@@ -6,6 +6,15 @@
  */
 import type { AgentCallSignal } from "./lifeAgentCall";
 import { z } from "zod";
+import {
+  TakeItemSchema,
+  RemoveItemSchema,
+  readChatInventoryAction,
+  readSceneItemOffers,
+  SCENE_ITEMS_DESCRIPTION,
+  type SceneItemOffer,
+} from "@/features/narration/chatInventory";
+
 import { clampDispositionDelta, isAnswerableQuestion, isPlaceTag, tagNamed } from "@/engine";
 import { normalizeWalkOnMentions, type WalkOnMention } from "@/features/cast/walkOnMention";
 import { isLowStakes, snapDv, wireObject } from "@/features/narration/narratorRules";
@@ -16,6 +25,8 @@ export const LIFE_ACTION_KINDS = [
   "facedown",
   "spend",
   "use_item",
+  "take_item",
+  "remove_item",
   "travel",
   "rest",
   "pay_bills",
@@ -27,6 +38,8 @@ export const LIFE_ACTION_KINDS = [
 
 /** What the engine should resolve out of the player's stated intent. */
 export const LifeProposedActionSchema = z.discriminatedUnion("kind", [
+  TakeItemSchema,
+  RemoveItemSchema,
   z.object({
     kind: z.literal("skill_check"),
     skillId: z.string(),
@@ -160,6 +173,7 @@ export type LifeResponse = {
   timeSpent: number;
   resolution: string | null;
   proposedActions: LifeProposedAction[];
+  sceneItems?: SceneItemOffer[];
   deltas: LifeDelta[];
   /**
    * What the turn noticed, from the engine's closed vocabulary. The model
@@ -195,6 +209,7 @@ export const LifeWireResponseSchema = z.object({
   timeSpent: z.number().nullish(),
   resolution: z.string().nullish(),
   proposedActions: z.array(z.unknown()).nullish(),
+  sceneItems: z.array(z.unknown()).describe(SCENE_ITEMS_DESCRIPTION).nullish(),
   deltas: z.array(z.unknown()).nullish(),
   observations: z.array(z.unknown()).nullish(),
   newSituation: z.unknown().nullish(),
@@ -256,6 +271,11 @@ function normalizeProposed(raw: unknown, warn: (m: string) => void): LifePropose
   if (!Array.isArray(raw)) return [];
   const out: LifeProposedAction[] = [];
   for (const item of raw) {
+    const inventoryAction = readChatInventoryAction(item);
+    if (inventoryAction) {
+      out.push(inventoryAction);
+      continue;
+    }
     const a = wireObject(item);
     if (!a) continue;
     const kindRaw = (str(a["kind"]) ?? str(a["type"]) ?? "").toLowerCase().replace(/[\s-]+/g, "_");
@@ -541,6 +561,7 @@ export function normalizeLifeResponse(
     timeSpent: clamp(num(wire.timeSpent) ?? 0, 0, MAX_MINUTES),
     resolution: str(wire.resolution) ?? null,
     proposedActions: normalizeProposed(wire.proposedActions, warn),
+    ...(wire.sceneItems?.length ? { sceneItems: readSceneItemOffers(wire.sceneItems) } : {}),
     deltas: normalizeDeltas(wire.deltas),
     // Left raw on purpose: engine/clocks.ts owns the vocabulary, and
     // features/campaign/pressure.ts is the one place it is checked against.

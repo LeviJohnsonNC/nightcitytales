@@ -11,7 +11,13 @@ import {
 
 const io = vi.hoisted(() => ({
   latest: null as unknown,
-  inventory: [] as { id: string; slot: string; item_id: string; ammo_loaded: number }[],
+  inventory: [] as {
+    id: string;
+    slot: string;
+    item_id: string;
+    ammo_loaded: number;
+    quantity: number;
+  }[],
   events: [] as Record<string, unknown>[],
   save: vi.fn(),
   npc: vi.fn(),
@@ -221,7 +227,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   io.events = [];
   io.latest = null;
-  io.inventory = [{ id: "gun", item_id: "heavy_pistol", slot: "weapon", ammo_loaded: 8 }];
+  io.inventory = [
+    { id: "gun", item_id: "heavy_pistol", slot: "weapon", ammo_loaded: 8, quantity: 1 },
+  ];
 });
 
 describe("shipping turn orchestration", () => {

@@ -8,6 +8,15 @@
  * Query in here.
  */
 
+import { listSceneItems } from "@/lib/backend/chatInventory";
+import {
+  inventoryPlayerInput,
+  inventoryRequestOf,
+  sceneInventoryPrompt,
+  establishSceneItems,
+  applyChatInventory,
+} from "@/features/campaign/chatInventory";
+import { isInventoryAction } from "@/features/narration/chatInventory";
 import { loadCurrentScene, trySceneAttack } from "@/features/scenes/sceneOps";
 import { finishCombatAction, owesASave, snapshotFor } from "./combatOps";
 import { payLuck } from "./rollCosts";
@@ -139,6 +148,8 @@ export async function narrate(
   options: {
     logInput?: boolean;
     optionsRequested?: boolean;
+    requestId?: string;
+    inventoryCheckSucceeded?: boolean;
     fixedResult?: boolean;
     /** This turn narrates a check the engine rolled itself; see rollWhatIsSmall. */
     autoRolled?: boolean;
@@ -159,14 +170,16 @@ export async function narrate(
   // packet, and kept beside the narration it informed.
   const recognition = recognitionRoll(bundle.reputation.level);
 
+  let requestId = options.requestId;
   if (options.logInput !== false) {
-    await appendCampaignEvent({
+    const playerInput = await appendCampaignEvent({
       campaign_id: campaignId,
       type: "player_input",
       summary: input,
-      data: {} as Json,
+      data: (requestId ? { requestId } : {}) as Json,
       ...beatFields,
     });
+    requestId ??= playerInput.id;
   }
 
   if (!bundle.mission || !bundle.runtime || !bundle.beat) {
@@ -357,7 +370,38 @@ export async function narrate(
     ...(options.optionsRequested ? { optionsRequested: true } : {}),
   });
 
-  const gm = await gmTurnFn({ data: { userPrompt: renderGmUserPrompt(context, input) } });
+  const inventoryLocation = bundle.campaign.location_key ?? DEFAULT_START;
+  const itemsHere =
+    !options.fixedResult && !options.optionsRequested
+      ? await listSceneItems(campaignId, inventoryLocation)
+      : [];
+  const gm = await gmTurnFn({
+    data: { userPrompt: renderGmUserPrompt(context, input) + sceneInventoryPrompt(itemsHere) },
+  });
+  const inventoryReady =
+    !options.fixedResult &&
+    !options.optionsRequested &&
+    !gm.proposedActions.some(
+      (action) =>
+        action.kind === "skill_check" ||
+        action.kind === "opposed_check" ||
+        action.kind === "facedown" ||
+        action.kind === "attack" ||
+        action.kind === "start_encounter",
+    );
+  if (inventoryReady) {
+    await establishSceneItems({
+      campaignId,
+      locationKey: inventoryLocation,
+      offers: gm.sceneItems ?? [],
+      narration: gm.narration,
+      events: bundle.events,
+      takes: gm.proposedActions.filter(isInventoryAction),
+      ...(options.inventoryCheckSucceeded !== undefined
+        ? { checkSucceeded: options.inventoryCheckSucceeded }
+        : {}),
+    });
+  }
   // The narrator has what arrived and what the dice answered: now they happened.
   await due?.commit();
   await pending?.commit();
@@ -482,7 +526,21 @@ export async function narrate(
   const checkBudget = Math.max(0, (fightRunning ? 1 : MAX_CHECKS_PER_TURN) - outstanding);
 
   for (const action of gm.proposedActions) {
-    if (action.kind === "skill_check") {
+    if (isInventoryAction(action)) {
+      if (!inventoryReady || !requestId || options.inventoryCheckSucceeded === false) continue;
+      const transferred = await applyChatInventory({
+        campaignId,
+        locationKey: inventoryLocation,
+        requestId,
+        beatId,
+        action,
+        events: bundle.events,
+      });
+      if (transferred) {
+        kit = transferred;
+        capability = snapshotFor({ ...bundle, inventory: kit });
+      }
+    } else if (action.kind === "skill_check") {
       if (attackPosted || postedSkillIds.size >= checkBudget) {
         console.warn(
           `GM proposed a "${action.skillId}" check with no room left this turn ` +
@@ -961,7 +1019,11 @@ async function commitOpposedCheck(
       `${opposition.npcName} (${opposition.skillName}): ${result.opponent.formula} = ${result.opponent.total}${critNote(result.opponent.critical)}. ` +
       `Outcome: ${verdict}. Narrate this exact outcome for the intent "${pending.intent}", showing how ${opposition.npcName} met it. ` +
       `Do not re-decide it, do not soften a failure, do not propose the same check again.${facedownOutcomeLine(pending, result.success)}${insightLine(read)}${carryOn(bundle, pending.eventId)} End on a decision.)`,
-    { logInput: false, fixedResult: bundle.encounter?.state.status === "active" },
+    {
+      logInput: false,
+      fixedResult: bundle.encounter?.state.status === "active",
+      ...checkInventoryOptions(bundle, pending, result.success),
+    },
   );
 }
 
@@ -1053,7 +1115,13 @@ async function resolveCheck(
     {
       logInput: false,
       fixedResult: bundle.encounter?.state.status === "active",
+      ...checkInventoryOptions(bundle, pending, result.success === true),
       ...(opts.auto ? { autoRolled: true } : {}),
     },
   );
+}
+
+function checkInventoryOptions(bundle: PlayBundle, pending: PendingCheck, success: boolean) {
+  const requestId = inventoryRequestOf(inventoryPlayerInput(bundle.events, pending.eventId));
+  return { ...(requestId ? { requestId } : {}), inventoryCheckSucceeded: success };
 }

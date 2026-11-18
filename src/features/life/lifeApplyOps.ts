@@ -48,7 +48,9 @@ import {
   upsertSituations,
   type Json,
 } from "@/lib/backend";
-import { gadgetTurn, planItemUse } from "@/features/campaign/itemUse";
+import { establishSceneItems, applyChatInventory } from "@/features/campaign/chatInventory";
+import { isInventoryAction } from "@/features/narration/chatInventory";
+import { applyItemUse, gadgetTurn, planItemUse } from "@/features/campaign/itemUse";
 import { dvBandName, facedownPrompt, snapToPublishedDv } from "@/features/play/checkPrompt";
 import { buildCapabilitySnapshot } from "@/features/play/capabilityModel";
 import { findNpcByKey } from "@/features/play/playModel";
@@ -142,6 +144,35 @@ export async function applyResponse(
         ? clampActionMinutes(turn.minutes)
         : clampActionMinutes(response.timeSpent);
 
+  const inventoryLocation = turn.inventoryLocation ?? bundle.campaign.location_key ?? DEFAULT_START;
+  const inventoryReady =
+    !turn.fixedResult &&
+    !turn.options &&
+    !response.proposedActions.some(
+      (action) =>
+        action.kind === "skill_check" ||
+        action.kind === "opposed_check" ||
+        action.kind === "facedown",
+    );
+  const leaving = response.proposedActions.some((action) => action.kind === "travel");
+  if (
+    inventoryReady &&
+    (!leaving || turn.inventoryCheckSucceeded) &&
+    (bundle.campaign.location_key ?? DEFAULT_START) === inventoryLocation
+  ) {
+    await establishSceneItems({
+      campaignId,
+      locationKey: inventoryLocation,
+      offers: response.sceneItems ?? [],
+      narration: response.resolution ?? response.situation.description,
+      events: bundle.events,
+      takes: response.proposedActions.filter(isInventoryAction),
+      ...(turn.inventoryCheckSucceeded !== undefined
+        ? { checkSucceeded: turn.inventoryCheckSucceeded }
+        : {}),
+    });
+  }
+
   await appendCampaignEvent({
     campaign_id: campaignId,
     // Options are answered on a row of their own: the scene has not moved, and
@@ -203,16 +234,20 @@ export async function applyResponse(
   // character does not have and kit they are not carrying are refused here,
   // deterministically, and the refusal is written back as something that
   // happened rather than silently dropped.
-  const capability = buildCapabilitySnapshot({
-    character: bundle.character,
-    vitals: bundle.vitals,
-    inventory: bundle.inventory,
-    cyberware: bundle.cyberware,
-    roleState: bundle.campaign.role_state,
-    encounter: null,
-    events: bundle.events,
-    beatId: null,
-  });
+  let kit = bundle.inventory;
+  const capabilityForKit = () =>
+    buildCapabilitySnapshot({
+      character: bundle.character,
+      vitals: bundle.vitals,
+      inventory: kit,
+      cyberware: bundle.cyberware,
+      roleState: bundle.campaign.role_state,
+      encounter: null,
+      events: bundle.events,
+      beatId: null,
+    });
+  const startingCapability = capabilityForKit();
+  let capability = startingCapability;
   const refuse = async (reason: string, code = "impossible"): Promise<void> => {
     await appendCampaignEvent({
       campaign_id: campaignId,
@@ -281,7 +316,28 @@ export async function applyResponse(
       : asked;
 
   for (const action of proposed) {
-    if (action.kind === "spend") {
+    if (isInventoryAction(action)) {
+      // The arrival turn handles actions after a journey using the new scene.
+      if (
+        !inventoryReady ||
+        !turn.requestId ||
+        outcome.travelled ||
+        outcome.travelRefused ||
+        turn.inventoryCheckSucceeded === false
+      )
+        continue;
+      const transferred = await applyChatInventory({
+        campaignId,
+        locationKey: inventoryLocation,
+        requestId: turn.requestId,
+        action,
+        events: bundle.events,
+      });
+      if (transferred) {
+        kit = transferred;
+        capability = capabilityForKit();
+      }
+    } else if (action.kind === "spend") {
       const legal = judgeAction(holding(), {
         kind: "spend",
         resource: "eurobucks",
@@ -314,11 +370,13 @@ export async function applyResponse(
       // Whatever it says now is what the rows were actually set to.
       const use = planItemUse({
         capability,
-        inventory: bundle.inventory,
+        inventory: kit,
         item: action.item,
         quantity: action.quantity,
       });
       for (const write of use.writes) await setInventoryQuantity(write.id, write.quantity);
+      kit = applyItemUse(kit, use);
+      capability = capabilityForKit();
       await appendCampaignEvent({
         campaign_id: campaignId,
         type: "life_action",
@@ -611,7 +669,7 @@ export async function applyResponse(
   let timeFactor = 1;
   if (!turn.options) {
     const finds = gadgetTurn({
-      capability,
+      capability: startingCapability,
       proposed,
       reports: readObservations(response.observations),
       report: (observation) => ({ observation: observation as Observation, factionId: null }),

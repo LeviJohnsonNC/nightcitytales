@@ -110,9 +110,9 @@ export function usePlay(campaignId: string) {
     ]);
 
   const turn = useMutation({
-    mutationFn: (input: string) => {
+    mutationFn: ({ input, requestId }: { input: string; requestId: string }) => {
       if (!query.data) throw new Error("Still loading.");
-      return narrate(query.data, input);
+      return narrate(query.data, input, { requestId });
     },
     onSettled: invalidate,
   });
@@ -440,7 +440,11 @@ export function usePlay(campaignId: string) {
     /** Resolves true when the turn landed, false when it failed. */
     submit: async (input: string) => {
       try {
-        await turn.mutateAsync(input);
+        const requestId =
+          turn.isError && turn.variables?.input === input
+            ? turn.variables.requestId
+            : crypto.randomUUID();
+        await turn.mutateAsync({ input, requestId });
         return true;
       } catch {
         return false;

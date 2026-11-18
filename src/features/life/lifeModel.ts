@@ -255,6 +255,7 @@ export function recentLifeLines(
     AGENT_CALL_ENDED,
     "life_narration",
     "life_action",
+    "inventory_changed",
     "neighborhood_action",
     // A refusal is part of what happened. Leaving it out let the model propose
     // the same impossible thing again next turn, having never been told.

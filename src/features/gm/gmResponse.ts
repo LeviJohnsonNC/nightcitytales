@@ -4,6 +4,15 @@
  * resolves proposedActions; nothing here changes state on its own.
  */
 import { z } from "zod";
+import {
+  TakeItemSchema,
+  RemoveItemSchema,
+  SceneItemSchema,
+  readChatInventoryAction,
+  readSceneItemOffers,
+  SCENE_ITEMS_DESCRIPTION,
+} from "@/features/narration/chatInventory";
+
 import { SCENE_FACTS_PROMPT } from "./sceneFactsPrompt";
 import {
   COMBAT_GOALS,
@@ -44,6 +53,8 @@ export type GmEnemy = z.infer<typeof GmEnemySchema>;
 
 /** A mechanical action the engine should resolve from the player's intent. */
 export const GmProposedActionSchema = z.discriminatedUnion("kind", [
+  TakeItemSchema,
+  RemoveItemSchema,
   z.object({
     kind: z.literal("skill_check"),
     skillId: z.string(),
@@ -176,6 +187,7 @@ export type GmObservation = z.infer<typeof GmObservationSchema>;
 export const GmResponseSchema = z.object({
   narration: z.string(),
   proposedActions: z.array(GmProposedActionSchema).default([]),
+  sceneItems: z.array(SceneItemSchema).optional(),
   suggestedActions: z.array(GmSuggestedActionSchema).default([]),
   stateDeltas: z.array(GmStateDeltaSchema).default([]),
   observations: z.array(GmObservationSchema).default([]),
@@ -210,6 +222,7 @@ export type GmResponse = z.infer<typeof GmResponseSchema>;
  */
 export const GmWireResponseSchema = z.object({
   narration: z.string(),
+  sceneItems: z.array(z.unknown()).describe(SCENE_ITEMS_DESCRIPTION).nullish(),
   proposedActions: z
     .array(z.unknown())
     .describe(
@@ -443,6 +456,11 @@ export function normalizeGmResponse(
   const proposedActions: GmProposedAction[] = [];
   const rawActions = wire.proposedActions ?? [];
   for (const raw of rawActions) {
+    const inventoryAction = readChatInventoryAction(raw);
+    if (inventoryAction) {
+      proposedActions.push(inventoryAction);
+      continue;
+    }
     const a = wireObject(raw);
     if (!a) {
       warn(`GM proposed a non-object action, dropped: ${JSON.stringify(raw)}`);
@@ -614,6 +632,7 @@ export function normalizeGmResponse(
 
   return {
     narration: wire.narration,
+    ...(wire.sceneItems?.length ? { sceneItems: readSceneItemOffers(wire.sceneItems) } : {}),
     proposedActions,
     suggestedActions,
     stateDeltas,

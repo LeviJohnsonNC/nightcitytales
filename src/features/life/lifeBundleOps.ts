@@ -445,6 +445,10 @@ async function bindLegacyHook(
 
 /** What a single Life turn is: what the player did, and what already happened. */
 export type TurnOptions = {
+  /** Stable across a retry and throughout this command's follow-ups. */
+  requestId?: string;
+  inventoryCheckSucceeded?: boolean;
+  inventoryLocation?: string;
   /** What the engine already resolved, when this turn narrates a result. */
   resolved?: string;
   /** Prompt whose saved roll this passage follows. */

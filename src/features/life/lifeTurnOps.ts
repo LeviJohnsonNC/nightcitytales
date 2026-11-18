@@ -7,6 +7,13 @@
  * No React and no TanStack Query in here.
  */
 
+import { listSceneItems } from "@/lib/backend/chatInventory";
+import {
+  inventoryPlayerInput,
+  inventoryRequestOf,
+  sceneInventoryPrompt,
+} from "@/features/campaign/chatInventory";
+import { isInventoryAction } from "@/features/narration/chatInventory";
 import { trySceneAttack } from "@/features/scenes/sceneOps";
 import { currentAgentCall, resolveAgentCall } from "./lifeAgentCall";
 import { checkResolvedLine } from "./checkResult";
@@ -105,19 +112,24 @@ export async function liveTurn(
 ): Promise<void> {
   if (!turn.fixedResult && !turn.continuation && (await trySceneAttack(bundle.campaign.id, input)))
     return;
+  let requestId = turn.requestId;
   if (input.trim()) {
-    await appendCampaignEvent({
+    const playerInput = await appendCampaignEvent({
       campaign_id: bundle.campaign.id,
       type: "player_input",
       summary: input,
-      data: {} as Json,
+      data: (requestId ? { requestId } : {}) as Json,
     });
+    requestId ??= playerInput.id;
   }
   const oracle = turn.fixedResult
     ? undefined
     : (turn.oracle ?? (await consultOracles(bundle, input, turn)));
+  const inventoryLocation = bundle.campaign.location_key ?? DEFAULT_START;
   const asked: TurnOptions = {
     ...turn,
+    ...(requestId ? { requestId } : {}),
+    inventoryLocation,
     ...(oracle ? { oracle } : {}),
     recognition: turn.recognition ?? recognitionRoll(bundle.climb.reputation.level),
     ...(input.trim() && !turn.said ? { said: input.trim() } : {}),
@@ -126,8 +138,14 @@ export async function liveTurn(
   const opening = turn.options
     ? "(the player is asking what they could do here)"
     : "(open the moment)";
+  const itemsHere =
+    !turn.fixedResult && !turn.options
+      ? await listSceneItems(bundle.campaign.id, inventoryLocation)
+      : [];
   const answered = await lifeTurnFn({
-    data: { userPrompt: renderLifeUserPrompt(context, input || opening) },
+    data: {
+      userPrompt: renderLifeUserPrompt(context, input || opening) + sceneInventoryPrompt(itemsHere),
+    },
   });
   // A continuation finishes what the player asked; it does not go anywhere
   // else. Dropped here, before anything is applied, so a second trip can
@@ -177,8 +195,13 @@ export async function liveTurn(
       // money, and this turn writes both from what the bundle says.
       const fresh = await loadLife(bundle.campaign.id);
       await liveTurn({ ...fresh, current: bundle.current, inScene: true }, "", {
-        resolved: correction,
+        resolved:
+          correction +
+          (response.proposedActions.some(isInventoryAction)
+            ? " Inventory actions before departure were already attempted. Resolve only inventory actions requested after arrival."
+            : ""),
         said: asked.said,
+        ...(requestId ? { requestId } : {}),
         continuation: true,
         // Nothing is re-rolled for the second half of one evening's errand.
         oracle: {},
@@ -384,6 +407,11 @@ export async function commitLifeCheck(
   opts: { auto?: boolean } = {},
 ): Promise<void> {
   const campaignId = bundle.campaign.id;
+  const requestId = inventoryRequestOf(inventoryPlayerInput(bundle.events, pending.eventId));
+  const inventoryResult = {
+    ...(requestId ? { requestId } : {}),
+    inventoryCheckSucceeded: roll.result.success === true,
+  };
 
   const tag = askTagFrom(bundle.events.find((event) => event.id === pending.eventId));
   const hook = tag && bundle.hook?.situationKey === tag.situationKey ? bundle.hook : null;
@@ -434,6 +462,7 @@ export async function commitLifeCheck(
     await liveTurn(fresh, "", {
       minutes: 0,
       resolvedCheckId: pending.eventId,
+      ...inventoryResult,
       ...saidBefore(bundle.events, pending.eventId),
       resolved:
         `The ${pending.skillName} check against ${pending.opposition?.npcName ?? "them"} is RESOLVED: ${verdict}, for the intent "${pending.intent}".` +
@@ -468,6 +497,7 @@ export async function commitLifeCheck(
   await liveTurn(fresh, "", {
     minutes: 0,
     resolvedCheckId: pending.eventId,
+    ...inventoryResult,
     ...saidBefore(bundle.events, pending.eventId),
     ...(opts.auto ? { autoRolled: true } : {}),
     resolved: checkResolvedLine({

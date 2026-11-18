@@ -50,7 +50,8 @@ export function liveInventory(
   inventory: CampaignInventoryItem[],
   character: FullCharacter,
 ): CampaignInventoryItem[] {
-  if (inventory.length > 0) return inventory.map(placed);
+  // A zero-quantity live row still proves the campaign has its own kit.
+  if (inventory.length > 0) return inventory.filter((row) => row.quantity > 0).map(placed);
   return character.gear
     .map((g) => ({
       id: g.id,

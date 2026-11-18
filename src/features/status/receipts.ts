@@ -32,6 +32,7 @@ export type TurnSnapshot = {
   day: number;
   minute: number;
   eurobucks: number;
+  inventory?: Record<string, { name: string; quantity: number }>;
   hp: number;
   humanity: number;
   /** Disposition by npc key, with the name to print. */
@@ -48,6 +49,7 @@ export type TurnSnapshot = {
 export function snapshotOf(input: {
   clock: { day: number; minute: number };
   vitals: { eurobucks: number; hp_current: number; humanity_current: number };
+  inventory?: readonly { key: string; name: string; quantity: number }[];
   npcs: { npc_id: string | null; name: string; disposition: number }[];
   pressure: { clock: LifeClock }[];
   goals?: GoalProgress[];
@@ -61,10 +63,18 @@ export function snapshotOf(input: {
   }
   const clocks: TurnSnapshot["clocks"] = {};
   for (const entry of input.pressure) clocks[entry.clock.key] = entry.clock;
+  const inventory = input.inventory ? new Map<string, { name: string; quantity: number }>() : null;
+  for (const item of input.inventory ?? []) {
+    inventory?.set(item.key, {
+      name: item.name,
+      quantity: (inventory.get(item.key)?.quantity ?? 0) + item.quantity,
+    });
+  }
   return {
     day: input.clock.day,
     minute: input.clock.minute,
     eurobucks: input.vitals.eurobucks,
+    ...(inventory ? { inventory: Object.fromEntries(inventory) } : {}),
     hp: input.vitals.hp_current,
     humanity: input.vitals.humanity_current,
     people,
@@ -124,6 +134,23 @@ export function receiptsBetween(before: TurnSnapshot, after: TurnSnapshot): Rece
       text: spent > 0 ? `−${money(spent)}` : `+${money(spent)}`,
       tone: spent > 0 ? "bad" : "good",
     });
+  }
+
+  if (before.inventory && after.inventory) {
+    for (const key of new Set([
+      ...Object.keys(before.inventory),
+      ...Object.keys(after.inventory),
+    ])) {
+      const previous = before.inventory[key];
+      const current = after.inventory[key];
+      const change = (current?.quantity ?? 0) - (previous?.quantity ?? 0);
+      if (change === 0) continue;
+      out.push({
+        key: `inventory:${key}`,
+        text: `${change > 0 ? "+" : "−"}${Math.abs(change)} × ${current?.name ?? previous?.name}`,
+        tone: change > 0 ? "good" : "neutral",
+      });
+    }
   }
 
   const hp = after.hp - before.hp;
