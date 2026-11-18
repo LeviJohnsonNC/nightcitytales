@@ -46,7 +46,7 @@ describe("Agent call state", () => {
     expect(resolveAgentCall(call, { people, situation }, "")?.direction).toBe("incoming");
     expect(resolveAgentCall(call, { people, situation, inScene: true }, "")).toBeNull();
     expect(resolveAgentCall(call, { people, situation: null }, "")).toBeNull();
-    const wire = { brokerKey: yuri.key, brokerName: yuri.name } as LifeContext["wire"];
+    const wire = { brokerKey: yuri.key, brokerName: yuri.name } as NonNullable<LifeContext["wire"]>;
     expect(resolveAgentCall(call, { people: [], situation: null, wire }, "")).toEqual({
       ...saved,
       direction: "incoming",

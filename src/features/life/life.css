@@ -462,6 +462,7 @@
   }
   .life-agent-connection {
     min-width: 0;
+    max-inline-size: 5.5rem;
   }
 }
 @media (max-width: 480px) {

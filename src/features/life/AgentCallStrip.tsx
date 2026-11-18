@@ -1,6 +1,6 @@
 import { Phone, Signal } from "lucide-react";
 import { FacePlate } from "@/features/cast/FacePlate";
-import { findNpc, npcArtwork } from "@/features/cast/npcDirectory";
+import { findNpc, isPerson, npcArtwork } from "@/features/cast/npcDirectory";
 import { portraitArt, portraitById } from "@/features/chargen/art";
 import { usePortraitUrl } from "@/features/chargen/usePortraitUrl";
 import type { AgentCall } from "@/engine";
@@ -17,7 +17,7 @@ export function AgentCallStrip({
   const preset = player.portrait_id ? portraitById(player.portrait_id) : undefined;
   const portrait = generated ?? (preset ? portraitArt(preset).src : null);
   const npc = findNpc(call.name);
-  const other = npc ? npcArtwork(npc) : null;
+  const other = npc && isPerson(npc) ? npcArtwork(npc) : null;
 
   return (
     <section className="life-agent-call" aria-label="Agent voice call">

@@ -12,6 +12,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AGENT_CALL_ENDED,
+  agentCallEventData,
   LEDGER_EVENTS,
   MAX_ACTION_MINUTES,
   generateCast,
@@ -716,4 +717,31 @@ it("keeps the Agent call on the ledger through a reply and hangs up without spen
   expect(currentAgentCall(db.events)).toBeNull();
   expect(ofType(AGENT_CALL_ENDED)).toHaveLength(1);
   expect([db.prompts.length, db.campaign.minute, db.vitals.eurobucks]).toEqual(before);
+});
+
+it("leaves a line closed when a reply comes back after another tab hangs up", async () => {
+  setup();
+  const backend = fakeBackend(() => db);
+  const { loadLife, liveTurn } = await import("../lifeOps");
+  await backend.appendCampaignEvent({
+    campaign_id: CAMPAIGN_ID,
+    type: "life_narration",
+    summary: "Yuri answers.",
+    data: agentCallEventData({
+      contactKey: "yuri",
+      name: "Yuri Pastrana",
+      role: "Fixer",
+      direction: "outgoing",
+    }),
+  });
+  db.replies.push(reply({ timeSpent: 0 }));
+  db.duringCall = () => {
+    void backend.appendCampaignEvent({
+      campaign_id: CAMPAIGN_ID,
+      type: AGENT_CALL_ENDED,
+      summary: "Call ended.",
+    });
+  };
+  await liveTurn(await loadLife(CAMPAIGN_ID), "Who else knows?");
+  expect(currentAgentCall(db.events)).toBeNull();
 });
