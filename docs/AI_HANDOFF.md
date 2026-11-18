@@ -1,4 +1,13 @@
-# Old Japantown scenes and Stackside Clinic — 2026-11-18
+# Life play screen redesign — 2026-11-18
+
+Branch `codex/life-screen-overhaul`, based on merged main `4e2f5b1`.
+The Life shell, location reader, composer and rail are implemented. Desktop and
+phone captures from the same seeded screen are in visual review. Turn-state
+walkthroughs, final validation and the draft PR are in progress.
+
+## Previous milestone
+
+### Old Japantown scenes and Stackside Clinic
 
 Branch `codex/neighborhood-clinic` from `4194ffc6`. All ten roles have an
 approach at Nakamura’s Counter or the Paper Lantern. The neighborhood flag

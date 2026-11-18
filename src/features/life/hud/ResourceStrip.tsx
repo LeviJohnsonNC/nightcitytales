@@ -49,13 +49,9 @@ function Chip({
         <span aria-hidden className="text-accent">
           {icon}
         </span>
+        <span className="text-xs">{label}</span>
         <span className={cn("num font-mono text-xs font-bold", tone)}>{figure}</span>
-        {alert && (
-          <span
-            aria-label="due"
-            className="absolute right-1 top-1 size-2 rounded-full bg-destructive shadow-[0_0_6px_var(--color-destructive)]"
-          />
-        )}
+        {alert && <span className="text-xs text-amber-400">Due</span>}
         {meter !== undefined && (
           <span aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 bg-hairline">
             <span
@@ -82,9 +78,9 @@ export function ResourceStrip({ status }: { status: StatusView }) {
   const counted = useCountTo(money.eurobucks);
   const moved = useChangeFlash(money.eurobucks);
   return (
-    <section className="grid grid-cols-3 gap-2">
+    <section className="life-resources">
       <Chip
-        label="Money"
+        label="Cash"
         icon={<Coins className="size-4" />}
         figure={counted === money.eurobucks ? money.line : formatMoney(counted)}
         tone={
@@ -99,7 +95,7 @@ export function ResourceStrip({ status }: { status: StatusView }) {
         <MoneyDetail status={money} />
       </Chip>
       <Chip
-        label="Growth"
+        label="IP"
         icon={<TrendingUp className="size-4" />}
         // Progress toward something, always: with nothing pinned it is the
         // cheapest raise, so a new character reads "0/20 IP", not a balance of
@@ -119,14 +115,16 @@ export function ResourceStrip({ status }: { status: StatusView }) {
       >
         <GrowthDetail status={growth} />
       </Chip>
-      <Chip
-        label="Commitments"
-        icon={<ListChecks className="size-4" />}
-        figure={String(commitments.open)}
-        alert={commitments.dueToday > 0 || commitments.overdue > 0}
-      >
-        <CommitmentsPanel status={commitments} />
-      </Chip>
+      {(commitments.open > 0 || commitments.leads.length > 0) && (
+        <Chip
+          label="Commitments"
+          icon={<ListChecks className="size-4" />}
+          figure={String(commitments.open)}
+          alert={commitments.dueToday > 0 || commitments.overdue > 0}
+        >
+          <CommitmentsPanel status={commitments} />
+        </Chip>
+      )}
     </section>
   );
 }

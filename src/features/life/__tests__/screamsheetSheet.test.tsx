@@ -30,10 +30,10 @@ const bundle = (sheet: typeof items, id = "c1") => ({ campaign: { id }, sheet })
 describe("the dock tile", () => {
   it("counts what the reader has not read, and says nothing when there is nothing", () => {
     const html = renderToStaticMarkup(<ScreamsheetSheet bundle={bundle(items)} />);
-    expect(html).toContain("The Sheet");
+    expect(html).toContain("Screamsheet");
     expect(html).toContain("2 new");
     const quiet = renderToStaticMarkup(<ScreamsheetSheet bundle={bundle([], "c2")} />);
-    expect(quiet).toContain("The Sheet");
+    expect(quiet).toContain("Screamsheet");
     expect(quiet).not.toContain(" new");
   });
 });

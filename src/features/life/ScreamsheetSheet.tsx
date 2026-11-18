@@ -67,7 +67,7 @@ export function ScreamsheetSheet({ bundle }: { bundle: LifeBundle }) {
       <SheetTrigger asChild>
         <DockTile
           icon={<Newspaper className="size-6" />}
-          label="The Sheet"
+          label="Screamsheet"
           badge={unseen > 0 ? `${unseen > MAX_BADGE ? `${MAX_BADGE}+` : unseen} new` : null}
         />
       </SheetTrigger>

@@ -17,7 +17,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { seenAsLine } from "@/engine";
 import { FacePlate } from "./FacePlate";
@@ -44,43 +44,43 @@ export function WalkOnFace({ subject, gender, face, name }: WalkOn) {
   const label = name ?? role;
   const look = seenAsLine(art.look);
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="group flex w-[5.5rem] shrink-0 flex-col gap-1 text-left"
-        aria-label={`Open image of ${label}`}
-      >
-        {/* The head and shoulders, cut from the scene (tools/art/flavor-faces.mjs):
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="group flex w-[5.5rem] shrink-0 flex-col gap-1 text-left"
+          aria-label={`Open image of ${label}`}
+        >
+          {/* The head and shoulders, cut from the scene (tools/art/flavor-faces.mjs):
             the whole 3:2 painting at this size was a few pixels of face and a lot of neon. */}
-        <FacePlate
-          src={art.faceSrc}
-          name={label}
-          alt={[name, role, look].filter(Boolean).join(", ")}
-          className="size-[5.5rem] transition-opacity group-hover:opacity-80"
-        />
-        {name && (
-          <span className="line-clamp-2 text-xs font-semibold leading-tight text-foreground">
-            {name}
-          </span>
-        )}
-        <span className="font-mono text-[9px] uppercase leading-tight tracking-[0.12em] text-muted-foreground">
-          {role}
-        </span>
-      </button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[92vw] border border-hairline bg-surface p-0 sm:max-w-[64rem]">
-          <DialogTitle className="sr-only">{label}</DialogTitle>
-          <img
-            src={art.src}
-            srcSet={art.srcSet}
-            sizes="(min-width: 640px) 1024px, 92vw"
-            alt={label}
-            className="w-full object-cover"
+          <FacePlate
+            src={art.faceSrc}
+            name={label}
+            alt={[name, role, look].filter(Boolean).join(", ")}
+            className="size-[5.5rem] transition-opacity group-hover:opacity-80"
           />
-        </DialogContent>
-      </Dialog>
-    </>
+          {name && (
+            <span className="line-clamp-2 text-xs font-semibold leading-tight text-foreground">
+              {name}
+            </span>
+          )}
+          <span className="font-mono text-[9px] uppercase leading-tight tracking-[0.12em] text-muted-foreground">
+            {role}
+          </span>
+        </button>
+      </DialogTrigger>
+      <DialogContent className="life-viewer" aria-describedby={undefined}>
+        <img
+          src={art.src}
+          srcSet={art.srcSet}
+          sizes="(min-width: 640px) 1024px, 92vw"
+          alt={label}
+          className="w-full object-cover"
+        />
+        <DialogTitle>{name ? name + " · " + role : role}</DialogTitle>
+      </DialogContent>
+    </Dialog>
   );
 }
 

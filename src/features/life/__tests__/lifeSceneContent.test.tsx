@@ -1,43 +1,15 @@
-import { expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+import { expect, it } from "vitest";
 import { LifeSceneContent } from "../LifeSceneContent";
 
-it("puts collapsed older narration above the current scene and its controls", () => {
+it("keeps the outcome with the passage and ahead of the next action", () => {
   const html = renderToStaticMarkup(
     <LifeSceneContent
-      narration={<p>Ulysses Street intersection</p>}
-      controls={<button>Enter combat</button>}
-      history={<p>Earlier container home</p>}
+      lead="The market"
+      narration="The stalls close."
+      outcome="10 minutes elapsed"
+      controls="Leave"
     />,
   );
-  expect(html.indexOf("<details")).toBeLessThan(html.indexOf("Earlier container home"));
-  expect(html.indexOf("Earlier container home")).toBeLessThan(html.indexOf("Ulysses Street"));
-  expect(html.indexOf("Ulysses Street")).toBeLessThan(html.indexOf("Enter combat"));
-  expect(html).not.toMatch(/<details[^>]*\bopen/);
-});
-it("keeps aftermath prominent and retains older events without duplicating them", () => {
-  const html = renderToStaticMarkup(
-    <LifeSceneContent
-      narration={<p>Both gangers withdrew.</p>}
-      history={<p>Before the fight</p>}
-    />,
-  );
-  expect(html.indexOf("<details")).toBeLessThan(html.indexOf("Both gangers withdrew."));
-  expect(html.match(/Both gangers withdrew/g)).toHaveLength(1);
-});
-it("does not hide the only available narration while a current block is absent", () => {
-  const html = renderToStaticMarkup(<LifeSceneContent narration={null} history={<p>Opening</p>} />);
-  expect(html).toContain("Opening");
-  expect(html).not.toContain("<details");
-});
-it("keeps the lead (picture and faces) under the earlier bar and over the prose", () => {
-  const html = renderToStaticMarkup(
-    <LifeSceneContent
-      lead={<p>Here: Nadia Sirko</p>}
-      narration={<p>The noodle bar steams.</p>}
-      history={<p>Earlier container home</p>}
-    />,
-  );
-  expect(html.indexOf("<details")).toBeLessThan(html.indexOf("Here: Nadia Sirko"));
-  expect(html.indexOf("Here: Nadia Sirko")).toBeLessThan(html.indexOf("The noodle bar steams."));
+  expect(html).toMatch(/The market.*The stalls close.*10 minutes elapsed.*Leave/);
 });

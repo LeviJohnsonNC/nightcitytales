@@ -16,8 +16,10 @@ import type { SceneFace } from "./sceneFaceModel";
 export function SceneFaces({ faces }: { faces: readonly SceneFace[] }) {
   if (faces.length === 0) return null;
   return (
-    <section aria-label="Who is here" className="space-y-2">
-      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Here</p>
+    <section aria-label="Who is here" className="life-faces">
+      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        In this scene
+      </p>
       <ul className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
         {faces.map((face) => (
           <li key={face.key} className="shrink-0">

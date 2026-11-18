@@ -13,6 +13,7 @@ type Props = {
   location: string;
   travelMode?: TravelMode;
   receipt?: string | null;
+  journal?: boolean;
   busy: boolean;
   act: (id: string) => void;
   travel: (place: string) => void;
@@ -24,6 +25,7 @@ export function NeighborhoodCard({
   location,
   receipt,
   travelMode,
+  journal = false,
   busy,
   act,
   travel,
@@ -53,6 +55,14 @@ export function NeighborhoodCard({
     );
   }
   const activeProject = state.keys && !state.lease && next.place !== context.place;
+  if (journal)
+    return leads.length ? (
+      <section className="my-4">
+        <h3 className="text-sm font-semibold">Word from Old Japantown</h3>
+        {leads.map(trip)}
+      </section>
+    ) : null;
+  if (!moment && !activeProject && !receipt) return null;
   return (
     <section aria-label="Old Japantown neighborhood" className="space-y-2">
       <div role="status">
@@ -97,14 +107,6 @@ export function NeighborhoodCard({
           <p className="pt-2 font-mono text-xs text-muted-foreground">Stackside Clinic</p>
           {trip(next)}
         </div>
-      )}
-      {leads.some((lead) => !activeProject || lead.place !== next.place) && (
-        <details className="rounded border border-border px-3">
-          <summary className="cursor-pointer py-3 text-sm font-medium">
-            Word from Old Japantown
-          </summary>
-          {leads.filter((lead) => !activeProject || lead.place !== next.place).map(trip)}
-        </details>
       )}
     </section>
   );

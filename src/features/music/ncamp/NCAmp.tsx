@@ -171,7 +171,7 @@ const TRANSPORT: { glyph: Glyph; label: string; run: () => void }[] = [
   { glyph: "next", label: "Next (B)", run: next },
 ];
 
-export function NCAmp() {
+export function NCAmp({ compact = false }: { compact?: boolean } = {}) {
   const state = useSyncExternalStore(subscribePlayer, getPlayerState, getPlayerState);
   const [ui, setUi] = useUi();
 
@@ -231,13 +231,25 @@ export function NCAmp() {
 
   return (
     <div className="ncamp" data-skin={ui.skin} ref={anchor}>
-      <Shade
-        state={state}
-        ui={ui}
-        text={text}
-        onToggle={() => setUi({ open: !ui.open })}
-        onVis={() => setUi({ vis: nextVis() })}
-      />
+      {compact ? (
+        <button
+          type="button"
+          className="life-radio"
+          aria-expanded={ui.open}
+          aria-haspopup="dialog"
+          onClick={() => setUi({ open: !ui.open })}
+        >
+          <span aria-hidden="true">♫</span> Radio
+        </button>
+      ) : (
+        <Shade
+          state={state}
+          ui={ui}
+          text={text}
+          onToggle={() => setUi({ open: !ui.open })}
+          onVis={() => setUi({ vis: nextVis() })}
+        />
+      )}
       {ui.open &&
         at &&
         createPortal(

@@ -27,6 +27,7 @@ export function MapButton({
   signals,
   placeHere,
   clinicOpen = false,
+  compact = false,
   open: openProp,
   onOpenChange,
 }: {
@@ -38,6 +39,7 @@ export function MapButton({
   /** What they would make the trip in, so the quoted minutes are the real ones. */
   travelMode?: TravelMode | undefined;
   signals?: PlaceSignal[] | undefined;
+  compact?: boolean;
   clinicOpen?: boolean | undefined;
   placeHere?: ((key: string) => PlaceHere | undefined) | undefined;
   /**
@@ -67,7 +69,7 @@ export function MapButton({
       >
         <MapPin className="h-4 w-4 shrink-0 text-accent" />
         <span className="max-w-[9rem] truncate font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:max-w-[16rem]">
-          {describePosition(locationKey)}
+          {compact ? "Map" : describePosition(locationKey)}
         </span>
       </button>
       {mounted ? (

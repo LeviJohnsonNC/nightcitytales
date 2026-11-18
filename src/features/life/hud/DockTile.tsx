@@ -15,6 +15,7 @@ export const DockTile = forwardRef<
   return (
     <button
       ref={ref}
+      data-dock-tile=""
       type="button"
       {...props}
       className={cn(

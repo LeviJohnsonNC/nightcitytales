@@ -25,7 +25,9 @@ export function SheetDrawer({
   character,
   inventory,
   cyberware,
+  label = "Character sheet",
 }: {
+  label?: string;
   character: FullCharacter;
   /** The campaign's live kit. Omitted on surfaces that have no campaign. */
   inventory?: CampaignInventoryItem[];
@@ -40,7 +42,7 @@ export function SheetDrawer({
       <SheetTrigger asChild>
         <Button variant="secondary" size="default">
           <NotebookText />
-          Character sheet
+          {label}
         </Button>
       </SheetTrigger>
       <SheetContent

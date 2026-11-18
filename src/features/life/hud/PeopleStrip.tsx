@@ -1,3 +1,4 @@
+import { DockTile } from "./DockTile";
 /**
  * The people the character knows, as a row of faces.
  *
@@ -9,13 +10,12 @@
  */
 import { useState } from "react";
 import { Users } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { findNpc, npcArtwork } from "@/features/cast/npcDirectory";
 import { NpcDossier, NpcName } from "@/features/cast/NpcName";
 import { getFaction, isHostile, standingBand, type FactionStanding } from "@/engine";
 import { cn } from "@/lib/utils";
-import { RING, WORD, dispositionBand, relevantPeople } from "./hudModel";
+import { RING, WORD, dispositionBand } from "./hudModel";
 
 export type HudPerson = {
   key: string;
@@ -129,6 +129,30 @@ function Standings({ standings }: { standings: readonly FactionStanding[] }) {
   );
 }
 
+function ContactFace({ person }: { person: HudPerson }) {
+  const npc = findNpc(person.name);
+  const [open, setOpen] = useState(false);
+  return npc ? (
+    <>
+      <button
+        type="button"
+        aria-label={`Open dossier for ${person.name}`}
+        onClick={() => setOpen(true)}
+      >
+        <Face person={person} size="sm" />
+      </button>
+      <NpcDossier
+        npc={npc}
+        open={open}
+        onOpenChange={setOpen}
+        relation={<Relation person={person} />}
+      />
+    </>
+  ) : (
+    <Face person={person} size="sm" />
+  );
+}
+
 export function PeopleStrip({
   people,
   standings,
@@ -136,87 +160,33 @@ export function PeopleStrip({
   people: readonly HudPerson[];
   standings: readonly FactionStanding[];
 }) {
-  const [openKey, setOpenKey] = useState<string | null>(null);
-  if (people.length === 0 && standings.length === 0) return null;
-  const shown = relevantPeople(people);
-  const opened = openKey ? people.find((p) => p.key === openKey) : undefined;
-  const openedNpc = opened ? findNpc(opened.name) : null;
   return (
-    <section className="space-y-2">
-      {opened && openedNpc && (
-        <NpcDossier
-          npc={openedNpc}
-          open
-          onOpenChange={(v) => !v && setOpenKey(null)}
-          relation={<Relation person={opened} />}
-        />
-      )}
-      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">People</p>
-      <div className="flex items-start gap-2">
-        {shown.map((person) => {
-          const npc = findNpc(person.name);
-          // Somebody with a dossier opens it, full size; anybody without one
-          // (the city's own people, a name the model supplied) gets the small card.
-          if (npc) {
-            return (
-              <button
-                key={person.key}
-                type="button"
-                aria-label={`Open dossier for ${person.name}`}
-                onClick={() => setOpenKey(person.key)}
-                className="shrink-0 transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-accent motion-reduce:transition-none"
-              >
-                <Face person={person} size="md" />
-              </button>
-            );
-          }
-          return (
-            <Popover key={person.key}>
-              <PopoverTrigger
-                aria-label={person.name}
-                className="shrink-0 transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-accent motion-reduce:transition-none"
-              >
-                <Face person={person} size="md" />
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-72 max-w-[calc(100vw-2rem)]">
-                <Detail person={person} />
-              </PopoverContent>
-            </Popover>
-          );
-        })}
-        <Sheet>
-          <SheetTrigger
-            aria-label="Everyone you know, and where you stand"
-            className="ml-auto flex size-12 shrink-0 flex-col items-center justify-center border border-hairline bg-surface/60 text-accent transition-colors hover:border-accent/70 focus-visible:outline-2 focus-visible:outline-accent"
-          >
-            <Users className="size-4" aria-hidden />
-            <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-text-dim">
-              All
-            </span>
-          </SheetTrigger>
-          <SheetContent
-            side="right"
-            className="w-full overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-md"
-          >
-            <SheetHeader>
-              <SheetTitle>People and standing</SheetTitle>
-            </SheetHeader>
-            <div className="mt-4 space-y-4">
-              <ul className="space-y-4">
-                {people.map((person) => (
-                  <li key={person.key} className="flex gap-3">
-                    <Face person={person} size="sm" />
-                    <div className="min-w-0 flex-1">
-                      <Detail person={person} />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <Standings standings={standings} />
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
-    </section>
+    <Sheet>
+      <SheetTrigger asChild>
+        <DockTile icon={<Users />} label="Contacts" />
+      </SheetTrigger>
+      <SheetContent
+        side="right"
+        className="w-full overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-md"
+      >
+        <SheetHeader>
+          <SheetTitle>Contacts and standing</SheetTitle>
+        </SheetHeader>
+        <div className="mt-4 space-y-4">
+          {!people.length && <p>Your contacts will appear here as you meet them.</p>}
+          <ul className="space-y-4">
+            {people.map((person) => (
+              <li key={person.key} className="flex gap-3">
+                <ContactFace person={person} />
+                <div className="min-w-0 flex-1">
+                  <Detail person={person} />
+                </div>
+              </li>
+            ))}
+          </ul>
+          <Standings standings={standings} />
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -1,3 +1,4 @@
+import { newestBrowse } from "./browseIntent";
 import { neighborhoodContext, takeNeighborhoodAction } from "./neighborhoodOps";
 import { neighborhoodMoment } from "@/engine/neighborhood";
 import { readSceneCombatEnd } from "@/engine";
@@ -54,10 +55,11 @@ export function useLife(campaignId: string) {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["life", campaignId], queryFn: () => loadLife(campaignId) });
   const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: ["life", campaignId] });
-    void queryClient.invalidateQueries({ queryKey: ["play", campaignId] });
-    void queryClient.invalidateQueries({ queryKey: ["campaign-phase", campaignId] });
-    void queryClient.invalidateQueries({ queryKey: ["scene", campaignId] });
+    return Promise.all(
+      ["life", "play", "campaign-phase", "scene"].map((key) =>
+        queryClient.invalidateQueries({ queryKey: [key, campaignId] }),
+      ),
+    );
   };
 
   const bundle = query.data;
@@ -345,6 +347,12 @@ export function useLife(campaignId: string) {
           ...(costs?.minutes !== undefined ? { minutes: costs.minutes } : {}),
           ...(costs?.spend ? { spend: costs.spend } : {}),
         });
+        const refreshed = queryClient.getQueryData<typeof bundle>(["life", campaignId]);
+        if (
+          refreshed &&
+          newestBrowse(refreshed.events)?.eventId !== newestBrowse(bundle?.events ?? [])?.eventId
+        )
+          return "counter" as const;
         return true;
       } catch {
         return false;
