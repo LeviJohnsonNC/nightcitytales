@@ -186,7 +186,9 @@ try {
           await page.getByRole("button", { name: "Act", exact: true }).scrollIntoViewIfNeeded();
           await page.screenshot({ path: join(out, "suggestions.png") });
           await option.click();
-          await page.getByRole("button", { name: /Roll 1d10 for/ }).scrollIntoViewIfNeeded();
+          await page
+            .getByRole("button", { name: /^Roll (d10$|1d10 for)/ })
+            .scrollIntoViewIfNeeded();
           await page.screenshot({ path: join(out, "check.png") });
         }
         await page.close();
