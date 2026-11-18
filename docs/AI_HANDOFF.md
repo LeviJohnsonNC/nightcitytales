@@ -1,10 +1,10 @@
-# Life skill checks — 2026-11-18
+# Agent calls in Life — 2026-11-18
 
-Branch `codex/life-roll-polish` in `LeviJohnsonNC/nightcitytales`, based on the merged Life screen at `ecd01e4`. [Draft PR #389](https://github.com/LeviJohnsonNC/nightcitytales/pull/389) holds the implementation and captures.
+Branch `codex/agent-call-strip`, based on merged main `d923cff`. [Draft PR #390](https://github.com/LeviJohnsonNC/nightcitytales/pull/390) holds the feature.
 
-- Life now shows one modifier and target before the roll, compact Luck odds, and expandable details. The die, total and stamp land together. The scene outcome follows the same roll when the composer returns.
-- Life reads the linked ledger result after refetch. A failed save is checked against the ledger before offering recovery. If the roll is saved, the player can continue from that verdict without replaying the settlement.
-- Apply `20261118020000_life_check_record.sql` before serving the new client. It records a player-rolled check and charges Luck atomically. Jobs and Combat use their existing presentation and settlement paths.
-- The 1,127 targeted tests and local PostgreSQL replay passed. The [browser walkthrough and matched captures](life-roll/README.md) cover the ready, landed and narrated check on desktop and the completed result at 390 px. The fixture uses local campaign reads and scripted narration. GitHub checks track the final revision. Owner review and the migration at rollout are next.
+- Life shows the player and caller across a cyan line above the passage, with the location still at the top. A connected call switches the composer to Reply and Hang up.
+- Newly narrated calls carry validated participant information in the existing Life narration event. Incoming calls use the broker or current situation. Reply continues on the connected line. Hang up writes one event without a model turn, and the reply path rereads the ledger before continuing a connection.
+- The Life skill-check path remains available during dialogue. Texts and in-person speech use the ordinary Life composer.
+- The production build, targeted tests and desktop and 390 px Chromium walkthrough passed. [Captures and reproduction](agent-call/README.md). The call strip requires no migration. Owner review is next.
 
-The [prior handoff](https://github.com/LeviJohnsonNC/nightcitytales/blob/ecd01e4/docs/AI_HANDOFF.md) covers the merged Life screen work and earlier milestones.
+The [prior handoff](https://github.com/LeviJohnsonNC/nightcitytales/blob/d923cff/docs/AI_HANDOFF.md) covers the merged Life roll work and its rollout migration.

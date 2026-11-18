@@ -6,11 +6,20 @@ type Props = {
   onDraft: (value: string) => void;
   onAct: () => void;
   onSuggest: () => void;
+  onHangUp?: ((keyboard: boolean) => void) | undefined;
   busy: boolean;
   suggestions: ReactNode;
 };
 
-export function LifeComposer({ draft, onDraft, onAct, onSuggest, busy, suggestions }: Props) {
+export function LifeComposer({
+  draft,
+  onDraft,
+  onAct,
+  onSuggest,
+  onHangUp,
+  busy,
+  suggestions,
+}: Props) {
   const composing = useRef(false);
   return (
     <form
@@ -21,12 +30,14 @@ export function LifeComposer({ draft, onDraft, onAct, onSuggest, busy, suggestio
       }}
     >
       <div className="life-composer-heading">
-        <label htmlFor="life-intent">What do you do?</label>
-        <button type="button" className="life-link" onClick={onSuggest} disabled={busy}>
-          Suggest actions
-        </button>
+        <label htmlFor="life-intent">{onHangUp ? "What do you say?" : "What do you do?"}</label>
+        {!onHangUp && (
+          <button type="button" className="life-link" onClick={onSuggest} disabled={busy}>
+            Suggest actions
+          </button>
+        )}
       </div>
-      {suggestions}
+      {!onHangUp && suggestions}
       <div className="life-entry">
         <Textarea
           id="life-intent"
@@ -53,9 +64,21 @@ export function LifeComposer({ draft, onDraft, onAct, onSuggest, busy, suggestio
             if (!e.repeat) e.currentTarget.form?.requestSubmit();
           }}
         />
-        <button className="life-act" disabled={busy || !draft.trim()}>
-          Act
-        </button>
+        <div className="life-entry-actions">
+          <button type="submit" className="life-act" disabled={busy || !draft.trim()}>
+            {onHangUp ? "Reply" : "Act"}
+          </button>
+          {onHangUp && (
+            <button
+              type="button"
+              className="life-link life-hang-up"
+              onClick={(event) => onHangUp(event.detail === 0)}
+              disabled={busy}
+            >
+              Hang up
+            </button>
+          )}
+        </div>
       </div>
     </form>
   );

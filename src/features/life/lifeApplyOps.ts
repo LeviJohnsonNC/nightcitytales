@@ -5,6 +5,8 @@
  */
 
 import {
+  agentCallEventData,
+  type AgentCall,
   advanceClock,
   clampActionMinutes,
   clampDisposition,
@@ -113,6 +115,7 @@ export async function applyResponse(
   bundle: LifeBundle,
   response: LifeTurnResult,
   turn: TurnOptions,
+  agentCall: AgentCall | null = null,
 ): Promise<TurnOutcome> {
   const campaignId = bundle.campaign.id;
   const outcome: TurnOutcome = {};
@@ -152,6 +155,7 @@ export async function applyResponse(
       at: bundle.campaign.location_key ?? DEFAULT_START,
       day: bundle.clock.day,
       title: response.situation.title,
+      ...(!turn.options && agentCall ? agentCallEventData(agentCall) : {}),
       ...(turn.resolvedCheckId ? { resolvedCheckId: turn.resolvedCheckId } : {}),
       actions: turn.cards ?? (turn.fixedResult ? [] : response.actions),
       // Resolved HERE, once, with the campaign+place seed the response schema

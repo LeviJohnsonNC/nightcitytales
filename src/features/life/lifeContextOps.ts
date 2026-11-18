@@ -39,6 +39,7 @@ import { buildCapabilitySnapshot, renderCapabilityLines } from "@/features/play/
 import { dossierForPrompt } from "@/features/atlas/placeDossiers";
 import { PACKET_BUDGET, withinBudget } from "@/features/narration/packetBudget";
 import type { LifeContext } from "./lifeContext";
+import { currentAgentCall } from "./lifeAgentCall";
 import { counterNews } from "./counterNews";
 import { keeperNamed } from "@/features/cast/npcLooks";
 import { alsoHereAt } from "./alsoHere";
@@ -216,6 +217,7 @@ export function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeCo
   // model is told the consequence, never asked to imagine it.
   const profile = positionDistrict ? districtProfile(positionDistrict.key) : undefined;
 
+  const agentCall = currentAgentCall(bundle.events);
   return {
     clock: bundle.clock,
     place: positionDistrict
@@ -407,6 +409,7 @@ export function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeCo
       tally: bundle.tally,
     }),
     people: lifePeople(bundle.npcs, bundle.clock.day),
+    ...(agentCall ? { agentCall } : {}),
     recentEvents: recentLifeLines(bundle.events),
     counter: counterNews(bundle.events),
     capabilities: renderCapabilityLines(capability),

@@ -808,6 +808,36 @@ export function readGoalsPinnedEventData(raw: unknown): Goal[] {
   return goals.map(readGoal).filter((g): g is Goal => g !== null);
 }
 
+/** Who is on the Agent line after a Life passage. The caller's identity is
+ * resolved against the campaign before the passage is written. */
+export type AgentCall = {
+  contactKey: string;
+  name: string;
+  role: string;
+  direction: "incoming" | "outgoing";
+};
+
+export const AGENT_CALL_ENDED = "agent_call_ended";
+
+export function agentCallEventData(call: AgentCall): { agentCall: AgentCall } {
+  return { agentCall: call };
+}
+
+export function readAgentCallEventData(raw: unknown): AgentCall | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const call = (raw as RawPayload)["agentCall"];
+  if (!call || typeof call !== "object" || Array.isArray(call)) return null;
+  const data = call as RawPayload;
+  const contactKey = str(data["contactKey"]);
+  const name = str(data["name"]);
+  const role = str(data["role"]);
+  const direction = data["direction"];
+  if (!contactKey || !name || !role || (direction !== "incoming" && direction !== "outgoing")) {
+    return null;
+  }
+  return { contactKey, name, role, direction };
+}
+
 // ---------------------------------------------------------------------------
 // walkOns — a field riding on life_narration/gm_narration, not an event of its
 // own. Those two types are otherwise prose with no contract to break, but this

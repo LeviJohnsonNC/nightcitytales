@@ -13,7 +13,7 @@ import {
   renderRoleAffordanceLines,
   type GameClock,
 } from "@/engine";
-import type { LifeSituation, LifeClock } from "@/engine";
+import type { LifeSituation, LifeClock, AgentCall } from "@/engine";
 
 export type LifePersonSummary = {
   key: string;
@@ -101,6 +101,7 @@ export type LifeContext = {
   };
   /** The situation the application chose for this turn. */
   situation: LifeSituation | null;
+  agentCall?: AgentCall;
   /**
    * True when that situation is the scene they are already in, rather than
    * something arriving this turn. It is then background: true, still theirs,
@@ -705,6 +706,15 @@ export function renderLifeUserPrompt(context: LifeContext, playerInput: string):
         : []),
       'To put it on the table, return {"kind":"hook_offer"} and voice this in the broker\'s mouth. ' +
         "Change nothing: not the fee, not the name, not the ask.",
+    );
+  }
+
+  if (context.agentCall) {
+    const call = context.agentCall;
+    parts.push(
+      "",
+      "== AGENT VOICE CALL ==",
+      `${call.name} [${call.contactKey}] is connected on an ${call.direction} call. They are on the line. Dialogue is spoken to them through the Agent unless the player changes activity.`,
     );
   }
 
