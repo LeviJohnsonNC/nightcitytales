@@ -10,7 +10,6 @@ import { Coins, ListChecks, TrendingUp } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { CommitmentsPanel, GrowthDetail, MoneyDetail } from "@/features/status/StatusRail";
-import { goalChipFigure, goalFill } from "@/features/status/goalsModel";
 import { formatMoney, type MoneyTone, type StatusView } from "@/features/status/statusModel";
 import { fillFraction } from "./hudModel";
 import { useChangeFlash, useCountTo } from "./useChange";
@@ -34,24 +33,20 @@ function Chip({
   icon: ReactNode;
   figure: string;
   tone?: string;
-  /** A red dot: something is due. */
-  alert?: boolean;
+  alert?: string;
   /** 0 to 1, drawn along the foot of the chip. */
   meter?: number;
   children: ReactNode;
 }) {
   return (
     <Popover>
-      <PopoverTrigger
-        aria-label={label}
-        className="group relative flex min-h-14 flex-col items-center justify-center gap-0.5 overflow-hidden border border-hairline bg-surface/60 px-1 py-2 transition-colors hover:border-accent/60 focus-visible:outline-2 focus-visible:outline-accent data-[state=open]:border-accent"
-      >
+      <PopoverTrigger className="group relative flex min-h-14 flex-col items-center justify-center gap-0.5 overflow-hidden border border-hairline bg-surface/60 px-1 py-2 transition-colors hover:border-accent/60 focus-visible:outline-2 focus-visible:outline-accent data-[state=open]:border-accent">
         <span aria-hidden className="text-accent">
           {icon}
         </span>
         <span className="text-xs">{label}</span>
         <span className={cn("num font-mono text-xs font-bold", tone)}>{figure}</span>
-        {alert && <span className="text-xs text-amber-400">Due</span>}
+        {alert && <span className="text-xs text-amber-400">{alert}</span>}
         {meter !== undefined && (
           <span aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 bg-hairline">
             <span
@@ -73,8 +68,6 @@ function Chip({
 
 export function ResourceStrip({ status }: { status: StatusView }) {
   const { money, growth, commitments } = status;
-  // The first pin leads the chip; with none, it is the cheapest raise, as before.
-  const top = growth.pinned[0] ?? null;
   const counted = useCountTo(money.eurobucks);
   const moved = useChangeFlash(money.eurobucks);
   return (
@@ -90,28 +83,21 @@ export function ResourceStrip({ status }: { status: StatusView }) {
               ? "text-success"
               : MONEY_TONE[money.tone]
         }
-        alert={money.tone === "due"}
+        alert={
+          money.tone === "due"
+            ? "Bills due"
+            : money.tone === "soon" && money.nextUp
+              ? money.nextUp.label + " due soon"
+              : ""
+        }
       >
         <MoneyDetail status={money} />
       </Chip>
       <Chip
         label="IP"
         icon={<TrendingUp className="size-4" />}
-        // Progress toward something, always: with nothing pinned it is the
-        // cheapest raise, so a new character reads "0/20 IP", not a balance of
-        // nothing.
-        figure={
-          top
-            ? goalChipFigure(top)
-            : growth.next
-              ? growth.ready
-                ? "ready"
-                : `${growth.ip}/${growth.next.cost} IP`
-              : `${growth.ip} IP`
-        }
-        meter={
-          top ? (goalFill(top) ?? 0) : growth.next ? fillFraction(growth.ip, growth.next.cost) : 1
-        }
+        figure={growth.next ? `${growth.ip}/${growth.next.cost}` : String(growth.ip)}
+        meter={growth.next ? fillFraction(growth.ip, growth.next.cost) : 1}
       >
         <GrowthDetail status={growth} />
       </Chip>
@@ -120,7 +106,7 @@ export function ResourceStrip({ status }: { status: StatusView }) {
           label="Commitments"
           icon={<ListChecks className="size-4" />}
           figure={String(commitments.open)}
-          alert={commitments.dueToday > 0 || commitments.overdue > 0}
+          alert={commitments.overdue > 0 ? "Overdue" : commitments.dueToday > 0 ? "Due today" : ""}
         >
           <CommitmentsPanel status={commitments} />
         </Chip>

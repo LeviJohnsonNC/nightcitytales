@@ -1,9 +1,10 @@
 # Life play screen redesign — 2026-11-18
 
 Branch `codex/life-screen-overhaul`, based on merged main `4e2f5b1`.
-The Life shell, location reader, composer and rail are implemented. Desktop and
-phone captures from the same seeded screen are in visual review. Turn-state
-walkthroughs, final validation and the draft PR are in progress.
+The Life shell, location reader, composer and rail are implemented. Draft [PR #388](https://github.com/LeviJohnsonNC/nightcitytales/pull/388) is open.
+Seeded Chromium checks passed for both counter paths, drawers, error recovery,
+IME, duplicate sends, priced options and a real Luck roll. The matched
+visual evidence and final checks are in progress.
 
 ## Previous milestone
 

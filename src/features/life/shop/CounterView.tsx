@@ -1046,7 +1046,7 @@ export function CounterView({
               onClick={onClose}
               className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.16em] text-text-muted hover:text-foreground"
             >
-              <X className="size-3" /> Close
+              <X className="size-3" /> Back to scene
             </button>
           </header>
           <WhereToShop

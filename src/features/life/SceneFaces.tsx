@@ -13,12 +13,18 @@ import { WalkOnFace } from "@/features/cast/WalkOnStrip";
 import { RING } from "./hud/hudModel";
 import type { SceneFace } from "./sceneFaceModel";
 
-export function SceneFaces({ faces }: { faces: readonly SceneFace[] }) {
+export function SceneFaces({
+  faces,
+  compact = false,
+}: {
+  faces: readonly SceneFace[];
+  compact?: boolean;
+}) {
   if (faces.length === 0) return null;
   return (
-    <section aria-label="Who is here" className="life-faces">
+    <section aria-label="Who is here" className={compact ? "life-faces" : "space-y-2"}>
       <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-        In this scene
+        {compact ? "In this scene" : "Here"}
       </p>
       <ul className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
         {faces.map((face) => (

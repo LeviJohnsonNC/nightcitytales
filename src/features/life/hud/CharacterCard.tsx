@@ -77,7 +77,7 @@ export function VitalBar({
   );
 }
 
-function LuckPips({ left, max }: { left: number; max: number }) {
+function LuckReadout({ left, max }: { left: number; max: number }) {
   return (
     <div className="flex items-baseline justify-between">
       <span className="font-mono text-xs text-muted-foreground">Luck</span>
@@ -177,7 +177,7 @@ export function CharacterCard({
       <div className="space-y-2.5 border-t border-hairline px-3 py-3">
         <VitalBar label="HP" current={hp.current} max={hp.max} />
         <VitalBar label="Humanity" current={humanity.current} max={humanity.max} />
-        {luck.max > 0 && <LuckPips left={luck.left} max={luck.max} />}
+        {luck.max > 0 && <LuckReadout left={luck.left} max={luck.max} />}
       </div>
     </section>
   );

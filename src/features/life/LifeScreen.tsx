@@ -74,6 +74,7 @@ import { CharacterCard } from "./hud/CharacterCard";
 import { PeopleStrip } from "./hud/PeopleStrip";
 import { ResourceStrip } from "./hud/ResourceStrip";
 import {
+  formatMoney,
   readDayBrief,
   statusView,
   welcomeBack,
@@ -439,7 +440,7 @@ function ActionCard({
         // The engine's own label, which names the specialization — and for
         // Local Expert, the district this number is for.
         name: line?.skill ?? getSkill(skillId).name,
-        base: line?.base ?? 0,
+        base: line?.base,
       }
     : null;
 
@@ -453,7 +454,7 @@ function ActionCard({
         {[
           formatDuration(action.timeMinutes),
           action.knownCost ? action.knownCost + "eb" : "",
-          hint ? hint.name + " +" + hint.base : "",
+          hint ? hint.name + (hint.base === undefined ? "" : " +" + hint.base) : "",
         ]
           .filter(Boolean)
           .join(" · ")}
@@ -644,7 +645,7 @@ function LifeRail({
   luckLeft: number;
   luckMax: number;
   status: StatusView;
-  /** False where the screen shows the day-one pointer itself (a phone). */
+  /** History and neighborhood leads, with a way to return to the scene. */
   journal: (close: () => void) => ReactNode;
   /** Turn the main column into the shop (the Counter). */
   onOpenShop: () => void;
@@ -741,7 +742,7 @@ function CampaignLife({
   const send = async (input: string, card?: LifeActionCard) => {
     if (sending.current || life.busy || !input.trim()) return;
     sending.current = true;
-    setSubmitted(input);
+    setSubmitted(card?.label ?? input);
     try {
       const result = await life.act(
         input,
@@ -765,12 +766,37 @@ function CampaignLife({
   /** The seller the Counter opens on, when the story or a log line chose one. */
   const [shopVendor, setShopVendor] = useState<string | null>(null);
   const [statusOpen, setStatusOpen] = useState(false);
+  const returnFromShop = useRef<{ scroll: number; target: string } | null>(null);
+  const shopHeading = useRef<HTMLDivElement>(null);
   const openShop = (vendorId: string | null = null) => {
+    returnFromShop.current = {
+      scroll: window.scrollY,
+      target: document.activeElement?.id === "life-browse" ? "life-browse" : "life-intent",
+    };
     setStatusOpen(false);
     setShopVendor(vendorId);
     setShopOpen(true);
     if (typeof window !== "undefined") window.scrollTo({ top: 0 });
   };
+  useEffect(() => {
+    if (!returnFromShop.current) return;
+    if (shopOpen) {
+      shopHeading.current?.focus({ preventScroll: true });
+    } else {
+      const { scroll, target } = returnFromShop.current;
+      returnFromShop.current = null;
+      document.getElementById(target)?.focus({ preventScroll: true });
+      window.scrollTo({ top: scroll, behavior: "instant" });
+    }
+  }, [shopOpen]);
+  const checkHadFocus = useRef(false);
+  useEffect(() => {
+    if (!life.pendingCheck && checkHadFocus.current) {
+      checkHadFocus.current = false;
+      if (document.activeElement === document.body)
+        document.getElementById("life-intent")?.focus({ preventScroll: true });
+    }
+  }, [life.pendingCheck]);
   // Who sells where the character stands, for the switch above the scene. A
   // trip away from the shop closes the Counter: it belongs to where they were.
   const standing = bundle ? standingAt(bundle.campaign) : null;
@@ -984,7 +1010,7 @@ function CampaignLife({
 
   const chips = [
     { label: "HP", value: `${bundle.vitals.hp_current}/${bundle.vitals.hp_max}` },
-    { label: "Cash", value: `€$${bundle.vitals.eurobucks}` },
+    { label: "Cash", value: formatMoney(bundle.vitals.eurobucks) },
   ];
   /** The engine rolls; the card only animates toward what it rolled. */
   const rollCheck = (pending: PendingCheck, luckSpend: number): CheckRoll =>
@@ -1120,12 +1146,22 @@ function CampaignLife({
       />
     </div>
   );
+  const waiting = life.busy || !!submitted;
+  const suggested = life.actions.map((action) => (
+    <ActionCard
+      key={action.label}
+      action={action}
+      character={bundle.character}
+      context={rollContext}
+      busy={waiting}
+      onPick={() => void send(cardInput(action), action)}
+    />
+  ));
   const sceneTitle = sceneArt(locationKey).title;
   const atHome =
     standing &&
     standing === (bundle.campaign.home_place_key ?? bundle.character.finance?.home_place_key);
   const latest = visibleEvents.at(-1);
-  const waiting = life.busy || !!submitted;
   return (
     <TooltipProvider delayDuration={150}>
       <div className="life-play">
@@ -1160,7 +1196,7 @@ function CampaignLife({
             {rail}
           </MobileStatusBar>
           <div className="life-layout">
-            <div className="life-main">
+            <div className="life-main" ref={shopHeading} tabIndex={-1}>
               {shopOpen ? (
                 // The Counter, in place of the scene. The input is hidden: a
                 // shop is for shopping, and "Talk to them" goes back to the scene.
@@ -1220,11 +1256,12 @@ function CampaignLife({
                           sellerHere ||
                           (atHome && bundle.character.character.role === "tech")) && (
                           <div className="life-presence">
-                            <SceneFaces faces={faces} />
+                            <SceneFaces faces={faces} compact />
                             <div className="life-local-actions">
                               {sellerHere && (
                                 <button
                                   type="button"
+                                  id="life-browse"
                                   className="life-link"
                                   onClick={() => openShop(sellerHere.id)}
                                 >
@@ -1297,9 +1334,15 @@ function CampaignLife({
                       </div>
                     )}
                     {life.pendingCheck ? (
-                      <section className="life-roll" aria-label="Required check">
-                        <h2>Check required</h2>
+                      <section
+                        className="life-roll"
+                        aria-label="Required check"
+                        onFocusCapture={() => {
+                          checkHadFocus.current = true;
+                        }}
+                      >
                         <CheckCard
+                          scene
                           key={life.pendingCheck.eventId}
                           pending={life.pendingCheck}
                           roll={(luckSpend) => rollCheck(life.pendingCheck!, luckSpend)}
@@ -1319,16 +1362,13 @@ function CampaignLife({
                         suggestions={
                           life.actions.length > 0 && (
                             <div className="life-suggestions" aria-label="Suggested actions">
-                              {life.actions.map((action) => (
-                                <ActionCard
-                                  key={action.label}
-                                  action={action}
-                                  character={bundle.character}
-                                  context={rollContext}
-                                  busy={waiting}
-                                  onPick={() => void send(cardInput(action), action)}
-                                />
-                              ))}
+                              {suggested.slice(0, 2)}
+                              {suggested.length > 2 && (
+                                <details className="life-more-actions">
+                                  <summary>More actions ({suggested.length - 2})</summary>
+                                  {suggested.slice(2)}
+                                </details>
+                              )}
                             </div>
                           )
                         }
