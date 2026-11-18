@@ -15,6 +15,7 @@ import type {
   Campaign,
   CampaignClock,
   CampaignEvent,
+  CampaignEventInsert,
   CampaignFaction,
   CampaignFlag,
   CampaignInventoryItem,
@@ -263,6 +264,24 @@ export function fakeBackend(db: () => Db) {
       return clone(row);
     },
     // --- ledger -----------------------------------------------------------
+    recordLifeCheck: async (row: CampaignEventInsert, expected: number | null) => {
+      const data = row.data as { prompt_event_id: string; luck_spent?: number };
+      if (
+        db().events.some(
+          (saved) =>
+            saved.type === "skill_check" &&
+            (saved.data as { prompt_event_id?: string })?.prompt_event_id === data.prompt_event_id,
+        )
+      )
+        return false;
+      if (data.luck_spent) {
+        if (db().vitals.luck_current !== expected) throw new Error("the Luck pool changed");
+        const maxLuck = db().character.stats?.luck ?? 0;
+        db().vitals.luck_current = Math.min(maxLuck, expected ?? maxLuck) - data.luck_spent;
+      }
+      event(row);
+      return true;
+    },
     appendCampaignEvent: async (row: Record<string, unknown>) => clone(event(row)),
     listCampaignEvents: async () => clone(db().events),
     lastCampaignEventOfType: async (_id: string, type: string) =>

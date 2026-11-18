@@ -1,14 +1,10 @@
-# Life play screen — 2026-11-18
+# Life skill checks — 2026-11-18
 
-Branch `codex/life-screen-overhaul`, based on merged main `4e2f5b1`.
-The [draft PR](https://github.com/LeviJohnsonNC/nightcitytales/pull/388) contains the Life rebuild. Owner visual review is next.
+Branch `codex/life-roll-polish` in `LeviJohnsonNC/nightcitytales`, based on the merged Life screen at `ecd01e4`.
 
-- The play column leads with location art, present people, narration, receipts and the active decision. The desk rail and phone status sheet carry Character, Contacts, Journal, Screamsheet and tools.
-- Character drafts survive direct and narrated shopping. The current campaign owns its draft. Life-only check and suggestion layouts use the existing engine controls. Travel retires the previous location’s passage and suggestions.
-- The [review and matched screenshots](life-screen/README.md) document the market, apartment, mobile suggestions and check. The capture runner lives in `tools/life/`.
-- Seeded Chromium exercised the normal turn, failure, required roll, keyboard composition, modal focus, both counter entries, authored neighborhood travel and an accepted catalog mission. Local reads and writes replace the hosted account. Physical phone keyboards and live playback remain unverified.
-- Revision `4ea4ed5` passed 4,781 local unit tests across 376 files. Follow-up changes address map/radio focus, the phone radio width and stale narration after travel. PR checks track the final revision. No migration is required for this UI change.
+- Life now shows one modifier and target before the roll, compact Luck odds, and expandable details. The die, total and stamp land together. The scene outcome follows the same roll when the composer returns.
+- Life reads the linked ledger result after refetch. A failed save is checked against the ledger before offering recovery. If the roll is saved, the player can continue from that verdict without replaying the settlement.
+- Apply `20261118020000_life_check_record.sql` before serving the new client. It records a player-rolled check and charges Luck atomically. Jobs and Combat use their existing presentation and settlement paths.
+- Early validation passed 1,127 relevant tests and the local database replay. The matched desktop and mobile captures and the final browser check are in progress. No live campaign or production deployment was used.
 
-## Earlier milestones
-
-PR #387 merged the Stackside Clinic and Old Japantown work. The [prior handoff](https://github.com/LeviJohnsonNC/nightcitytales/blob/4e2f5b1/docs/AI_HANDOFF.md) retains its rollout instructions and the earlier shopping, painted architecture and cast-art checkpoints.
+The [prior handoff](https://github.com/LeviJohnsonNC/nightcitytales/blob/ecd01e4/docs/AI_HANDOFF.md) covers the merged Life screen work and earlier milestones.

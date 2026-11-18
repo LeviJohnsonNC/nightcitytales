@@ -1208,6 +1208,7 @@ export type Database = {
       close_aftermath: { Args: { payload: Json }; Returns: undefined }
       install_cyberware: { Args: { payload: Json }; Returns: Json }
       commit_neighborhood_action: { Args: { payload: Json }; Returns: Json }
+      record_life_check: { Args: { payload: Json }; Returns: boolean }
       move_house: { Args: { payload: Json }; Returns: Json }
       owns_campaign: { Args: { _campaign_id: string }; Returns: boolean }
       owns_character: { Args: { _character_id: string }; Returns: boolean }

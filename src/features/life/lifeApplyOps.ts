@@ -152,6 +152,7 @@ export async function applyResponse(
       at: bundle.campaign.location_key ?? DEFAULT_START,
       day: bundle.clock.day,
       title: response.situation.title,
+      ...(turn.resolvedCheckId ? { resolvedCheckId: turn.resolvedCheckId } : {}),
       actions: turn.cards ?? (turn.fixedResult ? [] : response.actions),
       // Resolved HERE, once, with the campaign+place seed the response schema
       // never sees — never re-picked on a later render, so a walk-on's face

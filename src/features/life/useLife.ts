@@ -22,7 +22,7 @@ import {
   truthsAt,
 } from "@/engine";
 import { travelTo } from "@/features/atlas/travel";
-import { getCampaign } from "@/lib/backend";
+import { findSavedLifeCheck, getCampaign, type CampaignEvent } from "@/lib/backend";
 import {
   goalKey,
   reachList,
@@ -89,11 +89,43 @@ export function useLife(campaignId: string) {
   });
 
   const check = useMutation({
-    mutationFn: ({ pending, roll }: { pending: PendingCheck; roll: CheckRoll }) => {
-      if (!bundle) throw new Error("Still loading.");
-      return commitLifeCheck(bundle, pending, roll);
+    mutationFn: async ({
+      pending,
+      roll,
+      verifyOnly = false,
+    }: {
+      pending: PendingCheck;
+      roll: CheckRoll;
+      verifyOnly?: boolean;
+    }): Promise<{
+      state: "complete" | "saved" | "unsaved" | "unknown";
+      saved?: CampaignEvent;
+      error?: string;
+    }> => {
+      let error: string | undefined;
+      if (!verifyOnly) {
+        try {
+          if (!bundle) throw new Error("Still loading.");
+          await commitLifeCheck(bundle, pending, roll);
+          return { state: "complete" };
+        } catch (cause) {
+          error = cause instanceof Error ? cause.message : "The roll could not be saved.";
+        }
+      }
+      // A continuation can fail after both the result and Luck were committed.
+      // Inspect the ledger before enabling either way out of this state.
+      try {
+        const saved = await findSavedLifeCheck(campaignId, pending.eventId);
+        return {
+          state: saved ? "saved" : "unsaved",
+          ...(saved ? { saved } : {}),
+          ...(error ? { error } : {}),
+        };
+      } catch {
+        return { state: "unknown", ...(error ? { error } : {}) };
+      }
     },
-    onSuccess: invalidate,
+    onSettled: invalidate,
   });
 
   const accept = useMutation({
@@ -285,6 +317,7 @@ export function useLife(campaignId: string) {
                 : "Night City",
           text: event.summary ?? "",
           walkOns: readWalkOnsEventData(event.data),
+          event,
         };
       }
     }
@@ -323,7 +356,6 @@ export function useLife(campaignId: string) {
     actionError:
       ((neighborhood.error ??
         turn.error ??
-        check.error ??
         accept.error ??
         decline.error ??
         push.error ??
@@ -363,6 +395,12 @@ export function useLife(campaignId: string) {
     askOptions: () => turn.mutate({ input: "", minutes: 0, options: true }),
     commitCheck: (pending: PendingCheck, roll: CheckRoll) => check.mutate({ pending, roll }),
     checkBusy: check.isPending,
+    checkSettlement: check.data,
+    checkAttempt: check.variables,
+    recoverCheck: () => {
+      if (!check.variables || check.isPending) return;
+      check.mutate({ ...check.variables, verifyOnly: check.data?.state !== "unsaved" });
+    },
     acceptHook: () => accept.mutate(),
     declineHook: (reason: string) => decline.mutate(reason),
     pushHook: (ask: HookAsk) => push.mutate(ask),

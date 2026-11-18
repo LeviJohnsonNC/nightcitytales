@@ -30,11 +30,12 @@ import {
   getCampaign,
   listCampaignEvents,
   recordTruthDiscovery,
+  recordLifeCheck,
   setNpcDisposition,
   upsertSituations,
   type Json,
 } from "@/lib/backend";
-import { logOpposedCheck, logSkillCheck } from "@/features/campaign/skillCheckLog";
+import { opposedCheckEvent, skillCheckEvent } from "@/features/campaign/skillCheckLog";
 import {
   facedownOutcomeLine,
   pendingChecksFrom,
@@ -363,24 +364,36 @@ export async function commitLifeCheck(
 ): Promise<void> {
   const campaignId = bundle.campaign.id;
 
-  // A check posted by a negotiation settles the TERMS, not just the fiction:
-  // the engine decides what the push bought and the model is only told the
-  // outcome afterwards.
-  const tag = askTagFrom(bundle.events.find((e) => e.id === pending.eventId));
-  if (tag && bundle.hook && bundle.hook.situationKey === tag.situationKey) {
-    await settleNegotiation(bundle, bundle.hook, tag.ask, pending, roll);
+  const tag = askTagFrom(bundle.events.find((event) => event.id === pending.eventId));
+  const hook = tag && bundle.hook?.situationKey === tag.situationKey ? bundle.hook : null;
+  const context = {
+    skillId: pending.skillId,
+    skillName: pending.skillName,
+    intent: pending.intent,
+    promptEventId: pending.eventId,
+    luckSpent: roll.luckSpent,
+    ...(opts.auto ? { auto: true } : {}),
+  };
+  const npcKey = hook?.offer.brokerKey ?? pending.opposition?.npcKey;
+  const event =
+    roll.kind === "opposed"
+      ? opposedCheckEvent(campaignId, roll.result, { ...context, ...(npcKey ? { npcKey } : {}) })
+      : skillCheckEvent(campaignId, roll.result, context);
+
+  // Auto-rolls don't spend Luck. Player rolls are locked to one record per prompt.
+  if (opts.auto) {
+    await appendCampaignEvent(event);
+  } else {
+    const saved = await recordLifeCheck(event, bundle.vitals.luck_current);
+    if (!saved) return;
+  }
+
+  if (tag && hook) {
+    await settleNegotiation(bundle, hook, tag.ask, pending, roll);
     return;
   }
 
   if (roll.kind === "opposed") {
-    await logOpposedCheck(campaignId, roll.result, {
-      skillId: pending.skillId,
-      skillName: pending.skillName,
-      intent: pending.intent,
-      promptEventId: pending.eventId,
-      luckSpent: roll.luckSpent,
-      ...(pending.opposition?.npcKey ? { npcKey: pending.opposition.npcKey } : {}),
-    });
     const verdict = roll.result.success
       ? `SUCCESS by ${Math.abs(roll.result.margin)}`
       : roll.result.tie
@@ -399,6 +412,7 @@ export async function commitLifeCheck(
     const fresh = { ...bundle, events: await listCampaignEvents(campaignId) };
     await liveTurn(fresh, "", {
       minutes: 0,
+      resolvedCheckId: pending.eventId,
       ...saidBefore(bundle.events, pending.eventId),
       resolved:
         `The ${pending.skillName} check against ${pending.opposition?.npcName ?? "them"} is RESOLVED: ${verdict}, for the intent "${pending.intent}".` +
@@ -408,14 +422,6 @@ export async function commitLifeCheck(
     return;
   }
 
-  await logSkillCheck(campaignId, roll.result, {
-    skillId: pending.skillId,
-    skillName: pending.skillName,
-    intent: pending.intent,
-    promptEventId: pending.eventId,
-    luckSpent: roll.luckSpent,
-    ...(opts.auto ? { auto: true } : {}),
-  });
   const dv = pending.dv ?? 0;
   // What the engine says was there to find, before the narrator is asked to
   // describe the looking.
@@ -440,6 +446,7 @@ export async function commitLifeCheck(
   const fresh = { ...bundle, events: await listCampaignEvents(campaignId) };
   await liveTurn(fresh, "", {
     minutes: 0,
+    resolvedCheckId: pending.eventId,
     ...saidBefore(bundle.events, pending.eventId),
     ...(opts.auto ? { autoRolled: true } : {}),
     resolved: checkResolvedLine({
@@ -468,31 +475,8 @@ async function settleNegotiation(
   const campaignId = bundle.campaign.id;
   const spec = hookAskSpec(ask);
 
-  let success: boolean;
-  let margin: number;
-  if (roll.kind === "opposed") {
-    await logOpposedCheck(campaignId, roll.result, {
-      skillId: pending.skillId,
-      skillName: pending.skillName,
-      intent: pending.intent,
-      promptEventId: pending.eventId,
-      luckSpent: roll.luckSpent,
-      npcKey: hook.offer.brokerKey,
-    });
-    success = roll.result.success;
-    margin = roll.result.margin;
-  } else {
-    await logSkillCheck(campaignId, roll.result, {
-      skillId: pending.skillId,
-      skillName: pending.skillName,
-      intent: pending.intent,
-      promptEventId: pending.eventId,
-      luckSpent: roll.luckSpent,
-    });
-    // A roll made against no DV has no verdict, and no verdict is not a win.
-    success = roll.result.success === true;
-    margin = roll.result.total - (pending.dv ?? 0);
-  }
+  const success = roll.result.success === true;
+  const margin = roll.result.margin;
 
   const outcome = settleHookAsk(hook.terms, hook.offer, ask, { success, margin });
   // Only a push made AGAINST the broker reads the broker. Asking around the
@@ -550,5 +534,5 @@ async function settleNegotiation(
     events: await listCampaignEvents(campaignId),
     hook: { ...hook, terms: outcome.terms },
   };
-  await liveTurn(fresh, "", { minutes: spec.minutes, resolved });
+  await liveTurn(fresh, "", { minutes: spec.minutes, resolved, resolvedCheckId: pending.eventId });
 }

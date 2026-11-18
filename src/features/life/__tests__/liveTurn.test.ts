@@ -23,8 +23,10 @@ import {
 } from "@/engine";
 import type { CampaignNpc, Json } from "@/lib/backend";
 import { downtimeView } from "@/features/downtime/downtimeModel";
-import { DV_BANDS } from "@/features/play/checkPrompt";
-import { CAMPAIGN_ID, freshDb, reply, type Db } from "./lifeTurnHarness";
+import { DV_BANDS, pendingCheckFrom } from "@/features/play/checkPrompt";
+import { currentLifeRoll, lifeRollOutcome } from "../lifeCheckView";
+import { rollPendingCheck } from "@/features/play/rollCheck";
+import { CAMPAIGN_ID, fakeBackend, freshDb, reply, type Db } from "./lifeTurnHarness";
 
 let db: Db = freshDb();
 
@@ -636,5 +638,48 @@ describe("what the model cannot do", () => {
     expect(db.vitals.eurobucks).toBe(500);
     expect(db.flags.some((f) => f.flag === "model_flag")).toBe(false);
     expect(clockOf()).toEqual(before);
+  });
+});
+
+describe("a Life roll that reaches the ledger", () => {
+  async function landedCheck() {
+    setup();
+    const { loadLife, commitLifeCheck } = await import("../lifeOps");
+    await fakeBackend(() => db).appendCampaignEvent({
+      campaign_id: CAMPAIGN_ID,
+      type: "check_prompt",
+      summary: "Check the casing",
+      data: { intent: "Check the casing", skillId: "perception", dv: 13 },
+    });
+    const bundle = await loadLife(CAMPAIGN_ID);
+    const pending = pendingCheckFrom(bundle.events, bundle.character)!;
+    const roll = rollPendingCheck({ ...bundle, pending, luckSpend: 1 });
+    return { save: () => commitLifeCheck(bundle, pending, roll), pending, roll };
+  }
+
+  it("records the original roll and one Luck even when narration fails and the request repeats", async () => {
+    const { save, pending, roll } = await landedCheck();
+    await expect(save()).rejects.toThrow("did not script");
+    await save();
+    expect(db.vitals.luck_current).toBe(4);
+    expect(ofType("skill_check")).toHaveLength(1);
+    expect(db.prompts).toHaveLength(1);
+    expect(pendingCheckFrom(db.events, db.character)).toBeNull();
+    expect(currentLifeRoll(db.events)).toMatchObject({ promptId: pending.eventId, roll });
+  });
+
+  it("restores the latest roll with its actual follow-up and retires it for the next action", async () => {
+    const { save, pending } = await landedCheck();
+    db.replies.push(reply({ resolution: "The casing slides off." }));
+    await save();
+    const saved = currentLifeRoll(db.events)!;
+    expect(saved.promptId).toBe(pending.eventId);
+    expect(lifeRollOutcome(saved, db.events)?.summary).toBe("The casing slides off.");
+    await fakeBackend(() => db).appendCampaignEvent({
+      campaign_id: CAMPAIGN_ID,
+      type: "player_input",
+      summary: "Put it back.",
+    });
+    expect(currentLifeRoll(db.events)).toBeNull();
   });
 });
