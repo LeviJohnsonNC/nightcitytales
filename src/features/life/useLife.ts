@@ -1,4 +1,5 @@
-import { takeNeighborhoodAction } from "./neighborhoodOps";
+import { neighborhoodContext, takeNeighborhoodAction } from "./neighborhoodOps";
+import { neighborhoodMoment } from "@/engine/neighborhood";
 import { readSceneCombatEnd } from "@/engine";
 /**
  * The Life loop, bound to React.
@@ -203,6 +204,14 @@ export function useLife(campaignId: string) {
       )[0] ?? null)
     : null;
 
+  const atNeighborhoodScene =
+    bundle?.phase === "life" &&
+    !!neighborhoodMoment(bundle.neighborhood, neighborhoodContext(bundle));
+  // Arriving at an authored scene or playing its next beat retires the old
+  // room's suggested actions and moves its narration into the running log.
+  const startsNeighborhoodBeat = (type: string | undefined) =>
+    type === "neighborhood_action" || (atNeighborhoodScene && type === "travelled");
+
   /**
    * Options, when the player last asked for them. Empty on an ordinary turn:
    * Life does not hand out a menu, so the next turn clears these by returning
@@ -214,6 +223,7 @@ export function useLife(campaignId: string) {
     for (let i = bundle.events.length - 1; i >= 0; i -= 1) {
       const event = bundle.events[i];
       if (!event) continue;
+      if (startsNeighborhoodBeat(event.type)) break;
       if (event.type === "encounter_ended" && readSceneCombatEnd(event.data)) break;
       if (event.type !== "life_options" && event.type !== "life_narration") continue;
       // Whichever came last wins, so acting on anything clears the list: an
@@ -258,6 +268,7 @@ export function useLife(campaignId: string) {
     if (!bundle) return null;
     for (let i = bundle.events.length - 1; i >= 0; i -= 1) {
       const event = bundle.events[i];
+      if (startsNeighborhoodBeat(event?.type)) break;
       if (
         event?.type === "life_narration" ||
         (event?.type === "encounter_ended" && readSceneCombatEnd(event.data))
@@ -293,6 +304,7 @@ export function useLife(campaignId: string) {
     standings: bundle?.standings ?? [],
     hook: bundle?.hook ?? null,
     narration: latestNarration,
+    atNeighborhoodScene,
     actions,
     pendingCheck,
     takeNeighborhoodAction: (id: string) =>

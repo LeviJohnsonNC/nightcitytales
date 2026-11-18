@@ -1,6 +1,6 @@
 import { NeighborhoodCard } from "./NeighborhoodCard";
 import { neighborhoodContext } from "./neighborhoodOps";
-import { clinicDescription, CLINIC_PLACE, neighborhoodMoment } from "@/engine/neighborhood";
+import { clinicDescription, CLINIC_PLACE } from "@/engine/neighborhood";
 import { LifeSceneContent } from "./LifeSceneContent";
 import type { ReactNode } from "react";
 import { FIXER_VENDOR, readSceneCombatEnd, shopsAt } from "@/engine";
@@ -960,11 +960,7 @@ export function LifeScreen({
   useEffect(() => {
     if (!bundle || life.busy || life.actionError) return;
     if (life.narration || life.pendingCheck) return;
-    if (
-      bundle.phase === "life" &&
-      neighborhoodMoment(bundle.neighborhood, neighborhoodContext(bundle))
-    )
-      return;
+    if (life.atNeighborhoodScene || bundle.events.at(-1)?.type === "neighborhood_action") return;
     const key = `${bundle.campaign.id}:${bundle.clock.day}`;
     if (opened.current === key) return;
     opened.current = key;
