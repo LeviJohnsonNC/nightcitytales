@@ -372,6 +372,33 @@ export async function appendCampaignEvent(event: CampaignEventInsert): Promise<C
   return unwrap(await backendClient.from("campaign_events").insert(event).select("*").single());
 }
 
+/** Save the check and its Luck together. False means this prompt already has a roll. */
+export async function recordLifeCheck(
+  event: CampaignEventInsert,
+  expectedLuck: number | null,
+): Promise<boolean> {
+  return unwrap(
+    await backendClient.rpc("record_life_check", {
+      payload: { ...event, expected_luck: expectedLuck } as Json,
+    }),
+  );
+}
+
+/** Check the prompt against the ledger, even if the current event window has moved. */
+export async function findSavedLifeCheck(campaignId: string, promptId: string) {
+  return unwrap(
+    await backendClient
+      .from("campaign_events")
+      .select("*")
+      .eq("campaign_id", campaignId)
+      .eq("type", "skill_check")
+      .contains("data", { prompt_event_id: promptId })
+      .order("seq")
+      .limit(1)
+      .maybeSingle(),
+  );
+}
+
 /** The payload `award_improvement_points` accepts. */
 export type AwardImprovementPointsPayload = {
   campaign_id: string;

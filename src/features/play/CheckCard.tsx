@@ -403,9 +403,7 @@ export function CheckCard({
   busy,
   luckRemaining,
   odds,
-  scene = false,
 }: {
-  scene?: boolean;
   pending: PendingCheck;
   roll: (luckSpend: number) => CheckRoll;
   onSettled: (roll: CheckRoll) => void;
@@ -422,39 +420,24 @@ export function CheckCard({
 
   return (
     <section className="space-y-3 border border-accent/60 bg-accent/5 p-4">
-      {scene ? (
-        <header className="life-check-heading">
-          <p>{opposition ? "Opposed check required" : "Check required"}</p>
-          <h2>{pending.intent || pending.skillName}</h2>
-          <span>
-            {pending.skillName} +{pending.base} ·{" "}
-            {opposition ? `vs ${opposition.npcName}` : `DV ${pending.dv}`}
-          </span>
-        </header>
-      ) : (
-        <>
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
-              {opposition ? "Opposed check" : "Check called"}
-            </p>
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              {opposition
-                ? "1d10 + STAT + Skill vs their 1d10 + STAT + Skill"
-                : "1d10 + STAT + Skill vs DV"}
-            </p>
-          </div>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
+          {opposition ? "Opposed check" : "Check called"}
+        </p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          {opposition
+            ? "1d10 + STAT + Skill vs their 1d10 + STAT + Skill"
+            : "1d10 + STAT + Skill vs DV"}
+        </p>
+      </div>
 
-          <h3 className="text-lg font-bold leading-tight">
-            {pending.skillName}{" "}
-            <span className="text-sm font-normal text-muted-foreground">
-              ({pending.stat.toUpperCase()}){opposition ? ` vs ${opposition.npcName}` : ""}
-            </span>
-          </h3>
-          {pending.intent && (
-            <p className="text-sm italic text-muted-foreground">{pending.intent}</p>
-          )}
-        </>
-      )}
+      <h3 className="text-lg font-bold leading-tight">
+        {pending.skillName}{" "}
+        <span className="text-sm font-normal text-muted-foreground">
+          ({pending.stat.toUpperCase()}){opposition ? ` vs ${opposition.npcName}` : ""}
+        </span>
+      </h3>
+      {pending.intent && <p className="text-sm italic text-muted-foreground">{pending.intent}</p>}
 
       {/*
         What this approach can get out of them, before the die. The Social

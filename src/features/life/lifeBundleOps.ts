@@ -447,6 +447,8 @@ async function bindLegacyHook(
 export type TurnOptions = {
   /** What the engine already resolved, when this turn narrates a result. */
   resolved?: string;
+  /** Prompt whose saved roll this passage follows. */
+  resolvedCheckId?: string;
   /** True when the player asked what they could do rather than doing something. */
   options?: boolean;
   /** Minutes the engine has already decided this turn costs. */

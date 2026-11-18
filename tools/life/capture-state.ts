@@ -1,9 +1,12 @@
 // Local rendering fixture. Only the capture runner resolves game reads to this module.
 import type { Json } from "@/lib/backend";
+import type { CheckRoll, PendingCheck } from "@/features/play/checkPrompt";
+import { opposedCheckEvent, skillCheckEvent } from "@/features/campaign/skillCheckLog";
 import { freshDb } from "@/features/life/__tests__/lifeTurnHarness";
 
 const params = new URLSearchParams(location.search);
 const apartment = params.get("place") === "p4";
+const rollFixture = params.get("roll");
 const db = freshDb({ location: apartment ? "p4" : "o3", day: 1 });
 Object.assign(db.campaign, {
   name: "Fixer in Night City",
@@ -14,11 +17,21 @@ Object.assign(db.campaign, {
 Object.assign(db.character.character, {
   name: "Ren",
   handle: "",
-  role: "tech",
+  role: rollFixture ? "solo" : "tech",
   portrait_path: "fixture/ren",
 });
 Object.assign(db.character.roleAbility!, { ability_id: "maker" });
-db.character.skills.push({ ...db.character.skills[0]!, skill_id: "basic_tech", level: 5 });
+db.character.skills.push({
+  ...db.character.skills[0]!,
+  skill_id: "basic_tech",
+  level: rollFixture ? 6 : 5,
+});
+if (rollFixture) {
+  db.character.stats.tech = 6;
+  db.character.stats.cool = 6;
+  db.character.skills.find((skill) => skill.skill_id === "persuasion")!.level = 6;
+  db.vitals.luck_current = rollFixture === "empty" ? 0 : 5;
+}
 const clock = { day: 1, minute: 1092 };
 const walkOns = apartment
   ? [{ subject: "motel-desk-clerk", gender: "female" }]
@@ -46,12 +59,12 @@ const bundle = {
   tally: { jobsFinished: 0 },
   ipAward: { daysUntil: 6 },
 };
-function event(type: string, summary: string, data: Json) {
+function event(type: string, summary: string, data: Json, roll: Json | null = null) {
   const seq = bundle.events.length + 1;
   bundle.events.push({
     campaign_id: db.campaign.id,
     beat_id: null,
-    roll: null,
+    roll,
     id: String(seq),
     seq,
     type,
@@ -60,9 +73,36 @@ function event(type: string, summary: string, data: Json) {
     created_at: new Date().toISOString(),
   });
 }
-event("life_narration", passage, { title, walkOns });
+event(
+  "life_narration",
+  rollFixture ? "A scrap alternator lies on the workbench, its copper winding exposed." : passage,
+  { title, walkOns },
+);
+if (rollFixture) {
+  const opposed = rollFixture.startsWith("opposed");
+  const intent = opposed
+    ? "Convince Nao to release the parts."
+    : "Strip usable copper wire from the scrap alternator.";
+  event("check_prompt", intent, {
+    skillId: opposed ? "persuasion" : "basic_tech",
+    intent,
+    ...(opposed
+      ? {
+          opposition: {
+            npcKey: "nao",
+            npcName: "Nao",
+            skillId: "human_perception",
+            statValue: 6,
+            skillLevel: 6,
+          },
+        }
+      : { dv: rollFixture === "failure" || rollFixture === "exact" ? 15 : 13 }),
+  });
+}
 
 export async function loadLife() {
+  if (rollFixture === "uncertain" && verifications === 1)
+    throw new Error("Campaign refresh interrupted.");
   return structuredClone(bundle);
 }
 export async function liveTurn(
@@ -104,4 +144,51 @@ export async function liveTurn(
   } else {
     throw new Error("The capture fixture has no reply for this turn.");
   }
+}
+
+let requests = 0;
+let verifications = 0;
+export async function findSavedLifeCheck(_campaignId: string, promptId: string) {
+  if (rollFixture === "uncertain" && ++verifications === 1)
+    throw new Error("Ledger connection interrupted.");
+  return (
+    bundle.events.find(
+      (row) =>
+        row.type === "skill_check" &&
+        (row.data as { prompt_event_id?: string })?.prompt_event_id === promptId,
+    ) ?? null
+  );
+}
+
+export async function commitLifeCheck(_bundle: unknown, pending: PendingCheck, roll: CheckRoll) {
+  requests++;
+  document.documentElement.dataset.rollRequests = String(requests);
+  if (rollFixture === "unsaved" && requests === 1)
+    throw new Error("The connection dropped before saving.");
+  const context = {
+    promptEventId: pending.eventId,
+    skillName: pending.skillName,
+    skillId: pending.skillId,
+    luckSpent: roll.luckSpent,
+  };
+  const row =
+    roll.kind === "opposed"
+      ? opposedCheckEvent(db.campaign.id, roll.result, context)
+      : skillCheckEvent(db.campaign.id, roll.result, context);
+  event(row.type, row.summary ?? "", row.data ?? {}, row.roll ?? null);
+  bundle.vitals.luck_current = (bundle.vitals.luck_current ?? 5) - roll.luckSpent;
+  if (rollFixture === "saved" || rollFixture === "uncertain")
+    throw new Error("The narrator did not answer.");
+  if (rollFixture === "slow") {
+    await new Promise<void>((resolve) =>
+      window.addEventListener("fixture-finish-roll", () => resolve(), { once: true }),
+    );
+  }
+  event(
+    "life_narration",
+    roll.result.success
+      ? "The winding comes free in one piece. You set the usable copper aside."
+      : "The winding snaps inside the housing. You set the ruined alternator down.",
+    { title, walkOns, resolvedCheckId: pending.eventId },
+  );
 }

@@ -65,7 +65,13 @@ import { castHere } from "./lifeContextOps";
 import { SceneFaces } from "./SceneFaces";
 import { sceneFaces } from "./sceneFaceModel";
 import { JOB_TIERS, readWalkOnsEventData } from "@/engine";
-import { CheckCard } from "@/features/play/CheckCard";
+import { LifeCheckCard, LifeCheckResult } from "./LifeCheckCard";
+import {
+  currentLifeRoll,
+  lifeCheckAnnouncement,
+  lifeRollOutcome,
+  readLifeRoll,
+} from "./lifeCheckView";
 import { PreviouslyCard } from "@/features/play/ClosingFrameCard";
 import { previouslyFor, readDismissed, writeDismissed } from "@/features/campaign/previously";
 import { MapButton } from "@/features/atlas/MapButton";
@@ -785,14 +791,14 @@ function CampaignLife({
       window.scrollTo({ top: scroll, behavior: "instant" });
     }
   }, [shopOpen]);
-  const checkHadFocus = useRef(false);
+  const landedSummary = useRef<HTMLDivElement>(null);
+  const restoreRollFocus = useRef(false);
   useEffect(() => {
-    if (!life.pendingCheck && checkHadFocus.current) {
-      checkHadFocus.current = false;
-      if (document.activeElement === document.body)
-        document.getElementById("life-intent")?.focus({ preventScroll: true });
+    if (restoreRollFocus.current && landedSummary.current) {
+      restoreRollFocus.current = false;
+      landedSummary.current.focus({ preventScroll: true });
     }
-  }, [life.pendingCheck]);
+  }, [life.checkAttempt]);
   // Who sells where the character stands, for the switch above the scene. A
   // trip away from the shop closes the Counter: it belongs to where they were.
   const standing = bundle ? standingAt(bundle.campaign) : null;
@@ -930,7 +936,8 @@ function CampaignLife({
   if (life.isPending) {
     return <p className="p-8 text-sm text-muted-foreground">Loading your life…</p>;
   }
-  if (life.error) return <p className="p-8 text-sm text-destructive">{life.error.message}</p>;
+  if (!bundle && life.error)
+    return <p className="p-8 text-sm text-destructive">{life.error.message}</p>;
   if (!bundle) return null;
 
   const luckMax = luckPoolMax(statsRecord(bundle.character));
@@ -986,6 +993,55 @@ function CampaignLife({
     present: castHere(bundle) ? [castHere(bundle)!.name] : [],
     people: life.people,
   });
+  const latestRoll = currentLifeRoll(bundle.events);
+  const attempt = life.checkAttempt;
+  const activeAttempt =
+    attempt &&
+    (life.checkBusy ||
+      life.pendingCheck?.eventId === attempt.pending.eventId ||
+      latestRoll?.promptId === attempt.pending.eventId)
+      ? attempt
+      : null;
+  const recovered = life.checkSettlement?.saved;
+  const saved =
+    activeAttempt && latestRoll?.promptId !== activeAttempt.pending.eventId
+      ? recovered
+        ? readLifeRoll(recovered)
+        : null
+      : latestRoll;
+  const checkResult = saved?.roll ?? activeAttempt?.roll;
+  const resultPrompt = saved?.promptId ?? activeAttempt?.pending.eventId;
+  const outcome = saved ? lifeRollOutcome(saved, bundle.events) : undefined;
+  const unresolved = !!activeAttempt && !saved && !life.checkBusy;
+  const settlement = activeAttempt ? life.checkSettlement : undefined;
+  const canRoll = life.pendingCheck?.eventId !== resultPrompt ? life.pendingCheck : null;
+  // Keep the setup passage in its original place when the answer arrives below the die.
+  const setup =
+    outcome && saved
+      ? bundle.events
+          .filter((event) => event.type === "life_narration" && event.seq < saved.event.seq)
+          .at(-1)
+      : undefined;
+  const passage =
+    outcome && life.narration?.event.id === outcome.id
+      ? setup
+        ? {
+            title: (setup.data as { title?: string } | null)?.title ?? "",
+            text: setup.summary ?? "",
+          }
+        : null
+      : life.narration;
+  const resultStatus = outcome
+    ? null
+    : life.checkBusy
+      ? "Resolving the outcome…"
+      : unresolved
+        ? settlement?.state === "unsaved"
+          ? "The roll could not be saved."
+          : "The roll could not be verified."
+        : saved
+          ? "Roll saved. The scene outcome is unavailable."
+          : null;
   const lastEvent = bundle.events.at(-1);
   const visibleEvents = shownLifeEvents(bundle.events);
 
@@ -1274,15 +1330,17 @@ function CampaignLife({
                       </>
                     }
                     narration={
-                      life.narration ? (
+                      passage ? (
                         <article className="life-passage">
-                          {life.narration.title.trim().toLowerCase() !==
-                            sceneTitle.trim().toLowerCase() && <h2>{life.narration.title}</h2>}
+                          {passage.title &&
+                            passage.title.trim().toLowerCase() !==
+                              sceneTitle.trim().toLowerCase() && <h2>{passage.title}</h2>}
                           <div>
-                            <NpcText text={life.narration.text} />
+                            <NpcText text={passage.text} />
                           </div>
                         </article>
-                      ) : !life.atNeighborhoodScene &&
+                      ) : !checkResult &&
+                        !life.atNeighborhoodScene &&
                         latest &&
                         latest.type !== "neighborhood_action" ? (
                         <div className="life-passage">
@@ -1290,7 +1348,9 @@ function CampaignLife({
                         </div>
                       ) : null
                     }
-                    outcome={<ReceiptBar receipts={receipts} />}
+                    outcome={
+                      !outcome && !life.checkBusy ? <ReceiptBar receipts={receipts} /> : null
+                    }
                     controls={sceneControls}
                   />
                   {life.phase === "life" && (
@@ -1323,33 +1383,66 @@ function CampaignLife({
                         {life.actionError.message}
                       </p>
                     )}
-                    {waiting && (
+                    {waiting && !life.checkBusy && (
                       <div className="life-wait" role="status">
                         {submitted && <p>{submitted}</p>}
                         <span className="sr-only">Resolving your turn.</span>
                         <CityTurns context={turnContext} seed={bundle.events.length} />
                       </div>
                     )}
-                    {life.pendingCheck ? (
-                      <section
-                        className="life-roll"
-                        aria-label="Required check"
-                        onFocusCapture={() => {
-                          checkHadFocus.current = true;
+                    <p role="status" className="sr-only">
+                      {activeAttempt && checkResult
+                        ? `${lifeCheckAnnouncement(checkResult)} ${resultStatus ?? ""}`
+                        : ""}
+                    </p>
+                    {checkResult && (
+                      <LifeCheckResult
+                        key={resultPrompt}
+                        roll={checkResult}
+                        skillName={saved?.skillName ?? activeAttempt?.pending.skillName ?? "Skill"}
+                        summaryRef={landedSummary}
+                        status={resultStatus}
+                        recovery={
+                          unresolved && (
+                            <div className="life-check-recovery">
+                              {settlement?.error && <p>{settlement.error}</p>}
+                              <button
+                                type="button"
+                                className="life-link"
+                                onClick={life.recoverCheck}
+                              >
+                                {settlement?.state === "unsaved"
+                                  ? "Save this roll again"
+                                  : "Check saved roll"}
+                              </button>
+                            </div>
+                          )
+                        }
+                        outcome={
+                          outcome?.summary && (
+                            <div className="life-check-outcome">
+                              <NpcText text={outcome.summary} />
+                              <ReceiptBar receipts={receipts} />
+                            </div>
+                          )
+                        }
+                      />
+                    )}
+                    {canRoll && (
+                      <LifeCheckCard
+                        key={canRoll.eventId}
+                        pending={canRoll}
+                        roll={(luckSpend) => rollCheck(canRoll, luckSpend)}
+                        odds={(luckSpend) => checkOdds(canRoll, luckSpend)}
+                        onLanded={(rolled, hadFocus) => {
+                          restoreRollFocus.current = hadFocus;
+                          life.commitCheck(canRoll, rolled);
                         }}
-                      >
-                        <CheckCard
-                          scene
-                          key={life.pendingCheck.eventId}
-                          pending={life.pendingCheck}
-                          roll={(luckSpend) => rollCheck(life.pendingCheck!, luckSpend)}
-                          odds={(luckSpend) => checkOdds(life.pendingCheck!, luckSpend)}
-                          onSettled={(rolled) => life.commitCheck(life.pendingCheck!, rolled)}
-                          busy={life.checkBusy}
-                          luckRemaining={luckLeft}
-                        />
-                      </section>
-                    ) : (
+                        busy={waiting}
+                        luckRemaining={luckLeft}
+                      />
+                    )}
+                    {!canRoll && !life.checkBusy && !unresolved && (
                       <LifeComposer
                         draft={draft}
                         onDraft={setDraft}
