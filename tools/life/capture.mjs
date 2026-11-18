@@ -20,7 +20,9 @@ import {LifeScreen} from "@/features/life/LifeScreen";
 const root=createRootRoute();
 const route=createRoute({getParentRoute:()=>root,path:"/",component:()=> <LifeScreen campaignId="camp-1"/>});
 const router=createRouter({routeTree:root.addChildren([route])});
-createRoot(document.getElementById("root")).render(<QueryClientProvider client={new QueryClient()}><RouterProvider router={router}/></QueryClientProvider>);`;
+const query = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+window.fixtureRefresh = () => query.invalidateQueries({ queryKey: ["life", "camp-1"] });
+createRoot(document.getElementById("root")).render(<QueryClientProvider client={query}><RouterProvider router={router}/></QueryClientProvider>);`;
 const bundle = await build({
   stdin: { contents: entry, loader: "tsx", resolveDir: root },
   tsconfig: join(root, "tsconfig.json"),

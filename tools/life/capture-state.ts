@@ -101,11 +101,9 @@ if (rollFixture) {
 }
 
 export async function loadLife() {
-  const snapshot = structuredClone(bundle);
-  if (rollFixture === "uncertain" && verifications === 1) {
-    snapshot.events = snapshot.events.filter((row) => row.type !== "skill_check");
-  }
-  return snapshot;
+  if (rollFixture === "uncertain" && verifications === 1)
+    throw new Error("Campaign refresh interrupted.");
+  return structuredClone(bundle);
 }
 export async function liveTurn(
   _bundle: unknown,

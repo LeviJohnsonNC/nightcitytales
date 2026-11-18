@@ -59,6 +59,13 @@ export async function captureRoll(browser, url, out) {
     await rolling.press("Enter");
     await result(desktop).waitFor();
     assert.equal(await requestCount(desktop), "1");
+    const announcement = desktop
+      .getByRole("status")
+      .filter({ hasText: "14 against DV 13. Success by 1." });
+    assert.equal(await announcement.count(), 1);
+    await desktop.evaluate(() => window.fixtureRefresh());
+    assert.equal(await result(desktop).getByText("Success by 1").count(), 1);
+    assert.equal(await compose(desktop).count(), 0);
     assert.equal(
       await result(desktop)
         .locator(".life-check-impact")

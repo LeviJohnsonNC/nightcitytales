@@ -936,7 +936,8 @@ function CampaignLife({
   if (life.isPending) {
     return <p className="p-8 text-sm text-muted-foreground">Loading your life…</p>;
   }
-  if (life.error) return <p className="p-8 text-sm text-destructive">{life.error.message}</p>;
+  if (!bundle && life.error)
+    return <p className="p-8 text-sm text-destructive">{life.error.message}</p>;
   if (!bundle) return null;
 
   const luckMax = luckPoolMax(statsRecord(bundle.character));
@@ -1038,7 +1039,7 @@ function CampaignLife({
         ? settlement?.state === "unsaved"
           ? "The roll could not be saved."
           : "The roll could not be verified."
-        : !outcome && saved
+        : saved
           ? "Roll saved. The scene outcome is unavailable."
           : null;
   const lastEvent = bundle.events.at(-1);
