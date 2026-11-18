@@ -141,3 +141,7 @@ these tables must tolerate their absence until the line moves up to Applied.
   `portraits` bucket the 20260822203710 policies are written against. The
   deployed project already has it (made by hand), so applying it there changes
   nothing; a fresh database needs it before a portrait can be saved.
+
+- `20261117010000_settle_investigation.sql` — pending. Apply before releasing
+  investigation endings. Commits the final beat and its existing job settlement
+  together. An older server leaves the evidence decision available to retry.

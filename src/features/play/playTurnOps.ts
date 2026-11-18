@@ -323,7 +323,7 @@ export async function narrate(
         ...(offer ? { deduction: offer } : {}),
       };
     })(),
-    availableExits: bundle.availableExits,
+    availableExits: bundle.beat.evidenceDecision ? [] : bundle.availableExits,
     // Where they are standing goes with the sheet, so the Skill list reports
     // Local Expert for this district rather than for whichever one they know.
     character: {
@@ -659,6 +659,7 @@ export async function narrate(
       kit = applyItemUse(kit, use);
       capability = snapshotFor({ ...bundle, inventory: kit });
     } else if (action.kind === "advance_beat") {
+      if (bundle.beat.evidenceDecision) continue;
       // Only the model's proposed advancement is allowed to be wrong. Everything
       // after it is our own bookkeeping, and a failure there must surface — a
       // catch around the settlement is what hid a job silently failing to close.

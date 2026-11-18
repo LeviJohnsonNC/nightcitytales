@@ -15,6 +15,7 @@
  * Pure. The table and the arithmetic; who rolls it and what it writes belong to
  * the caller.
  */
+import type { EvidenceEnding } from "./missions/investigation";
 import { defaultRng } from "./dice";
 import { rollOracle, type OracleResult, type OracleTable } from "./oracle";
 import type { RNG } from "./types";
@@ -60,7 +61,7 @@ export type PaymentOutcome = {
   withheld: number;
   /** What this does to the broker's standing, when it does anything. */
   brokerStanding: number;
-  roll: OracleResult;
+  roll: OracleResult | null;
 };
 
 export type PaymentInput = {
@@ -81,7 +82,7 @@ export type PaymentInput = {
  * in standing — nobody chose it, it is just what the job paid in — but it costs
  * to move, which is the same hole in the pocket by a different route.
  */
-export function rollPayment(input: PaymentInput): PaymentOutcome {
+export function rollPayment(input: PaymentInput): PaymentOutcome & { roll: OracleResult } {
   const agreed = Math.max(0, Math.round(input.agreed));
   const roll = rollOracle(PAYMENT, input.rng ?? defaultRng, {
     modifiers: input.messy ? [{ label: "Job went badly", value: PAYMENT_BAD_JOB_PENALTY }] : [],
@@ -104,6 +105,20 @@ export function rollPayment(input: PaymentInput): PaymentOutcome {
     withheld: agreed - paid,
     brokerStanding,
     roll,
+  };
+}
+
+/** The player decided the contract payment by deciding who got the evidence. */
+export function investigationPayment(agreed: number, ending: EvidenceEnding): PaymentOutcome {
+  const delivered = ending === "delivered";
+  return {
+    key: delivered ? "paid" : "forgone",
+    text: delivered ? "The client paid for the signed file." : "You gave up the fee.",
+    agreed,
+    paid: delivered ? agreed : 0,
+    withheld: delivered ? 0 : agreed,
+    brokerStanding: 0,
+    roll: null,
   };
 }
 

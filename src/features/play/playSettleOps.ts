@@ -9,6 +9,8 @@ import { commitDeathSave as commitCombatDeathSave } from "./combatOps";
 import {
   LEDGER_EVENTS,
   failMission,
+  evidenceEnding,
+  agreedMissionFee,
   findFactionIn,
   luckPoolMax,
   milestoneEventData,
@@ -51,18 +53,24 @@ export async function settleMission(
   const printed = missionPayout(mission);
   // A fee argued upwards at the offer is what this job pays. The printed reward
   // is the floor, never a cap the negotiation is quietly reverted to.
-  const total =
-    bundle.agreedPayout !== null && printed
-      ? Math.max(printed.total, bundle.agreedPayout)
-      : (printed?.total ?? bundle.agreedPayout ?? 0);
+  const total = agreedMissionFee(mission, bundle.agreedPayout);
   const payout = printed ? { ...printed, total } : null;
   const done = runtime.objectives.filter((o) => o.status === "done").length;
   // What was AGREED, not what arrived: the settlement receipt records the
   // amount that actually lands. Completion and settlement are committed in the
   // same transaction so a retry cannot duplicate either ledger row.
-  const completionSummary = payout
-    ? `${mission.title} complete — ${payout.total}eb agreed (${payout.upfront}eb up front, ${payout.onCompletion}eb on delivery); ${done}/${runtime.objectives.length} objectives closed.`
-    : `${mission.title} complete — ${done}/${runtime.objectives.length} objectives closed. This job records no printed payout.`;
+  const ending = mission.investigation ? evidenceEnding(runtime) : null;
+  const evidence =
+    ending && mission.investigation ? { ending, inquiry: mission.investigation } : undefined;
+  const completionSummary = evidence
+    ? {
+        delivered: `You delivered the signed file to ${mission.offer?.patronName} for ${total}eb.`,
+        leaked: `You gave the signed file to the Screamsheet and gave up ${total}eb.`,
+        buried: `You destroyed the file and gave up ${total}eb. ${evidence.inquiry.source} left a private number for next week.`,
+      }[evidence.ending]
+    : payout
+      ? `${mission.title} complete — ${payout.total}eb agreed (${payout.upfront}eb up front, ${payout.onCompletion}eb on delivery); ${done}/${runtime.objectives.length} objectives closed.`
+      : `${mission.title} complete — ${done}/${runtime.objectives.length} objectives closed. This job records no printed payout.`;
 
   // The trip home. What the job cost is read off its own ledger, the money is
   // rolled for, whoever walked away becomes somebody the campaign remembers,
@@ -72,6 +80,7 @@ export async function settleMission(
     missionId: mission.id,
     playerName: bundle.character.character.name,
     agreed: total,
+    ...(evidence ? { evidence } : {}),
     messy: done < runtime.objectives.length,
     factionId: missionFaction(mission),
     completion: {
@@ -87,6 +96,7 @@ export async function settleMission(
   // began. A complication they never noticed is worth showing too, and so is a
   // clean brief: it is the evidence that the job's shape was rolled, not
   // written to suit how the job was going.
+  if (evidence && !aftermath) return; // An earlier request already committed the choice.
   await revealComplication(campaignId, mission.id);
 
   // A finished job writes the campaign's status, rather than leaving it to be

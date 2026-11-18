@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { EvidenceDecision } from "./EvidenceDecision";
 import { CombatOpeningRecap } from "./CombatOpeningRecap";
 import { compactCombatFeedback } from "./combatFeedback";
 import { openingAttackIntentFrom } from "./attackPrompt";
@@ -15,7 +16,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { CampaignEvent } from "@/lib/backend";
-import { getSkill, resolveSkillId, DEFAULT_START } from "@/engine";
+import { agreedMissionFee, getSkill, resolveSkillId, DEFAULT_START } from "@/engine";
 import { IpTallyCard } from "./IpTallyCard";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
@@ -502,7 +503,9 @@ function SettlementReport({ events }: { events: CampaignEvent[] }) {
 
       {view.payment && (
         <p className={`num text-sm ${wasShorted(view) ? "text-destructive" : ""}`}>
-          {view.payment.paid}eb paid
+          {view.payment.key === "forgone"
+            ? `${view.payment.agreed}eb fee forgone`
+            : `${view.payment.paid}eb paid`}
           {wasShorted(view) && (
             <span className="text-muted-foreground"> of {view.payment.agreed}eb agreed</span>
           )}
@@ -843,7 +846,9 @@ export function PlayScreen({
       <RoleAbilityPanel play={play} />
       <RollHistory rolls={play.rolls} />
       <PressurePanel pressure={bundle.pressure} />
-      <ScenePanel bundle={bundle} onChoose={play.choose} busy={play.busy} />
+      {!bundle.beat?.evidenceDecision && (
+        <ScenePanel bundle={bundle} onChoose={play.choose} busy={play.busy} />
+      )}
       {bundle.mission && bundle.beat && <JobCard mission={bundle.mission} beat={bundle.beat} />}
     </>
   );
@@ -1079,6 +1084,21 @@ export function PlayScreen({
           <div className="space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
             <NarrativeLog events={bundle.events} readAloud={bundle.beat?.readAloud} busy={false} />
             {sceneControls}
+            {bundle.mission && bundle.beat?.evidenceDecision && !play.finished && (
+              <EvidenceDecision
+                beat={bundle.beat}
+                exits={bundle.availableExits}
+                fee={agreedMissionFee(bundle.mission, bundle.agreedPayout)}
+                onChoose={play.choose}
+                busy={
+                  play.busy ||
+                  play.opening ||
+                  !!play.pendingDeathSave ||
+                  !!play.pendingCheck ||
+                  !!play.pendingAttack
+                }
+              />
+            )}
             {play.actionError && (
               <div className="flex flex-wrap items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
                 <p className="text-sm text-destructive">{play.actionError.message}</p>
@@ -1122,7 +1142,7 @@ export function PlayScreen({
           {/* Pinned under the scroller: the two things the player acts THROUGH
               must never be the things they have to go looking for. */}
           <SuggestionBar
-            suggestions={play.finished ? [] : play.suggestions}
+            suggestions={play.finished || bundle.beat?.evidenceDecision ? [] : play.suggestions}
             onPick={(suggestion) => void play.submit(suggestionInput(suggestion))}
             busy={play.busy || play.opening}
             character={bundle.character}

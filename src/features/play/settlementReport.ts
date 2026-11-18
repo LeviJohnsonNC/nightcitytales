@@ -191,5 +191,9 @@ export function settlementFrom(events: CampaignEvent[]): SettlementView | null {
 
 /** True when the money did not all arrive. */
 export function wasShorted(view: SettlementView): boolean {
-  return view.payment !== null && view.payment.paid < view.payment.agreed;
+  return (
+    view.payment !== null &&
+    view.payment.key !== "forgone" &&
+    view.payment.paid < view.payment.agreed
+  );
 }

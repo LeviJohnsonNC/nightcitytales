@@ -1214,6 +1214,7 @@ export type Database = {
       read_campaign_scene: { Args: { payload: Json }; Returns: Json }
       save_character: { Args: { payload: Json }; Returns: string }
       save_encounter_state: { Args: { payload: Json }; Returns: undefined }
+      settle_investigation: { Args: { payload: Json }; Returns: Json }
       settle_job: { Args: { payload: Json }; Returns: Json }
       spend_ip_on_role_rank: {
         Args: {

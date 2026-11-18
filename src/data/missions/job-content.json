@@ -9,6 +9,14 @@
     "skills": "Every skill below must be a printed Skill name from skills.json, so the GM can map it to a real skill id.",
     "force": "Every opposition entry names a force key from data/rules/threats.json. It is READ, never drawn, so adding this field changed no existing job: the fiction of who is against you decides the statblocks of who turns up, instead of the GM model inventing them."
   },
+  "investigationSources": [
+    "Nell Ibarra",
+    "Ivo Fen",
+    "Luz Varela",
+    "Mina Vale",
+    "Paz Silva",
+    "Dev Saran"
+  ],
   "fixers": [
     {
       "name": "Rogue Amendiares",
@@ -647,7 +655,7 @@
         }
       ],
       "climaxBrief": "The truth and the cleanup crew arrive together, {opposition} in the room and the evidence within reach. Distances in metres — and telling the truth is as live an option as shooting.",
-      "resolutionBrief": "The Edgerunner knows what happened to {target}. What they do with it — sell it, bury it, hand it to {patron} — is the last real choice, and Night City will price it accordingly.",
+      "resolutionBrief": "The inquiry into {target} is over. The ledger records what happened to the evidence and what the client paid.",
       "beatTruths": {
         "background": [
           {

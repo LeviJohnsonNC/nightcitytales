@@ -545,8 +545,11 @@ export type SettleJobPayload = {
 export type SettleJobResult = { eventId: string; receipt: Json; alreadySettled: boolean };
 
 /** Commit one job's closeout exactly once, in one database transaction. */
-export async function settleJob(payload: SettleJobPayload): Promise<SettleJobResult> {
-  const { data, error } = await backendClient.rpc("settle_job", {
+export async function settleJob(
+  payload: SettleJobPayload,
+  operation: "settle_job" | "settle_investigation" = "settle_job",
+): Promise<SettleJobResult> {
+  const { data, error } = await backendClient.rpc(operation, {
     payload: payload as unknown as Json,
   });
   if (error) throw new Error(error.message);

@@ -43,6 +43,10 @@ LIFE → HOOK → JOB → AFTERMATH → LIFE
   and freeform intent stay within reach. Saved actions play in sequence with
   skippable movement and shot feedback; routine exchanges use engine-written
   reports without waiting for generated narration.
+- A generated **investigation** ends with the signed evidence in your hands.
+  Deliver it for the negotiated fee, leak it and read the clipping, or destroy
+  it to protect the source. The source leaves a private number for the following
+  week. All three choices settle the job.
 - **Aftermath** is the receipt: what the job paid, what it cost, who noticed,
   and what is still bleeding — and it opens on one frame: the moment of the job
   that mattered most (the closest the character came to the end, or the loudest

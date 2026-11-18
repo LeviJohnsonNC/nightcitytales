@@ -19,6 +19,13 @@ export async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void
   if (!bundle.mission || !bundle.runtime || !bundle.beat) return;
   const campaignId = bundle.campaign.id;
   const next = advance(bundle.mission, bundle.runtime, exit.to);
+  if (bundle.beat.evidenceDecision) {
+    if (bundle.encounter)
+      throw new Error("Finish the current encounter before choosing an ending.");
+    if (bundle.campaign.phase !== "job") throw new Error("This job has already ended.");
+    await settleMission(bundle, next, bundle.mission);
+    return;
+  }
   await saveMissionRuntime(campaignId, next);
   await revealBeatTruths(bundle, bundle.mission, exit.to);
   const toBeat = getBeat(bundle.mission, exit.to);
@@ -39,6 +46,7 @@ export async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void
     beat: toBeat,
     availableExits: availableExits(bundle.mission, next),
   };
+  if (toBeat.evidenceDecision) return; // The signed evidence is shown directly.
   await narrate(advanced, `(You choose: ${exit.label}. Set the new scene.)`);
 }
 

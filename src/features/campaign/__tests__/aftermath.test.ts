@@ -21,6 +21,10 @@ vi.mock("@/lib/backend", () => ({
     const at = liveEvents.map((e) => e.type).lastIndexOf("mission_started");
     return at === -1 ? [] : liveEvents.slice(at);
   }),
+  listCampaignFlags: vi.fn(async () => []),
+  updateCampaign: vi.fn(),
+  upsertCampaignPlace: vi.fn(),
+  appendCampaignEvent: vi.fn(),
   listClocks: vi.fn(async () => []),
   listCampaignFactions: vi.fn(async () => []),
   settleJob,
@@ -160,6 +164,7 @@ describe("atomic settlement preparation", () => {
         ],
         situations: [expect.objectContaining({ situation_key: "grudge_vex" })],
       }),
+      "settle_job",
     );
   });
 
@@ -260,5 +265,82 @@ describe("atomic settlement preparation", () => {
     liveEvents = [ev("narration")];
     await expect(settleAftermath(input())).rejects.toThrow("mission_started");
     expect(settleJob).not.toHaveBeenCalled();
+  });
+});
+
+describe("investigation endings through the player's scene choice", () => {
+  it.each([
+    ["resolution", "delivered", 3200],
+    ["leaked", "leaked", 0],
+    ["buried", "buried", 0],
+  ] as const)(
+    "settles %s and carries only its consequences into Life",
+    async (to, ending, paid) => {
+      const { advance, generateJob, getBeat, runtimeAtBeat, screamsheet, stableKey } =
+        await import("@/engine");
+      const { takeExit } = await import("@/features/play/playSceneOps");
+      const mission = generateJob(4);
+      const inquiry = mission.investigation!;
+      const runtime = advance(mission, runtimeAtBeat(mission, "climax"), "evidence");
+      const beat = getBeat(mission, runtime.currentBeatId);
+      expect(beat.evidenceDecision).toBe(true);
+      expect(beat.playerBrief).toContain(inquiry.source);
+      const start = ev("mission_started", { missionId: mission.id });
+      liveEvents = [start];
+      const bundle = {
+        campaign: { id: "c", phase: "job" },
+        character: { character: { name: PLAYER } },
+        encounter: null,
+        mission,
+        beat,
+        runtime,
+        agreedPayout: 3200,
+      } as unknown as import("@/features/play/playBundleOps").PlayBundle;
+      await takeExit(
+        bundle,
+        beat.exits.find((exit) => exit.to === to)!,
+      );
+      const [payload, operation] = settleJob.mock.calls[0]!;
+      expect(operation).toBe("settle_investigation");
+      expect(payload.completion.beat_id).toBe(to);
+      expect(payload.payment).toEqual({ agreed: 3200, paid });
+      expect(payload.roll).toBeNull();
+      expect(payload.receipt.evidenceEnding).toBe(ending);
+      const sheet = screamsheet({
+        events: [start, ev("job_settled", payload.receipt)],
+        handle: PLAYER,
+      });
+      expect(sheet).toHaveLength(ending === "leaked" ? 1 : 0);
+      if (ending === "leaked") {
+        expect(sheet[0]?.headline).toContain(mission.offer!.patronName);
+        expect(sheet[0]?.deck).toContain(inquiry.source);
+        expect(JSON.stringify(sheet)).not.toContain(PLAYER);
+      }
+      const key = stableKey(inquiry.source);
+      if (ending === "buried") {
+        expect(payload.npcs).toContainEqual(
+          expect.objectContaining({ name: inquiry.source, npc_key: key, disposition: 1 }),
+        );
+        expect(payload.situations).toContainEqual(
+          expect.objectContaining({
+            situation_key: `evidence_call_${start.id}`,
+            npc_key: key,
+            data: { availableFromDay: 17 },
+          }),
+        );
+      } else {
+        expect(payload.npcs).toEqual([]);
+        expect(payload.situations).toEqual([]);
+      }
+    },
+  );
+
+  it("reads a legacy investigation at Payday without assigning it a new ending", async () => {
+    const { evidenceEnding, generateJob, runtimeAtBeat } = await import("@/engine");
+    const mission = generateJob(4);
+    const runtime = runtimeAtBeat(mission, "resolution");
+    expect(
+      evidenceEnding({ ...runtime, status: "completed", branchChoices: { climax: "resolution" } }),
+    ).toBeNull();
   });
 });

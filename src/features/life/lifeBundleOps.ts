@@ -227,7 +227,11 @@ export async function loadLife(campaignId: string): Promise<LifeBundle> {
   // Age what was already on the books, then fold in what is true right now.
   // The result is persisted, so a situation survives a reload rather than being
   // re-invented (or forgotten) each turn.
-  const persisted = ageSituations(situationRows.map(situationFromRow), clock.day);
+  const visibleSituations = situationRows.map(situationFromRow).filter((situation) => {
+    const from = situation.data?.["availableFromDay"];
+    return typeof from !== "number" || clock.day >= from;
+  });
+  const persisted = ageSituations(visibleSituations, clock.day);
   const merged = mergeSituations(persisted, derivedSituations({ ...input, places }));
   const changed = merged.filter((s) => {
     const prior = persisted.find((p) => p.key === s.key);

@@ -744,6 +744,14 @@ export function readJobSettledFactions(raw: unknown): string[] {
   return out;
 }
 
+/** Old receipts contain no decision and cannot generate an evidence headline. */
+export function readEvidenceEnding(
+  raw: unknown,
+): import("./missions/investigation").EvidenceEnding | null {
+  const ending = payloadOf({ data: raw })["evidenceEnding"];
+  return ending === "delivered" || ending === "leaked" || ending === "buried" ? ending : null;
+}
+
 export function readJobSettledMeta(raw: unknown): JobSettledMeta {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return { day: null, missionId: null, placeKey: null };

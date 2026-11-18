@@ -128,6 +128,34 @@ const clockOf = () => ({ day: db.campaign.day, minute: db.campaign.minute });
 beforeEach(() => setup());
 
 describe("a plain narration turn", () => {
+  it("puts the protected source's call in Life for the first time a week later", async () => {
+    db.situations.push({
+      id: "evidence-call",
+      campaign_id: CAMPAIGN_ID,
+      situation_key: "evidence_call_job",
+      category: "people",
+      title: "Nell left a number",
+      summary: "Call me.",
+      npc_key: "nell",
+      status: "live",
+      severity: 4,
+      due_day: null,
+      last_shown_day: null,
+      data: { availableFromDay: 17 },
+      created_at: "",
+      updated_at: "",
+    });
+    db.campaign.day = 16;
+    expect(
+      (await loadLife(CAMPAIGN_ID)).situations.some((s) => s.key === "evidence_call_job"),
+    ).toBe(false);
+    db.campaign.day = 17;
+    for (let reload = 0; reload < 2; reload++) {
+      const { situations } = await loadLife(CAMPAIGN_ID);
+      expect(situations.filter((s) => s.key === "evidence_call_job")).toHaveLength(1);
+    }
+  });
+
   it("writes what the player said, then the narration, and charges the engine's clamp of the time", async () => {
     // The model claims a whole day went by on a look round the market.
     db.replies.push(reply({ timeSpent: 5000 }));

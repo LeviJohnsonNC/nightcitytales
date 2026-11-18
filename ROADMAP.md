@@ -15,6 +15,14 @@ waiting-seat light shadows and residential driveway/planting paint order. PR370 
 construction and wreck silhouettes, and varies residential saved-door finishes.
 Visual review is the next gate; a real campaign persistence playthrough remains separate.
 
+## Generated investigations — evidence endings
+
+After securing the file, the player decides who gets it. Delivery pays the agreed
+fee. A leak puts the signed record in the Screamsheet. Burying it leaves a source
+the player can hear from seven in-world days later. The last two forgo the fee.
+The decision and its consequences share the settlement transaction. Rollout
+requires `20261117010000_settle_investigation.sql`.
+
 ## Audit — 2026-10-11
 
 A whole-codebase audit was run as six read-only passes: the engine, Life/shop/campaign, play/combat/GM, server/security/DB, chargen and misc, and scene rendering. Each finding was checked against its callers before it was fixed. The fixes are in PR #369 and the PR after it.

@@ -25,7 +25,8 @@
  *  - THE CHARACTER IS NAMED ONLY WHEN THE ENGINE SAYS THEY WERE. `named` is an
  *    observation with a price — somebody said their handle where it could be
  *    heard — so it is what puts a handle in print. A job nobody could place the
- *    character at (`clean`) is not printed at all: getting away without a trace
+ *    character at (`clean`) gets no crime headline. An intentional leak can
+ *    publish the signed file without naming its sender. Getting away without a trace
  *    is what keeps your name out of the story, and that trade is the point.
  *
  *  - NO DIAL IS EVER SHOWN. A place's dials are hidden on purpose; the sheet
@@ -44,6 +45,7 @@ import {
   payloadOf,
   readJobSettledEventData,
   readJobSettledMeta,
+  readEvidenceEnding,
   readPlaceChangedEventData,
 } from "./ledger";
 import { findMission } from "./missions";
@@ -316,6 +318,19 @@ export function screamsheet(input: ScreamsheetInput): SheetItem[] {
       meta.placeKey ?? mission?.offer?.placeKey ?? null,
       mission?.offer?.districtKey,
     );
+    if (readEvidenceEnding(event.data) === "leaked" && mission?.investigation && mission.offer) {
+      items.push({
+        key: `leak:${event.id}`,
+        seq: event.seq,
+        day: meta.day,
+        kind: "job",
+        tone: "neutral",
+        kicker: "LEAKED FILE",
+        headline: `Signed record ties ${mission.offer.patronName} to disappearance in ${mission.offer.district}`,
+        deck: `The file on ${mission.investigation.subject} bears the signature of ${mission.investigation.source}.`,
+        ...where,
+      });
+    }
     const job = jobItem(event, where, meta.day, handle);
     if (job) items.push(job);
 
