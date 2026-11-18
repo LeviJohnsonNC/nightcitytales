@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
@@ -1206,14 +1206,14 @@ export type Database = {
     Functions: {
       award_improvement_points: { Args: { payload: Json }; Returns: number }
       close_aftermath: { Args: { payload: Json }; Returns: undefined }
-      install_cyberware: { Args: { payload: Json }; Returns: Json }
       commit_neighborhood_action: { Args: { payload: Json }; Returns: Json }
-      record_life_check: { Args: { payload: Json }; Returns: boolean }
+      install_cyberware: { Args: { payload: Json }; Returns: Json }
       move_house: { Args: { payload: Json }; Returns: Json }
       owns_campaign: { Args: { _campaign_id: string }; Returns: boolean }
       owns_character: { Args: { _character_id: string }; Returns: boolean }
       owns_encounter: { Args: { _encounter_id: string }; Returns: boolean }
       read_campaign_scene: { Args: { payload: Json }; Returns: Json }
+      record_life_check: { Args: { payload: Json }; Returns: boolean }
       save_character: { Args: { payload: Json }; Returns: string }
       save_encounter_state: { Args: { payload: Json }; Returns: undefined }
       settle_investigation: { Args: { payload: Json }; Returns: Json }
