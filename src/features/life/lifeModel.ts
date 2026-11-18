@@ -253,6 +253,7 @@ export function recentLifeLines(
   const interesting = new Set([
     "life_narration",
     "life_action",
+    "neighborhood_action",
     // A refusal is part of what happened. Leaving it out let the model propose
     // the same impossible thing again next turn, having never been told.
     "action_refused",

@@ -247,6 +247,7 @@ describe("turn operations are free of React", () => {
       "features/life/lifeOps.ts",
       "features/life/lifeOracleOps.ts",
       "features/life/lifeTurnOps.ts",
+      "features/life/neighborhoodOps.ts",
       "features/opening/openingOps.ts",
       "features/play/combatOps.ts",
       "features/play/playBundleOps.ts",

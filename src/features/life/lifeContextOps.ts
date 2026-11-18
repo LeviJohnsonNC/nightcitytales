@@ -4,6 +4,8 @@
  * lifeOps.ts. No React and no TanStack Query in here.
  */
 
+import { neighborhoodMoment } from "@/engine/neighborhood";
+import { neighborhoodContext } from "./neighborhoodOps";
 import {
   knownTerms,
   directionName,
@@ -238,7 +240,13 @@ export function buildContext(bundle: LifeBundle, turn: TurnOptions = {}): LifeCo
           ...(position?.placeKey ? placeBlurb(position.placeKey) : {}),
           ...(() => {
             const written = dossierForPrompt(position?.placeKey, positionDistrict.key);
-            return written ? { dossier: written.text } : {};
+            const local =
+              bundle.neighborhood &&
+              neighborhoodMoment(bundle.neighborhood, neighborhoodContext(bundle));
+            const dossier = [written?.text, local ? local.title + ". " + local.text : ""]
+              .filter(Boolean)
+              .join("\n");
+            return dossier ? { dossier } : {};
           })(),
           // How often they have stood here. The engine has counted every
           // arrival since the campaign began and nothing has ever read it back,

@@ -18,6 +18,7 @@
  * Presentation only: every coordinate, name and fact comes from the engine's
  * geography module.
  */
+import { CLINIC_PLACE } from "@/engine/neighborhood";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Crosshair, Minus, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -65,6 +66,7 @@ export function MapModal({
   travelBusy = false,
   signals = [],
   placeHere,
+  clinicOpen = false,
   travelMode,
 }: {
   open: boolean;
@@ -91,8 +93,10 @@ export function MapModal({
    * Everything the campaign knows about a place, for the dossier's live panels.
    * Absent outside a campaign: the atlas reader on its own is still an atlas.
    */
+  clinicOpen?: boolean | undefined;
   placeHere?: ((key: string) => PlaceHere | undefined) | undefined;
 }) {
+  const clinicPoint = clinicOpen ? mapPointOf(CLINIC_PLACE) : null;
   const [zoom, setZoom] = useState(1.4);
   const [dossier, setDossier] = useState<string | null>(null);
   const scroller = useRef<HTMLDivElement | null>(null);
@@ -378,6 +382,23 @@ export function MapModal({
                   </button>
                 );
               })}
+              {clinicPoint && (
+                <button
+                  type="button"
+                  aria-label="Stackside Clinic at The Precipice"
+                  title="Stackside Clinic"
+                  onClick={() => setDossier(CLINIC_PLACE)}
+                  style={placeOnMapStyle(clinicPoint.x, clinicPoint.y)}
+                  className="absolute z-10 flex size-11 -translate-y-full items-end justify-start focus-visible:outline-accent"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="rounded-sm border border-background bg-foreground px-1.5 text-base font-bold leading-tight text-background"
+                  >
+                    ✚
+                  </span>
+                </button>
+              )}
             </div>
           </div>
 
