@@ -73,7 +73,13 @@ function BenchRow({
   );
 }
 
-export function WorkshopSheet({ bundle }: { bundle: LifeBundle }) {
+export function WorkshopSheet({
+  bundle,
+  contextual = false,
+}: {
+  bundle: LifeBundle;
+  contextual?: boolean;
+}) {
   const workshop = useWorkshop(bundle);
   const [kind, setKind] = useState<ItemKind>("weapon");
   const [query, setQuery] = useState("");
@@ -91,7 +97,13 @@ export function WorkshopSheet({ bundle }: { bundle: LifeBundle }) {
   return (
     <Sheet onOpenChange={(open) => !open && workshop.clearMessage()}>
       <SheetTrigger asChild>
-        <DockTile icon={<Wrench className="size-6" />} label="Bench" />
+        {contextual ? (
+          <button type="button" className="life-link">
+            Open workbench
+          </button>
+        ) : (
+          <DockTile icon={<Wrench className="size-6" />} label="Workbench" />
+        )}
       </SheetTrigger>
       <SheetContent
         side="right"

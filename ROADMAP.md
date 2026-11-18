@@ -15,6 +15,13 @@ waiting-seat light shadows and residential driveway/planting paint order. PR370 
 construction and wreck silhouettes, and varies residential saved-door finishes.
 Visual review is the next gate; a real campaign persistence playthrough remains separate.
 
+## Life play screen
+
+The Life redesign puts the current place, prose and decision in the main column.
+Ganymede and Evergreen have matched laptop and phone captures. Suggestions,
+required rolls, vendor detours and authored choices have a seeded browser
+walkthrough. The next gate is the owner's visual review. [Comparisons and device checks](docs/life-screen/README.md).
+
 ## Old Japantown between jobs
 
 Nakamura’s Counter and the Paper Lantern each have a short authored scene. Help

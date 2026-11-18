@@ -1,6 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PeopleStrip, type HudPerson } from "../PeopleStrip";
+
+// Inspect the contents normally mounted into a browser portal.
+vi.mock("@/components/ui/sheet", async (original) => ({
+  ...(await original<typeof import("@/components/ui/sheet")>()),
+  SheetContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  SheetTitle: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
+}));
 
 const person = (
   key: string,
@@ -27,15 +34,11 @@ describe("the people strip", () => {
   ];
   const html = renderToStaticMarkup(<PeopleStrip people={people} standings={[]} />);
 
-  it("shows five faces and leaves the sixth for 'all'", () => {
-    expect(html).toContain('aria-label="Echo Five"');
-    expect(html).not.toContain('aria-label="Foxtrot Six"');
-    expect(html).toContain("Everyone you know");
-  });
-
-  it("keeps what each person is carrying behind a tap", () => {
-    expect(html).not.toContain("a thing you learned");
-    expect(html).not.toContain("standing line");
+  it("keeps every known contact and their learned facts in Contacts", () => {
+    expect(html).toContain(">Contacts<");
+    expect(html).toContain(">Foxtrot Six<");
+    expect(html).toContain("a thing you learned");
+    expect(html).toContain("Alpha One standing line");
   });
 
   it("opens a person with a dossier at full size, and keeps the small card for anybody without one", () => {
@@ -46,11 +49,13 @@ describe("the people strip", () => {
       />,
     );
     expect(withDossier).toContain('aria-label="Open dossier for Nnamdi Cole"');
-    expect(withDossier).toContain('aria-label="Nobody Known"');
+    expect(withDossier).toContain(">Nobody Known<");
     expect(withDossier).not.toContain('aria-label="Open dossier for Nobody Known"');
   });
 
-  it("draws nothing when there is nobody and nothing to stand on", () => {
-    expect(renderToStaticMarkup(<PeopleStrip people={[]} standings={[]} />)).toBe("");
+  it("keeps Contacts available before the first introduction", () => {
+    expect(renderToStaticMarkup(<PeopleStrip people={[]} standings={[]} />)).toContain(
+      "Your contacts will appear",
+    );
   });
 });

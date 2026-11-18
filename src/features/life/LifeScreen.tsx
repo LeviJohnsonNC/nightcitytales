@@ -2,6 +2,9 @@ import { NeighborhoodCard } from "./NeighborhoodCard";
 import { neighborhoodContext } from "./neighborhoodOps";
 import { clinicDescription, CLINIC_PLACE } from "@/engine/neighborhood";
 import { LifeSceneContent } from "./LifeSceneContent";
+import { LifeComposer } from "./LifeComposer";
+import { sceneArt } from "./sceneArt";
+import { NCAmp } from "@/features/music/ncamp/NCAmp";
 import type { ReactNode } from "react";
 import { FIXER_VENDOR, readSceneCombatEnd, shopsAt } from "@/engine";
 /**
@@ -25,13 +28,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Textarea } from "@/components/ui/textarea";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { ChevronDown, ShoppingBag } from "lucide-react";
 import {
   clampLuckSpend,
   formatDuration,
-  formatLifeClock,
   getSkill,
   knownTerms,
   luckModifier,
@@ -68,12 +69,12 @@ import { CheckCard } from "@/features/play/CheckCard";
 import { PreviouslyCard } from "@/features/play/ClosingFrameCard";
 import { previouslyFor, readDismissed, writeDismissed } from "@/features/campaign/previously";
 import { MapButton } from "@/features/atlas/MapButton";
-import { CampaignHeader } from "@/features/play/CampaignHeader";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
 import { CharacterCard } from "./hud/CharacterCard";
 import { PeopleStrip } from "./hud/PeopleStrip";
 import { ResourceStrip } from "./hud/ResourceStrip";
 import {
+  formatMoney,
   readDayBrief,
   statusView,
   welcomeBack,
@@ -83,7 +84,7 @@ import { ReceiptBar } from "@/features/status/ReceiptBar";
 import { IpTallyCard } from "@/features/play/IpTallyCard";
 import { snapshotOf } from "@/features/status/receipts";
 import { useReceipts } from "@/features/status/useReceipts";
-import { BottomDock, MobileStatusBar } from "@/features/play/mobileShell";
+import { MobileStatusBar } from "@/features/play/mobileShell";
 import {
   actorFor,
   gmSkillList,
@@ -93,7 +94,7 @@ import {
 import { type CheckRoll, type PendingCheck } from "@/features/play/checkPrompt";
 import { previewPendingCheck, rollPendingCheck } from "@/features/play/rollCheck";
 import { RollLine } from "@/features/play/RollLine";
-import type { CampaignEvent } from "@/lib/backend";
+import type { CampaignEvent, FullCharacter } from "@/lib/backend";
 import { useLife } from "./useLife";
 import { CityTurns } from "./CityTurns";
 import { SceneHero } from "./SceneHero";
@@ -102,7 +103,6 @@ import { hauntPeople } from "./lifeModel";
 import { placeHistory } from "@/features/campaign/placeState";
 import { ShopView } from "./shop/ShopView";
 import { browseLinkFor, newestBrowse } from "./browseIntent";
-import { ModeSwitch } from "./shop/ModeSwitch";
 import { standingAt } from "@/features/campaign/favours";
 import { DockTile } from "./hud/DockTile";
 import { RipperdocSheet } from "./RipperdocSheet";
@@ -374,21 +374,15 @@ function LifeLog({
   events,
   suppressText,
   climber,
-  autoScroll = true,
   here = null,
   onBrowse,
 }: {
   events: CampaignEvent[];
-  autoScroll?: boolean;
   suppressText?: string;
   climber?: Climber;
   here?: string | null;
   onBrowse?: ((vendorId: string) => void) | undefined;
 }) {
-  const endRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (autoScroll) endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [events.length, autoScroll]);
   const shown = shownLifeEvents(events, suppressText);
   // Nothing has happened yet: the scene above is the screen, and an empty
   // bordered box under it reads as something that failed to load. The wait
@@ -408,7 +402,6 @@ function LifeLog({
           {...(climber ? { climber } : {})}
         />
       ))}
-      <div ref={endRef} />
     </div>
   );
 }
@@ -422,11 +415,7 @@ function ActionCard({
   busy,
 }: {
   action: LifeActionCard;
-  character: ReturnType<typeof useLife>["bundle"] extends infer B
-    ? B extends { character: infer C }
-      ? C
-      : never
-    : never;
+  character: FullCharacter;
   /**
    * The live context the roll will use: worn armor, current Humanity, and the
    * district underfoot. The card prints the number the engine is going to add,
@@ -440,57 +429,33 @@ function ActionCard({
 }) {
   const skillId = action.skillId ? resolveSkillId(action.skillId) : null;
   const line = skillId
-    ? gmSkillList(character as never, 40, context).find((s) => s.id === skillId)
+    ? gmSkillList(character, character.skills.length, context).find((s) => s.id === skillId)
     : undefined;
   const hint = skillId
     ? {
         // The engine's own label, which names the specialization — and for
         // Local Expert, the district this number is for.
         name: line?.skill ?? getSkill(skillId).name,
-        base: line?.base ?? 0,
+        base: line?.base,
       }
     : null;
 
-  const button = (
-    <Button
-      variant="outline"
-      disabled={busy}
-      onClick={onPick}
-      className={`h-auto w-full flex-col items-start gap-1 whitespace-normal p-3 text-left ${
-        hint ? "border-neon-pink shadow-[0_0_8px_rgba(255,61,154,0.25)]" : ""
-      }`}
-    >
-      <span className="text-sm font-semibold">{action.label}</span>
-      {action.description && (
-        <span className="text-xs font-normal text-muted-foreground">{action.description}</span>
-      )}
-      <span className="num font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-        {formatDuration(action.timeMinutes)}
-        {action.knownCost ? ` · ${action.knownCost}eb` : ""}
-      </span>
-      {/* Touch has no hover, so the skill hint is spelled out on small screens. */}
-      {hint && (
-        <span className="num font-mono text-[10px] uppercase tracking-[0.18em] text-neon-pink lg:hidden">
-          {hint.name}: {hint.base}
-        </span>
-      )}
-    </Button>
-  );
-
-  if (!hint) return button;
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
-      <TooltipContent
-        side="top"
-        className="max-w-xs border border-neon-pink bg-card text-foreground"
-      >
-        <Label>Skill</Label>
-        <p className="text-sm font-semibold">
-          {hint.name}: {hint.base}
-        </p>
-      </TooltipContent>
-    </Tooltip>
+    <button type="button" className="life-suggestion" disabled={busy} onClick={onPick}>
+      <span>
+        {action.label}
+        {action.description && <small>{action.description}</small>}
+      </span>
+      <span>
+        {[
+          formatDuration(action.timeMinutes),
+          action.knownCost ? action.knownCost + "eb" : "",
+          hint ? hint.name + (hint.base === undefined ? "" : " +" + hint.base) : "",
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+      </span>
+    </button>
   );
 }
 
@@ -658,68 +623,6 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
 }
 
 /**
- * The one thing the player always has: a place to say what they do.
- *
- * What they type is sent as what they typed. No engine note is stapled to it,
- * because a nudge about when to roll belongs in the system prompt, not in the
- * player's own words on their own log.
- */
-function InputBar({
-  onSend,
-  onAskOptions,
-  busy,
-}: {
-  onSend: (text: string) => Promise<boolean> | void;
-  onAskOptions: () => void;
-  /** Open the city and pick a destination off it. */
-  busy: boolean;
-}) {
-  const [text, setText] = useState("");
-  const send = async () => {
-    const trimmed = text.trim();
-    if (!trimmed || busy) return;
-    const result = await onSend(trimmed);
-    if (result !== false) setText("");
-  };
-  return (
-    <div className="flex flex-col gap-2 sm:flex-row">
-      <Textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            void send();
-          }
-        }}
-        placeholder="What do you do?"
-        rows={2}
-        className="flex-1 resize-none"
-        disabled={busy}
-      />
-      <div className="flex gap-2 sm:flex-col">
-        <Button
-          className="flex-1 sm:flex-none"
-          onClick={() => void send()}
-          disabled={busy || !text.trim()}
-        >
-          {busy ? "…" : "Act"}
-        </Button>
-        <Button
-          variant="outline"
-          className="flex-1 sm:flex-none"
-          onClick={onAskOptions}
-          disabled={busy}
-          title="Ask what you could do here. Costs no time."
-        >
-          Options?
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-/**
  * The status rail. Rendered once as a desktop sidebar and once inside the
  * mobile status sheet, so a phone never has to scroll past the whole log to
  * find out how much HP is left.
@@ -730,7 +633,7 @@ function LifeRail({
   luckLeft,
   luckMax,
   status,
-  intro = true,
+  journal,
   onOpenShop,
 }: {
   life: ReturnType<typeof useLife>;
@@ -738,8 +641,8 @@ function LifeRail({
   luckLeft: number;
   luckMax: number;
   status: StatusView;
-  /** False where the screen shows the day-one pointer itself (a phone). */
-  intro?: boolean;
+  /** History and neighborhood leads, with a way to return to the scene. */
+  journal: (close: () => void) => ReactNode;
   /** Turn the main column into the shop (the Counter). */
   onOpenShop: () => void;
 }) {
@@ -765,20 +668,25 @@ function LifeRail({
        */}
       <ResourceStrip status={status} />
 
-      <PeopleStrip people={life.people} standings={life.standings} />
-
-      {intro && (
-        <ClimbIntro
-          campaignId={bundle.campaign.id}
-          pinnedCount={life.pinned.length}
-          onShow={() => setReachOpen(true)}
+      <ClimbIntro
+        campaignId={bundle.campaign.id}
+        pinnedCount={life.pinned.length}
+        onShow={() => setReachOpen(true)}
+      />
+      <nav className="life-rail-nav" aria-label="Campaign">
+        <SheetDrawer
+          label="Character"
+          character={bundle.character}
+          inventory={bundle.inventory}
+          cyberware={bundle.cyberware}
         />
-      )}
-
-      <div className="grid grid-cols-2 gap-2">
-        <WithinReachSheet life={life} open={reachOpen} onOpenChange={setReachOpen} />
-        <RecordSheet bundle={bundle} />
+        <PeopleStrip people={life.people} standings={life.standings} />
+        <RecordSheet bundle={bundle} journal={journal} />
         <ScreamsheetSheet bundle={bundle} />
+      </nav>
+      <details className="life-tools">
+        <summary>Tools and services</summary>
+        <WithinReachSheet life={life} open={reachOpen} onOpenChange={setReachOpen} />
         <HomeSheet life={life} />
         {/* Renders nothing unless the place you are standing in has taken to you. */}
         <FavoursSheet bundle={bundle} />
@@ -792,7 +700,7 @@ function LifeRail({
         />
         {/* Renders nothing at all for a character without Maker. */}
         <WorkshopSheet bundle={bundle} />
-      </div>
+      </details>
 
       <Link
         to="/roster"
@@ -811,7 +719,11 @@ function knownPlacesOf(campaign: { known_places: unknown }): string[] {
     : [];
 }
 
-export function LifeScreen({
+export function LifeScreen(props: { campaignId: string; sceneControls?: ReactNode }) {
+  return <CampaignLife key={props.campaignId} {...props} />;
+}
+
+function CampaignLife({
   campaignId,
   sceneControls,
 }: {
@@ -820,7 +732,29 @@ export function LifeScreen({
 }) {
   const life = useLife(campaignId);
   const bundle = life.bundle;
-  const [mobileReachOpen, setMobileReachOpen] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [submitted, setSubmitted] = useState("");
+  const sending = useRef(false);
+  const send = async (input: string, card?: LifeActionCard) => {
+    if (sending.current || life.busy || !input.trim()) return;
+    sending.current = true;
+    setSubmitted(card?.label ?? input);
+    try {
+      const result = await life.act(
+        input,
+        card
+          ? {
+              minutes: card.timeMinutes,
+              ...(card.knownCost ? { spend: { amount: card.knownCost, reason: card.label } } : {}),
+            }
+          : undefined,
+      );
+      if (result === true && !card) setDraft("");
+    } finally {
+      sending.current = false;
+      setSubmitted("");
+    }
+  };
   // The Counter: a shop takes the main column, in place of the scene, until the
   // player leaves it. The phone's status sheet is closed so the shop is what
   // they see.
@@ -828,12 +762,37 @@ export function LifeScreen({
   /** The seller the Counter opens on, when the story or a log line chose one. */
   const [shopVendor, setShopVendor] = useState<string | null>(null);
   const [statusOpen, setStatusOpen] = useState(false);
+  const returnFromShop = useRef<{ scroll: number; target: string } | null>(null);
+  const shopHeading = useRef<HTMLDivElement>(null);
   const openShop = (vendorId: string | null = null) => {
+    returnFromShop.current = {
+      scroll: window.scrollY,
+      target: document.activeElement?.id === "life-browse" ? "life-browse" : "life-intent",
+    };
     setStatusOpen(false);
     setShopVendor(vendorId);
     setShopOpen(true);
     if (typeof window !== "undefined") window.scrollTo({ top: 0 });
   };
+  useEffect(() => {
+    if (!returnFromShop.current) return;
+    if (shopOpen) {
+      shopHeading.current?.focus({ preventScroll: true });
+    } else {
+      const { scroll, target } = returnFromShop.current;
+      returnFromShop.current = null;
+      document.getElementById(target)?.focus({ preventScroll: true });
+      window.scrollTo({ top: scroll, behavior: "instant" });
+    }
+  }, [shopOpen]);
+  const checkHadFocus = useRef(false);
+  useEffect(() => {
+    if (!life.pendingCheck && checkHadFocus.current) {
+      checkHadFocus.current = false;
+      if (document.activeElement === document.body)
+        document.getElementById("life-intent")?.focus({ preventScroll: true });
+    }
+  }, [life.pendingCheck]);
   // Who sells where the character stands, for the switch above the scene. A
   // trip away from the shop closes the Counter: it belongs to where they were.
   const standing = bundle ? standingAt(bundle.campaign) : null;
@@ -960,7 +919,8 @@ export function LifeScreen({
   useEffect(() => {
     if (!bundle || life.busy || life.actionError) return;
     if (life.narration || life.pendingCheck) return;
-    if (life.atNeighborhoodScene || bundle.events.at(-1)?.type === "neighborhood_action") return;
+    const last = bundle.events.at(-1)?.type;
+    if (life.atNeighborhoodScene || last === "neighborhood_action" || last === "travelled") return;
     const key = `${bundle.campaign.id}:${bundle.clock.day}`;
     if (opened.current === key) return;
     opened.current = key;
@@ -1027,7 +987,7 @@ export function LifeScreen({
     people: life.people,
   });
   const lastEvent = bundle.events.at(-1);
-  const hasLog = shownLifeEvents(bundle.events, life.narration?.text).length > 0;
+  const visibleEvents = shownLifeEvents(bundle.events);
 
   /**
    * What the wait is allowed to know: where they are, and roughly when. Three
@@ -1047,11 +1007,8 @@ export function LifeScreen({
 
   const chips = [
     { label: "HP", value: `${bundle.vitals.hp_current}/${bundle.vitals.hp_max}` },
-    { label: "Wound", value: bundle.vitals.wound_state },
-    { label: "eb", value: `${bundle.vitals.eurobucks}` },
-    ...(luckMax > 0 ? [{ label: "Luck", value: `${luckLeft}/${luckMax}` }] : []),
+    { label: "Cash", value: formatMoney(bundle.vitals.eurobucks) },
   ];
-
   /** The engine rolls; the card only animates toward what it rolled. */
   const rollCheck = (pending: PendingCheck, luckSpend: number): CheckRoll =>
     rollPendingCheck({
@@ -1136,176 +1093,253 @@ export function LifeScreen({
     };
   };
 
+  const journal = (close: () => void) => (
+    <>
+      {life.phase === "life" && (
+        <NeighborhoodCard
+          journal
+          state={bundle.neighborhood}
+          context={neighborhoodContext(bundle)}
+          location={locationKey}
+          travelMode={life.vehicleRule}
+          busy={life.busy || !!life.pendingCheck}
+          act={life.takeNeighborhoodAction}
+          travel={(to) => {
+            close();
+            setStatusOpen(false);
+            life.travelTo(to);
+          }}
+        />
+      )}
+      {visibleEvents.length > 0 && (
+        <details className="my-4">
+          <summary className="cursor-pointer py-2">Earlier events</summary>
+          <LifeLog
+            events={bundle.events}
+            here={standing}
+            onBrowse={(vendor) => {
+              close();
+              openShop(vendor);
+            }}
+            climber={{
+              roleId: bundle.character.character.role,
+              homeDistrictKey: bundle.character.finance?.home_district_key ?? null,
+            }}
+          />
+        </details>
+      )}
+    </>
+  );
+  const rail = (
+    <div className="life-rail">
+      <LifeRail
+        life={life}
+        bundle={bundle}
+        luckLeft={luckLeft}
+        luckMax={luckMax}
+        status={status}
+        journal={journal}
+        onOpenShop={() => openShop()}
+      />
+    </div>
+  );
+  const waiting = life.busy || !!submitted;
+  const suggested = life.actions.map((action) => (
+    <ActionCard
+      key={action.label}
+      action={action}
+      character={bundle.character}
+      context={rollContext}
+      busy={waiting}
+      onPick={() => void send(cardInput(action), action)}
+    />
+  ));
+  const sceneTitle = sceneArt(locationKey).title;
+  const atHome =
+    standing &&
+    standing === (bundle.campaign.home_place_key ?? bundle.character.finance?.home_place_key);
+  const latest = visibleEvents.at(-1);
   return (
     <TooltipProvider delayDuration={150}>
-      <div className="touch-play">
-        <MobileStatusBar
-          title={bundle.character.character.name}
-          chips={chips}
-          open={statusOpen}
-          onOpenChange={setStatusOpen}
-        >
-          <LifeRail
-            life={life}
-            bundle={bundle}
-            luckLeft={luckLeft}
-            luckMax={luckMax}
-            status={status}
-            intro={false}
-            onOpenShop={() => openShop()}
-          />
-        </MobileStatusBar>
-        {/* On a phone the rail waits behind the status bar, so the day-one
-            pointer stands in the column and opens Within reach itself. */}
-        <div className="px-4 lg:hidden [&>section]:mt-3">
-          <ClimbIntro
-            campaignId={bundle.campaign.id}
-            pinnedCount={life.pinned.length}
-            onShow={() => setMobileReachOpen(true)}
-          />
-          <WithinReachSheet
-            life={life}
-            open={mobileReachOpen}
-            onOpenChange={setMobileReachOpen}
-            trigger={false}
-          />
-        </div>
-
-        <div className="mx-auto grid max-w-6xl gap-4 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-          <div className="flex flex-col gap-3 lg:min-h-[70vh]">
-            <CampaignHeader
-              title={bundle.campaign.name}
-              subtitle={
-                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
-                  Life · {formatLifeClock(bundle.clock)} · day {bundle.clock.day}
-                </p>
-              }
-              className="lg:sticky lg:top-0 lg:z-20 lg:bg-background/95 lg:backdrop-blur supports-[backdrop-filter]:lg:bg-background/70"
-              actions={
-                <>
-                  <MapButton
-                    locationKey={bundle.campaign.location_key ?? DEFAULT_START}
-                    knownPlaces={knownPlaces}
-                    onTravel={life.travelTo}
-                    travelBusy={life.travelBusy}
-                    {...(life.vehicleRule ? { travelMode: life.vehicleRule } : {})}
-                    signals={signals}
-                    placeHere={placeHere}
-                    clinicOpen={!!bundle.neighborhood.lease}
-                  />
-                  <SheetDrawer
-                    character={bundle.character}
-                    inventory={bundle.inventory}
-                    cyberware={bundle.cyberware}
-                  />
-                </>
-              }
-            />
-
-            {shopOpen ? (
-              // The Counter, in place of the scene. The input is hidden: a
-              // shop is for shopping, and "Talk to them" goes back to the scene.
-              <ShopView
-                key={shopVendor ?? "shop"}
-                bundle={bundle}
-                vendorId={shopVendor}
-                talk={{
-                  onSay: (text) => life.act(text),
-                  busy: life.busy,
-                  last: life.narration?.text ?? null,
-                  waitingOnRoll: !!life.pendingCheck,
-                  onScene: () => setShopOpen(false),
-                }}
-                onClose={() => setShopOpen(false)}
+      <div className="life-play">
+        <div className="life-shell">
+          <header className="life-mast">
+            <div className="life-brand">
+              Night City Tales <b aria-hidden="true">//</b>
+            </div>
+            <span className="life-campaign">{bundle.campaign.name}</span>
+            <div className="life-utilities">
+              <MapButton
+                compact
+                locationKey={bundle.campaign.location_key ?? DEFAULT_START}
+                knownPlaces={knownPlaces}
                 onTravel={life.travelTo}
-                travelBusy={life.travelBusy}
-                travelMode={life.vehicleRule}
-                onTalk={() => setShopOpen(false)}
+                travelBusy={life.busy || !!life.pendingCheck}
+                {...(life.vehicleRule ? { travelMode: life.vehicleRule } : {})}
+                signals={signals}
+                placeHere={placeHere}
+                clinicOpen={!!bundle.neighborhood.lease}
               />
-            ) : (
-              <>
-                {/* Standing somewhere that sells: the same switch the Counter shows. */}
-                {sellerHere && (
-                  <ModeSwitch
-                    mode="scene"
-                    seller={sellerHere.label}
-                    onCounter={() => openShop(sellerHere.id)}
-                    onScene={() => {}}
-                  />
-                )}
-                {/* What happened on the job they just finished: the peak, and what it left open. */}
-                {previously && bundle.lastFrame && (
-                  <PreviouslyCard
-                    frame={previously}
-                    onDismiss={() => {
-                      writeDismissed(campaignId, bundle.lastFrame!.settledId);
-                      setDismissedFrame(bundle.lastFrame!.settledId);
-                    }}
-                  />
-                )}
+              <NCAmp compact />
+            </div>
+          </header>
+          <MobileStatusBar
+            title={bundle.character.character.name}
+            chips={chips}
+            open={statusOpen}
+            onOpenChange={setStatusOpen}
+            showRadio={false}
+          >
+            {rail}
+          </MobileStatusBar>
+          <div className="life-layout">
+            <div className="life-main" ref={shopHeading} tabIndex={-1}>
+              {shopOpen ? (
+                // The Counter, in place of the scene. The input is hidden: a
+                // shop is for shopping, and "Talk to them" goes back to the scene.
+                <ShopView
+                  key={shopVendor ?? "shop"}
+                  bundle={bundle}
+                  vendorId={shopVendor}
+                  talk={{
+                    onSay: async (text) => (await life.act(text)) !== false,
+                    busy: life.busy,
+                    last: life.narration?.text ?? null,
+                    waitingOnRoll: !!life.pendingCheck,
+                    onScene: () => setShopOpen(false),
+                  }}
+                  onClose={() => setShopOpen(false)}
+                  onTravel={life.travelTo}
+                  travelBusy={life.travelBusy}
+                  travelMode={life.vehicleRule}
+                  onTalk={() => setShopOpen(false)}
+                />
+              ) : (
+                <>
+                  {/* What happened on the job they just finished: the peak, and what it left open. */}
+                  {previously && bundle.lastFrame && (
+                    <PreviouslyCard
+                      frame={previously}
+                      onDismiss={() => {
+                        writeDismissed(campaignId, bundle.lastFrame!.settledId);
+                        setDismissedFrame(bundle.lastFrame!.settledId);
+                      }}
+                    />
+                  )}
 
-                {/* Coming back after a while: the threads they left open, by name. */}
-                {returning && (
-                  <div className="border-l-2 border-accent bg-accent/5 px-3 py-2">
-                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
-                      Where you left off
-                    </p>
-                    <ul className="mt-1 space-y-0.5 text-sm text-foreground">
-                      {returning.map((line) => (
-                        <li key={line}>{line}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                  {/* Coming back after a while: the threads they left open, by name. */}
+                  {returning && (
+                    <div className="border-l-2 border-accent bg-accent/5 px-3 py-2">
+                      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
+                        Where you left off
+                      </p>
+                      <ul className="mt-1 space-y-0.5 text-sm text-foreground">
+                        {returning.map((line) => (
+                          <li key={line}>{line}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-                <LifeSceneContent
-                  lead={
-                    <>
-                      {/* Where you are, before anything has happened here. */}
-                      <SceneHero locationKey={locationKey} opening={!hasLog} />
-
-                      {/* Who is here, once, instead of a strip under every paragraph. */}
-                      <SceneFaces faces={faces} />
-
-                      {/* What the turn just cost, alongside the current scene. */}
-                      <ReceiptBar receipts={receipts} />
-                      {life.phase === "life" && (
-                        <NeighborhoodCard
-                          state={bundle.neighborhood}
-                          context={neighborhoodContext(bundle)}
-                          location={locationKey}
-                          receipt={
-                            lastEvent?.type === "neighborhood_action" ? lastEvent.summary : null
-                          }
-                          travelMode={life.vehicleRule}
-                          busy={life.busy || !!life.pendingCheck}
-                          act={life.takeNeighborhoodAction}
-                          travel={life.travelTo}
+                  <LifeSceneContent
+                    lead={
+                      <>
+                        <SceneHero
+                          key={locationKey}
+                          locationKey={locationKey}
+                          clock={bundle.clock}
                         />
-                      )}
-
-                      {/* A week of life with no award is a session: judged here, on the
-                      playstyle columns, the same table a job is judged on. */}
-                      {life.phase === "life" && (life.ipDaysUntil === 0 || life.lifeIpTally) && (
-                        <IpTallyCard
-                          heading="a week on the street, since the last award"
-                          tally={life.lifeIpTally}
-                          busy={life.lifeIpBusy}
-                          error={life.lifeIpError}
-                          defaults={life.ipLastPlaystyles}
-                          onTally={life.tallyLifeIp}
-                          onDismiss={life.dismissLifeIp}
-                        />
-                      )}
-
-                      {life.actionError && (
-                        <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                          {life.actionError.message}
-                        </p>
-                      )}
-
-                      {life.pendingCheck && (
+                        {(faces.length > 0 ||
+                          sellerHere ||
+                          (atHome && bundle.character.character.role === "tech")) && (
+                          <div className="life-presence">
+                            <SceneFaces faces={faces} compact />
+                            <div className="life-local-actions">
+                              {sellerHere && (
+                                <button
+                                  type="button"
+                                  id="life-browse"
+                                  className="life-link"
+                                  onClick={() => openShop(sellerHere.id)}
+                                >
+                                  Browse the counter
+                                </button>
+                              )}
+                              {atHome && bundle.character.character.role === "tech" && (
+                                <WorkshopSheet bundle={bundle} contextual />
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    }
+                    narration={
+                      life.narration ? (
+                        <article className="life-passage">
+                          {life.narration.title.trim().toLowerCase() !==
+                            sceneTitle.trim().toLowerCase() && <h2>{life.narration.title}</h2>}
+                          <div>
+                            <NpcText text={life.narration.text} />
+                          </div>
+                        </article>
+                      ) : !life.atNeighborhoodScene &&
+                        latest &&
+                        latest.type !== "neighborhood_action" ? (
+                        <div className="life-passage">
+                          <LifeEvent event={latest} here={standing} onBrowse={openShop} />
+                        </div>
+                      ) : null
+                    }
+                    outcome={<ReceiptBar receipts={receipts} />}
+                    controls={sceneControls}
+                  />
+                  {life.phase === "life" && (
+                    <NeighborhoodCard
+                      state={bundle.neighborhood}
+                      context={neighborhoodContext(bundle)}
+                      location={locationKey}
+                      receipt={lastEvent?.type === "neighborhood_action" ? lastEvent.summary : null}
+                      travelMode={life.vehicleRule}
+                      busy={life.busy || !!life.pendingCheck}
+                      act={life.takeNeighborhoodAction}
+                      travel={life.travelTo}
+                    />
+                  )}
+                  {life.phase === "life" && (life.ipDaysUntil === 0 || life.lifeIpTally) && (
+                    <IpTallyCard
+                      heading="a week on the street, since the last award"
+                      tally={life.lifeIpTally}
+                      busy={life.lifeIpBusy}
+                      error={life.lifeIpError}
+                      defaults={life.ipLastPlaystyles}
+                      onTally={life.tallyLifeIp}
+                      onDismiss={life.dismissLifeIp}
+                    />
+                  )}
+                  {life.hook && <HookCard life={life} />}
+                  <div className="life-turn-area">
+                    {life.actionError && (
+                      <p role="alert" className="life-error">
+                        {life.actionError.message}
+                      </p>
+                    )}
+                    {waiting && (
+                      <div className="life-wait" role="status">
+                        {submitted && <p>{submitted}</p>}
+                        <span className="sr-only">Resolving your turn.</span>
+                        <CityTurns context={turnContext} seed={bundle.events.length} />
+                      </div>
+                    )}
+                    {life.pendingCheck ? (
+                      <section
+                        className="life-roll"
+                        aria-label="Required check"
+                        onFocusCapture={() => {
+                          checkHadFocus.current = true;
+                        }}
+                      >
                         <CheckCard
+                          scene
                           key={life.pendingCheck.eventId}
                           pending={life.pendingCheck}
                           roll={(luckSpend) => rollCheck(life.pendingCheck!, luckSpend)}
@@ -1314,93 +1348,37 @@ export function LifeScreen({
                           busy={life.checkBusy}
                           luckRemaining={luckLeft}
                         />
-                      )}
-                    </>
-                  }
-                  narration={
-                    life.narration ? (
-                      <section className="space-y-2 border-l-2 border-accent bg-accent/5 p-3">
-                        <Label>{life.narration.title}</Label>
-                        <p className="whitespace-pre-wrap text-[15px] leading-7 sm:text-sm sm:leading-relaxed">
-                          <NpcText text={life.narration.text} />
-                        </p>
                       </section>
-                    ) : null
-                  }
-                  controls={sceneControls}
-                  history={
-                    hasLog ? (
-                      <LifeLog
-                        autoScroll={!life.narration}
-                        events={bundle.events}
-                        here={standingAt(bundle.campaign)}
-                        onBrowse={openShop}
-                        climber={{
-                          roleId: bundle.character.character.role ?? null,
-                          homeDistrictKey: bundle.character.finance?.home_district_key ?? null,
-                        }}
-                        {...(life.narration ? { suppressText: life.narration.text } : {})}
-                      />
-                    ) : null
-                  }
-                />
-
-                {/* Options, and only when they were asked for. An ordinary turn
-                returns none, so these clear themselves the moment the player acts. */}
-                {!life.pendingCheck && life.actions.length > 0 && (
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    {life.actions.map((action) => (
-                      <ActionCard
-                        key={action.label}
-                        action={action}
-                        character={bundle.character as never}
-                        context={rollContext}
-                        busy={life.busy}
-                        onPick={() =>
-                          void life.act(cardInput(action), {
-                            // What the card printed is what the turn costs. Both
-                            // kinds of card go through here — the model's and the
-                            // engine's — because a player cannot tell them apart
-                            // and should not have to.
-                            minutes: action.timeMinutes,
-                            ...(action.knownCost
-                              ? { spend: { amount: action.knownCost, reason: action.label } }
-                              : {}),
-                          })
+                    ) : (
+                      <LifeComposer
+                        draft={draft}
+                        onDraft={setDraft}
+                        busy={waiting}
+                        onAct={() => void send(draft.trim())}
+                        onSuggest={life.askOptions}
+                        suggestions={
+                          life.actions.length > 0 && (
+                            <div className="life-suggestions" aria-label="Suggested actions">
+                              {suggested.slice(0, 2)}
+                              {suggested.length > 2 && (
+                                <details className="life-more-actions">
+                                  <summary>More actions ({suggested.length - 2})</summary>
+                                  {suggested.slice(2)}
+                                </details>
+                              )}
+                            </div>
+                          )
                         }
                       />
-                    ))}
+                    )}
                   </div>
-                )}
-
-                {life.hook && <HookCard life={life} />}
-
-                {/* The wait, pinned above the input rather than at the tail of
-                whatever box it used to share — the lowest thing on the
-                screen until the turn actually lands. */}
-                {life.busy && <CityTurns context={turnContext} seed={bundle.events.length} />}
-
-                <BottomDock>
-                  <InputBar
-                    onSend={(text) => life.act(text)}
-                    onAskOptions={() => life.askOptions()}
-                    busy={life.busy || !!life.pendingCheck}
-                  />
-                </BottomDock>
-              </>
-            )}
+                </>
+              )}
+            </div>
+            <aside className="life-desktop-status" aria-label="Character status">
+              {rail}
+            </aside>
           </div>
-
-          <aside className="sticky top-6 hidden h-fit space-y-4 self-start lg:block">
-            <LifeRail
-              life={life}
-              bundle={bundle}
-              luckLeft={luckLeft}
-              luckMax={luckMax}
-              status={status}
-              onOpenShop={() => openShop()}
-            />
-          </aside>
         </div>
       </div>
     </TooltipProvider>

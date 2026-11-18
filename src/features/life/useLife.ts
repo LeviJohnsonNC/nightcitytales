@@ -1,3 +1,4 @@
+import { newestBrowse } from "./browseIntent";
 import { neighborhoodContext, takeNeighborhoodAction } from "./neighborhoodOps";
 import { neighborhoodMoment } from "@/engine/neighborhood";
 import { readSceneCombatEnd } from "@/engine";
@@ -54,10 +55,11 @@ export function useLife(campaignId: string) {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["life", campaignId], queryFn: () => loadLife(campaignId) });
   const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: ["life", campaignId] });
-    void queryClient.invalidateQueries({ queryKey: ["play", campaignId] });
-    void queryClient.invalidateQueries({ queryKey: ["campaign-phase", campaignId] });
-    void queryClient.invalidateQueries({ queryKey: ["scene", campaignId] });
+    return Promise.all(
+      ["life", "play", "campaign-phase", "scene"].map((key) =>
+        queryClient.invalidateQueries({ queryKey: [key, campaignId] }),
+      ),
+    );
   };
 
   const bundle = query.data;
@@ -207,10 +209,10 @@ export function useLife(campaignId: string) {
   const atNeighborhoodScene =
     bundle?.phase === "life" &&
     !!neighborhoodMoment(bundle.neighborhood, neighborhoodContext(bundle));
-  // Arriving at an authored scene or playing its next beat retires the old
-  // room's suggested actions and moves its narration into the running log.
-  const startsNeighborhoodBeat = (type: string | undefined) =>
-    type === "neighborhood_action" || (atNeighborhoodScene && type === "travelled");
+  // A new location or authored beat retires the last passage and its options.
+  // Its history stays in the Journal, including when travel has no new prose.
+  const endsPassage = (type: string | undefined) =>
+    type === "neighborhood_action" || type === "travelled";
 
   /**
    * Options, when the player last asked for them. Empty on an ordinary turn:
@@ -223,7 +225,7 @@ export function useLife(campaignId: string) {
     for (let i = bundle.events.length - 1; i >= 0; i -= 1) {
       const event = bundle.events[i];
       if (!event) continue;
-      if (startsNeighborhoodBeat(event.type)) break;
+      if (endsPassage(event.type)) break;
       if (event.type === "encounter_ended" && readSceneCombatEnd(event.data)) break;
       if (event.type !== "life_options" && event.type !== "life_narration") continue;
       // Whichever came last wins, so acting on anything clears the list: an
@@ -268,7 +270,7 @@ export function useLife(campaignId: string) {
     if (!bundle) return null;
     for (let i = bundle.events.length - 1; i >= 0; i -= 1) {
       const event = bundle.events[i];
-      if (startsNeighborhoodBeat(event?.type)) break;
+      if (endsPassage(event?.type)) break;
       if (
         event?.type === "life_narration" ||
         (event?.type === "encounter_ended" && readSceneCombatEnd(event.data))
@@ -345,6 +347,12 @@ export function useLife(campaignId: string) {
           ...(costs?.minutes !== undefined ? { minutes: costs.minutes } : {}),
           ...(costs?.spend ? { spend: costs.spend } : {}),
         });
+        const refreshed = queryClient.getQueryData<typeof bundle>(["life", campaignId]);
+        if (
+          refreshed &&
+          newestBrowse(refreshed.events)?.eventId !== newestBrowse(bundle?.events ?? [])?.eventId
+        )
+          return "counter" as const;
         return true;
       } catch {
         return false;

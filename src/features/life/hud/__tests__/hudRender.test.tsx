@@ -48,11 +48,12 @@ describe("the character card", () => {
       />,
     );
 
-  it("draws bars and luck as pips, not prose", () => {
+  it("labels every resource and shows remaining Luck", () => {
     const html = card(40, "none");
     expect(html).toContain("Shane McMahn");
     expect(html).toContain('role="meter"');
-    expect(html).toContain('aria-label="Luck 4 of 6"');
+    expect(html).toContain(">Luck<");
+    expect(html).toContain(">4/6<");
     expect(html).not.toContain("Wounded");
   });
 
@@ -72,7 +73,7 @@ describe("the character card", () => {
     expect(html).not.toContain("full size");
     expect(html).toContain(">S<");
     // ...and the slot keeps its own size, so the name stays beside it.
-    expect(html).toContain("h-24 w-[4.5rem] shrink-0");
+    expect(html).toContain("h-16 w-14 shrink-0");
   });
 
   it("goes red and says so when hurt", () => {
@@ -84,13 +85,14 @@ describe("the character card", () => {
 
 describe("the resource strip", () => {
   const html = renderToStaticMarkup(<ResourceStrip status={status} />);
-  it("shows three chips with figures only", () => {
+  it("shows labeled balances and flags a due commitment", () => {
     expect(html).toContain("€1,540");
     // Progress against the cheapest raise (Handgun 4 → 5), not a bare balance.
-    expect(html).toContain("3/100 IP");
-    expect(html).toContain('aria-label="Money"');
-    expect(html).toContain('aria-label="Growth"');
-    expect(html).toContain('aria-label="Commitments"');
+    expect(html).toContain("3/100");
+    expect(html).toContain(">Cash<");
+    expect(html).toContain(">IP<");
+    expect(html).toContain(">Commitments<");
+    expect(html).toContain("Due today");
   });
   it("keeps the detail closed until asked for", () => {
     expect(html).not.toContain("On hand");

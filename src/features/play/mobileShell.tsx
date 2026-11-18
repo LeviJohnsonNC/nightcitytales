@@ -21,7 +21,9 @@ export function MobileStatusBar({
   children,
   open,
   onOpenChange,
+  showRadio = true,
 }: {
+  showRadio?: boolean;
   title: string;
   chips: StatChip[];
   children: ReactNode;
@@ -58,7 +60,7 @@ export function MobileStatusBar({
             </button>
           </SheetTrigger>
           {/* Beside the trigger, not inside it: a button cannot hold buttons. */}
-          {!desktop && (
+          {showRadio && !desktop && (
             <div className="shrink-0 pr-3" data-player-strip>
               <NCAmp />
             </div>

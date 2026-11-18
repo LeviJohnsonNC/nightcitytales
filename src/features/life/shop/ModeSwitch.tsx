@@ -50,7 +50,7 @@ export function ModeSwitch({
         onClick={onScene}
       >
         <MessageSquare aria-hidden className="size-4 shrink-0" />
-        <span className="truncate">The scene</span>
+        <span className="truncate">{mode === "counter" ? "Back to scene" : "The scene"}</span>
       </button>
     </div>
   );

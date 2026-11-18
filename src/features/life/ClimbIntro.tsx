@@ -8,7 +8,6 @@
  * blocked or cleared store only means seeing it again.
  */
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 
 function storageKey(campaignId: string): string {
   return `nct:climb-intro:${campaignId}`;
@@ -46,29 +45,19 @@ export function ClimbIntro({
     setHidden(true);
   };
   return (
-    <section className="space-y-2 border border-accent/60 bg-accent/5 p-3 text-sm">
-      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
-        Where you could go from here
-      </p>
-      <p>
-        Every Skill, your Role, the chrome, and who in this city respects you has a next step and a
-        price. Jobs and the days between them earn the points. See what is within reach, and pin up
-        to three things to work toward.
-      </p>
-      <div className="flex gap-2">
-        <Button
-          size="sm"
-          onClick={() => {
-            close();
-            onShow();
-          }}
-        >
-          Show me
-        </Button>
-        <Button size="sm" variant="ghost" onClick={close}>
-          Got it
-        </Button>
-      </div>
+    <section className="life-ip-tip">
+      <button
+        type="button"
+        onClick={() => {
+          close();
+          onShow();
+        }}
+      >
+        See what’s within reach with IP
+      </button>
+      <button type="button" aria-label="Dismiss IP tip" onClick={close}>
+        ×
+      </button>
     </section>
   );
 }

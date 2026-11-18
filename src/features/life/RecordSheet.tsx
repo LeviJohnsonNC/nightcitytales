@@ -118,7 +118,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export function RecordSheet({ bundle }: { bundle: LifeBundle }) {
+export function RecordSheet({
+  bundle,
+  journal,
+}: {
+  bundle: LifeBundle;
+  journal?: (close: () => void) => React.ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const lines = chronicleFor({
     day: bundle.clock.day,
@@ -137,15 +143,16 @@ export function RecordSheet({ bundle }: { bundle: LifeBundle }) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <DockTile icon={<ScrollText className="size-6" />} label="Record" />
+        <DockTile icon={<ScrollText className="size-6" />} label="Journal" />
       </SheetTrigger>
       <SheetContent
         side="right"
         className="w-full overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-md"
       >
         <SheetHeader>
-          <SheetTitle>The record · day {bundle.clock.day}</SheetTitle>
+          <SheetTitle>Journal · day {bundle.clock.day}</SheetTitle>
         </SheetHeader>
+        {journal?.(() => setOpen(false))}
 
         {/* Your file as a card: made here, from this campaign, posted only if you choose. */}
         <div className="mt-3">

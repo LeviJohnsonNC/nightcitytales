@@ -8,7 +8,7 @@ describe("the day-one pointer at Within reach", () => {
       <ClimbIntro campaignId="c1" pinnedCount={0} onShow={() => {}} />,
     );
     expect(html).toContain("within reach");
-    expect(html).toContain("Show me");
+    expect(html).toContain("Dismiss IP tip");
   });
 
   it("is gone once the player is working toward something", () => {

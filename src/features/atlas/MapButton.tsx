@@ -2,7 +2,7 @@
  * The map pin that lives in the play headers. Shows where you are and opens the
  * city map on tap.
  */
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
 import { describePosition, type PlaceSignal, type TravelMode } from "@/engine";
 import type { PlaceHere } from "./PlaceDossier";
@@ -27,6 +27,7 @@ export function MapButton({
   signals,
   placeHere,
   clinicOpen = false,
+  compact = false,
   open: openProp,
   onOpenChange,
 }: {
@@ -38,6 +39,7 @@ export function MapButton({
   /** What they would make the trip in, so the quoted minutes are the real ones. */
   travelMode?: TravelMode | undefined;
   signals?: PlaceSignal[] | undefined;
+  compact?: boolean;
   clinicOpen?: boolean | undefined;
   placeHere?: ((key: string) => PlaceHere | undefined) | undefined;
   /**
@@ -54,9 +56,11 @@ export function MapButton({
   // drives `open` itself can open the map without this button being pressed.
   const [everOpened, setEverOpened] = useState(false);
   const mounted = everOpened || open;
+  const trigger = useRef<HTMLButtonElement>(null);
   return (
     <>
       <button
+        ref={trigger}
         type="button"
         onClick={() => {
           setEverOpened(true);
@@ -67,13 +71,14 @@ export function MapButton({
       >
         <MapPin className="h-4 w-4 shrink-0 text-accent" />
         <span className="max-w-[9rem] truncate font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:max-w-[16rem]">
-          {describePosition(locationKey)}
+          {compact ? "Map" : describePosition(locationKey)}
         </span>
       </button>
       {mounted ? (
         <Suspense fallback={null}>
           <MapModal
             open={open}
+            returnFocus={() => trigger.current?.focus({ preventScroll: true })}
             onOpenChange={setOpen}
             locationKey={locationKey}
             knownPlaces={knownPlaces}

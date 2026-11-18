@@ -9,10 +9,10 @@ import { portraitArt, portraitById } from "@/features/chargen/art";
 import { usePortraitUrl } from "@/features/chargen/usePortraitUrl";
 import { cn } from "@/lib/utils";
 import { useChangeFlash } from "./useChange";
-import { barTone, fillFraction, luckPips, woundBadge, type BarTone } from "./hudModel";
+import { barTone, fillFraction, woundBadge, type BarTone } from "./hudModel";
 
 const FILL: Record<BarTone, string> = {
-  ok: "bg-success",
+  ok: "bg-foreground/35",
   warn: "bg-amber-500",
   danger: "bg-destructive",
 };
@@ -62,7 +62,7 @@ export function VitalBar({
         aria-valuemin={0}
         aria-valuemax={max}
         aria-valuenow={current}
-        className="mt-1 h-2 overflow-hidden bg-hairline/70"
+        className="mt-1 h-0.5 overflow-hidden bg-hairline/70"
       >
         <div
           className={cn(
@@ -77,31 +77,13 @@ export function VitalBar({
   );
 }
 
-function LuckPips({ left, max }: { left: number; max: number }) {
-  const pips = luckPips(left, max);
+function LuckReadout({ left, max }: { left: number; max: number }) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">Luck</span>
-      {pips ? (
-        <span className="flex gap-1" role="img" aria-label={`Luck ${left} of ${max}`}>
-          {pips.map((filled, i) => (
-            <span
-              key={i}
-              aria-hidden
-              className={cn(
-                "size-2.5 rounded-full border",
-                filled
-                  ? "border-neon-cyan bg-neon-cyan shadow-[0_0_6px_var(--color-neon-cyan)]"
-                  : "border-hairline",
-              )}
-            />
-          ))}
-        </span>
-      ) : (
-        <span className="num font-mono text-sm font-bold">
-          {left}/{max}
-        </span>
-      )}
+    <div className="flex items-baseline justify-between">
+      <span className="font-mono text-xs text-muted-foreground">Luck</span>
+      <span className="num font-mono text-sm">
+        {left}/{max}
+      </span>
     </div>
   );
 }
@@ -133,7 +115,7 @@ export function CharacterCard({
   return (
     <section
       className={cn(
-        "neon-frame-cyan relative overflow-hidden bg-card transition-shadow duration-500 motion-reduce:transition-none",
+        "life-character",
         barTone(fillFraction(hp.current, hp.max)) === "danger" &&
           "shadow-[inset_0_0_28px_-6px_var(--color-destructive)]",
       )}
@@ -141,7 +123,7 @@ export function CharacterCard({
       <div className="flex gap-3 p-3">
         {/* The size lives out here: with no picture on file the lightbox renders its
             children bare, and a portrait slot that sizes itself fills the card. */}
-        <div className="h-24 w-[4.5rem] shrink-0">
+        <div className="h-16 w-14 shrink-0">
           <PortraitLightbox
             src={generated ?? (preset ? portraitArt(preset).src : null)}
             alt={`${name} portrait`}
@@ -195,7 +177,7 @@ export function CharacterCard({
       <div className="space-y-2.5 border-t border-hairline px-3 py-3">
         <VitalBar label="HP" current={hp.current} max={hp.max} />
         <VitalBar label="Humanity" current={humanity.current} max={humanity.max} />
-        {luck.max > 0 && <LuckPips left={luck.left} max={luck.max} />}
+        {luck.max > 0 && <LuckReadout left={luck.left} max={luck.max} />}
       </div>
     </section>
   );

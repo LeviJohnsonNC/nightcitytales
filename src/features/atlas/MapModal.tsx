@@ -60,6 +60,7 @@ const MAP_MUTE = "saturate(0.8) brightness(0.9)";
 export function MapModal({
   open,
   onOpenChange,
+  returnFocus,
   locationKey,
   knownPlaces = [],
   onTravel,
@@ -71,6 +72,7 @@ export function MapModal({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  returnFocus?: () => void;
   locationKey?: string | null | undefined;
   knownPlaces?: string[] | undefined;
   /** When given, districts other than the current one offer a trip. */
@@ -235,7 +237,15 @@ export function MapModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="flex h-[92vh] max-h-[92vh] w-[96vw] max-w-5xl flex-col gap-0 border border-hairline bg-surface p-0">
+        <DialogContent
+          onCloseAutoFocus={(event) => {
+            if (returnFocus) {
+              event.preventDefault();
+              returnFocus();
+            }
+          }}
+          className="flex h-[92vh] max-h-[92vh] w-[96vw] max-w-5xl flex-col gap-0 border border-hairline bg-surface p-0"
+        >
           <DialogTitle className="sr-only">Map of Night City</DialogTitle>
           <div className="flex items-start justify-between gap-3 border-b border-hairline px-4 py-3">
             <div className="min-w-0">

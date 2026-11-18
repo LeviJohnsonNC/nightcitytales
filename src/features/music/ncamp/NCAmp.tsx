@@ -171,7 +171,7 @@ const TRANSPORT: { glyph: Glyph; label: string; run: () => void }[] = [
   { glyph: "next", label: "Next (B)", run: next },
 ];
 
-export function NCAmp() {
+export function NCAmp({ compact = false }: { compact?: boolean } = {}) {
   const state = useSyncExternalStore(subscribePlayer, getPlayerState, getPlayerState);
   const [ui, setUi] = useUi();
 
@@ -225,19 +225,49 @@ export function NCAmp() {
     };
   }, [ui.open]);
 
+  const radioPanel = useRef<HTMLDivElement>(null);
+  const radioOpened = useRef(false);
+  const compactOpen = compact && ui.open && at !== null;
+  useEffect(() => {
+    if (compactOpen) {
+      radioOpened.current = true;
+      radioPanel.current?.focus({ preventScroll: true });
+    } else if (radioOpened.current) {
+      radioOpened.current = false;
+      anchor.current?.querySelector("button")?.focus({ preventScroll: true });
+    }
+  }, [compactOpen]);
+  const preferredZoom = ui.double ? 2 : 1.5;
+  const zoom =
+    compactOpen && at
+      ? Math.min(preferredZoom, (document.documentElement.clientWidth - at.right - 8) / 275)
+      : preferredZoom;
+
   const nextVis = (): VisMode =>
     ui.vis === "spectrum" ? "scope" : ui.vis === "scope" ? "off" : "spectrum";
   const text = state.blocked ? BLOCKED_TEXT : lineFor(state, state.track);
 
   return (
     <div className="ncamp" data-skin={ui.skin} ref={anchor}>
-      <Shade
-        state={state}
-        ui={ui}
-        text={text}
-        onToggle={() => setUi({ open: !ui.open })}
-        onVis={() => setUi({ vis: nextVis() })}
-      />
+      {compact ? (
+        <button
+          type="button"
+          className="life-radio"
+          aria-expanded={ui.open}
+          aria-haspopup="dialog"
+          onClick={() => setUi({ open: !ui.open })}
+        >
+          <span aria-hidden="true">♫</span> Radio
+        </button>
+      ) : (
+        <Shade
+          state={state}
+          ui={ui}
+          text={text}
+          onToggle={() => setUi({ open: !ui.open })}
+          onVis={() => setUi({ vis: nextVis() })}
+        />
+      )}
       {ui.open &&
         at &&
         createPortal(
@@ -248,9 +278,19 @@ export function NCAmp() {
           >
             <div
               className="ncamp-stack"
+              ref={radioPanel}
+              tabIndex={-1}
               role="dialog"
               aria-label="NCAmp"
-              style={{ zoom: ui.double ? 2 : 1.5 }}
+              style={{
+                zoom,
+                ...(compactOpen && at
+                  ? {
+                      maxHeight: (window.innerHeight - at.top - 8) / zoom,
+                      overflowY: "auto" as const,
+                    }
+                  : {}),
+              }}
             >
               <SkinRow skin={ui.skin} onChange={(skin) => setUi({ skin })} />
               <MainWindow
