@@ -2,7 +2,7 @@
  * The map pin that lives in the play headers. Shows where you are and opens the
  * city map on tap.
  */
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
 import { describePosition, type PlaceSignal, type TravelMode } from "@/engine";
 import type { PlaceHere } from "./PlaceDossier";
@@ -56,9 +56,11 @@ export function MapButton({
   // drives `open` itself can open the map without this button being pressed.
   const [everOpened, setEverOpened] = useState(false);
   const mounted = everOpened || open;
+  const trigger = useRef<HTMLButtonElement>(null);
   return (
     <>
       <button
+        ref={trigger}
         type="button"
         onClick={() => {
           setEverOpened(true);
@@ -76,6 +78,7 @@ export function MapButton({
         <Suspense fallback={null}>
           <MapModal
             open={open}
+            returnFocus={() => trigger.current?.focus({ preventScroll: true })}
             onOpenChange={setOpen}
             locationKey={locationKey}
             knownPlaces={knownPlaces}

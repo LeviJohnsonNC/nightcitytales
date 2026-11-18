@@ -214,7 +214,7 @@
     linear-gradient(90deg, #08090c33, transparent 66%);
 }
 .life-hero[data-picture="false"] {
-  min-height: 7rem;
+  background: linear-gradient(120deg, #282d34, #14161a);
 }
 .life-location {
   padding: clamp(0.9rem, 2vw, 1.55rem);

@@ -94,7 +94,7 @@ import {
 import { type CheckRoll, type PendingCheck } from "@/features/play/checkPrompt";
 import { previewPendingCheck, rollPendingCheck } from "@/features/play/rollCheck";
 import { RollLine } from "@/features/play/RollLine";
-import type { CampaignEvent } from "@/lib/backend";
+import type { CampaignEvent, FullCharacter } from "@/lib/backend";
 import { useLife } from "./useLife";
 import { CityTurns } from "./CityTurns";
 import { SceneHero } from "./SceneHero";
@@ -415,11 +415,7 @@ function ActionCard({
   busy,
 }: {
   action: LifeActionCard;
-  character: ReturnType<typeof useLife>["bundle"] extends infer B
-    ? B extends { character: infer C }
-      ? C
-      : never
-    : never;
+  character: FullCharacter;
   /**
    * The live context the roll will use: worn armor, current Humanity, and the
    * district underfoot. The card prints the number the engine is going to add,
@@ -433,7 +429,7 @@ function ActionCard({
 }) {
   const skillId = action.skillId ? resolveSkillId(action.skillId) : null;
   const line = skillId
-    ? gmSkillList(character as never, 40, context).find((s) => s.id === skillId)
+    ? gmSkillList(character, character.skills.length, context).find((s) => s.id === skillId)
     : undefined;
   const hint = skillId
     ? {
@@ -923,7 +919,8 @@ function CampaignLife({
   useEffect(() => {
     if (!bundle || life.busy || life.actionError) return;
     if (life.narration || life.pendingCheck) return;
-    if (life.atNeighborhoodScene || bundle.events.at(-1)?.type === "neighborhood_action") return;
+    const last = bundle.events.at(-1)?.type;
+    if (life.atNeighborhoodScene || last === "neighborhood_action" || last === "travelled") return;
     const key = `${bundle.campaign.id}:${bundle.clock.day}`;
     if (opened.current === key) return;
     opened.current = key;
