@@ -149,3 +149,7 @@ these tables must tolerate their absence until the line moves up to Applied.
 - `20261118010000_neighborhood_actions.sql` — pending. Apply before releasing
   the Old Japantown scenes and Stackside Clinic. The RPC commits a choice,
   its time and payment, the campaign flag and its ledger receipt together.
+
+- `20261118020000_life_check_record.sql` — pending deployment. Apply before
+  serving the Life roll redesign. Records the roll and its Luck spend in one
+  transaction and rejects duplicate settlement for the same prompt.
