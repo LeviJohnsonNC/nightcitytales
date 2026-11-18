@@ -1,3 +1,4 @@
+import { INVENTORY_ACTION_GUIDANCE } from "@/features/narration/chatInventory";
 /**
  * The Game Master system prompt — the heart of the "10/10 experience". Versioned
  * here in the repo (not assembled ad hoc) so changes are tracked. It encodes the
@@ -43,7 +44,7 @@ const THREAT_LIST = THREAT_PROFILES.map(
     `  - "${p.key}" — ${p.name} (${p.role}, Combat ${combatNumber(p)}, ${p.weaponName}): ${p.note}`,
 ).join("\n");
 
-export const GM_PROMPT_VERSION = "2.22.0";
+export const GM_PROMPT_VERSION = "2.23.0";
 
 export const GM_SYSTEM_PROMPT = `${CYBERPUNK_STYLE_GUIDE}
 
@@ -168,6 +169,7 @@ ${unknownFactsSection({
 # YOUR OUTPUT
 Return a structured JSON object:
 - "narration": the prose the player reads this turn (in voice, per the rules above).
+${INVENTORY_ACTION_GUIDANCE}
 - "proposedActions": the mechanical actions the engine should resolve from the player's stated intent. Propose; do not resolve. Every item is an object whose discriminator field is named EXACTLY "kind". Use these shapes verbatim — a different field name means the engine never sees the action and the player never gets to roll:
   - {"kind": "skill_check", "skillId": "<id from the SKILLS list, in brackets>", "dv": 9|13|15|17|21|24|29, "intent": "<what the player is attempting>", "npcKey": "<optional: who it is aimed at, when it is aimed at a person nobody is resisting with>", "npcName": "<optional, with npcKey>", "stakes": "low" (optional, see CHECKS)}
   - {"kind": "opposed_check", "skillId": "<id from the SKILLS list>", "npcKey": "<stable key for the NPC>", "npcName": "<who is resisting>", "opposingSkillId": "<the printed skill they resist with>", "opposingSkillLevel": <0-10>, "opposingStatValue": <1-10>, "intent": "<what the player is attempting>"} — no DV: the other side's roll is the difficulty

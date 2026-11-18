@@ -557,3 +557,25 @@ describe("a hostile list the scene can stage", () => {
     expect(start(many).enemies).toHaveLength(ADVENTURE_MAX_ENEMIES);
   });
 });
+
+it("keeps typed gear transfers and newly established stock in order", () => {
+  const result = normalizeGmResponse({
+    narration: "A spool of copper lies on the workbench.",
+    sceneItems: [{ item: "copper", quantity: 3, source: "workbench" }],
+    proposedActions: [
+      { type: "pick-up-item", item: "copper", count: "3", source: "workbench" },
+      { kind: "stash_item", item: "Duct Tape", quantity: "all", destination: "lockbox" },
+    ],
+  });
+  expect(result.sceneItems).toEqual([{ item: "copper", quantity: 3, source: "workbench" }]);
+  expect(result.proposedActions).toEqual([
+    { kind: "take_item", item: "copper", quantity: 3, source: "workbench" },
+    {
+      kind: "remove_item",
+      item: "Duct Tape",
+      quantity: "all",
+      mode: "stash",
+      destination: "lockbox",
+    },
+  ]);
+});

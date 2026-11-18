@@ -53,6 +53,11 @@ import { usePlay } from "./usePlay";
 import type { PlayBundle } from "./playOps";
 import type { RollRecord } from "./checkPrompt";
 
+function latestChatInventoryTurn(events: CampaignEvent[]): CampaignEvent[] {
+  const index = [...events].reverse().findIndex((event) => event.type === "gm_narration");
+  return index < 0 ? [] : events.slice(events.length - index - 1);
+}
+
 function EventBlock({
   event,
   isCurrentTurn = false,
@@ -79,6 +84,12 @@ function EventBlock({
         </div>
       );
 
+    case "inventory_changed":
+      return (
+        <p role="status" className="font-mono text-xs text-accent">
+          {text}
+        </p>
+      );
     case "skill_check":
       return <RollLine event={event} text={text} />;
     case "attack":
@@ -953,7 +964,14 @@ export function PlayScreen({
               />
               <div className="combat-intent-result" aria-live="polite">
                 <NarrativeLog
-                  events={bundle.events.filter((event) => event.type === "gm_narration").slice(-1)}
+                  events={latestChatInventoryTurn(bundle.events).filter(
+                    (event) =>
+                      event.type === "gm_narration" ||
+                      event.type === "inventory_changed" ||
+                      (event.type === "action_refused" &&
+                        (event.data as { code?: unknown } | null)?.code ===
+                          "inventory_unavailable"),
+                  )}
                   busy={play.busy || play.opening}
                   people={bundle.npcs.map((n) => ({ name: n.name, disposition: n.disposition }))}
                   isCurrentTurn

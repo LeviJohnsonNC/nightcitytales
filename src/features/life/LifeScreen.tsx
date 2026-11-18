@@ -82,6 +82,7 @@ import {
 import { PreviouslyCard } from "@/features/play/ClosingFrameCard";
 import { previouslyFor, readDismissed, writeDismissed } from "@/features/campaign/previously";
 import { MapButton } from "@/features/atlas/MapButton";
+import { carriedKit } from "@/features/play/carriedKit";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
 import { CharacterCard } from "./hud/CharacterCard";
 import { PeopleStrip } from "./hud/PeopleStrip";
@@ -291,6 +292,12 @@ function LifeEvent({
     // Something the character tried and could not do. Shown for the same reason
     // a travel line is: without it the prose says they went and the map says
     // they did not, and the player has no way to tell which is true.
+    case "inventory_changed":
+      return (
+        <p role="status" className="font-mono text-xs text-accent">
+          {text}
+        </p>
+      );
     case "action_refused":
       return (
         <p className="font-mono text-xs text-ember">
@@ -317,6 +324,7 @@ const LIFE_EVENT_TYPES = new Set([
 
   "life_narration",
   "life_action",
+  "inventory_changed",
   "life_note",
   "skill_check",
   "hook_offered",
@@ -876,11 +884,30 @@ function CampaignLife({
    * was ever shown as a CHANGE. Called above the loading and error returns
    * below, because hooks do not get to be conditional.
    */
+  const inventoryRefusals = (() => {
+    const rows: CampaignEvent[] = [];
+    for (const event of [...(bundle?.events ?? [])].reverse()) {
+      if (event.type === "player_input") break;
+      if (
+        event.type === "action_refused" &&
+        (event.data as { code?: unknown } | null)?.code === "inventory_unavailable"
+      )
+        rows.push(event);
+    }
+    return rows.reverse();
+  })();
   const receipts = useReceipts(
     bundle
       ? snapshotOf({
           clock: bundle.clock,
           vitals: bundle.vitals,
+          inventory: carriedKit(bundle.inventory).flatMap((group) =>
+            group.lines.map((line) => ({
+              key: `${group.kind}:${line.itemId}`,
+              name: line.name,
+              quantity: line.quantity,
+            })),
+          ),
           npcs: bundle.npcs,
           pressure: bundle.pressure,
           goals: life.pinned,
@@ -1473,6 +1500,18 @@ function CampaignLife({
                         busy={waiting}
                         luckRemaining={luckLeft}
                       />
+                    )}
+                    {inventoryRefusals.length > 0 && (
+                      <div role="status" className="space-y-1">
+                        {inventoryRefusals.map((event) => (
+                          <LifeEvent
+                            event={event}
+                            key={event.id}
+                            here={standing}
+                            onBrowse={openShop}
+                          />
+                        ))}
+                      </div>
                     )}
                     {!canRoll && !life.checkBusy && !unresolved && (
                       <LifeComposer

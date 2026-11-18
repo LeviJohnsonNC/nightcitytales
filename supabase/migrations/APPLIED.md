@@ -153,3 +153,7 @@ these tables must tolerate their absence until the line moves up to Applied.
 - `20261118020000_life_check_record.sql` — pending deployment. Apply before
   serving the Life roll redesign. Records the roll and its Luck spend in one
   transaction and rejects duplicate settlement for the same prompt.
+
+- `20261118030000_chat_inventory.sql` — pending deployment. Apply before
+  releasing typed pickups and removals. Scene items are scoped to the campaign
+  and location. A transfer commits the kit change and its receipt together.

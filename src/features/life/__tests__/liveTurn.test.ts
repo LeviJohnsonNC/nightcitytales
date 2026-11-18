@@ -23,7 +23,8 @@ import {
   readShopBrowsedEventData,
   shopsAt,
 } from "@/engine";
-import type { CampaignNpc, Json } from "@/lib/backend";
+import type { CampaignInventoryItem, CampaignNpc, Json } from "@/lib/backend";
+import type { SceneItem } from "@/lib/backend/chatInventory";
 import { downtimeView } from "@/features/downtime/downtimeModel";
 import { DV_BANDS, pendingCheckFrom } from "@/features/play/checkPrompt";
 import { currentAgentCall } from "../lifeAgentCall";
@@ -32,6 +33,17 @@ import { rollPendingCheck } from "@/features/play/rollCheck";
 import { CAMPAIGN_ID, fakeBackend, freshDb, reply, type Db } from "./lifeTurnHarness";
 
 let db: Db = freshDb();
+let sceneItems: SceneItem[] = [];
+const inventoryCommits = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/backend/chatInventory", () => ({
+  listSceneItems: async (_campaignId: string, locationKey: string) =>
+    sceneItems.filter((item) => item.location_key === locationKey),
+  putSceneItems: async (offers: SceneItem[]) => {
+    for (const offer of offers)
+      sceneItems.push({ ...offer, id: `scene-item-${sceneItems.length}` });
+  },
+  commitChatInventory: inventoryCommits,
+}));
 
 vi.mock("@/lib/backend", async () => {
   const { fakeBackend: make } = await import("./lifeTurnHarness");
@@ -130,7 +142,11 @@ const ofType = (type: string) => db.events.filter((e) => e.type === type);
 const types = () => db.events.map((e) => e.type);
 const clockOf = () => ({ day: db.campaign.day, minute: db.campaign.minute });
 
-beforeEach(() => setup());
+beforeEach(() => {
+  setup();
+  sceneItems = [];
+  inventoryCommits.mockReset();
+});
 
 describe("a plain narration turn", () => {
   it("puts the protected source's call in Life for the first time a week later", async () => {
@@ -744,4 +760,167 @@ it("leaves a line closed when a reply comes back after another tab hangs up", as
   };
   await liveTurn(await loadLife(CAMPAIGN_ID), "Who else knows?");
   expect(currentAgentCall(db.events)).toBeNull();
+});
+
+describe("typed inventory transfers", () => {
+  const copper = { item: "Heavy-gauge copper", quantity: 3, source: "workbench" };
+  const takeCopper = { kind: "take_item", item: "copper", quantity: 3 };
+
+  it("tracks a prop seen in narration, picks it up before travelling, and reloads the kit", async () => {
+    const backend = fakeBackend(() => db);
+    inventoryCommits.mockImplementation(async (payload) => {
+      const source = sceneItems.find((item) => item.id === payload.scene_item_id);
+      if (!source || source.quantity < payload.quantity) {
+        return { ok: false, summary: "That quantity is no longer available." };
+      }
+      source.quantity -= payload.quantity;
+      db.inventory.push({
+        id: "held-copper",
+        campaign_id: CAMPAIGN_ID,
+        kind: "gear",
+        item_id: source.item_id,
+        quantity: payload.quantity,
+        equipped: false,
+        slot: "gear",
+        current_sp: null,
+        ammo_loaded: null,
+        notes: null,
+        condition: "ok",
+      } satisfies CampaignInventoryItem);
+      await backend.appendCampaignEvent({
+        campaign_id: CAMPAIGN_ID,
+        type: "inventory_changed",
+        summary: "+3 × Heavy-gauge copper",
+        data: payload,
+      });
+      return { ok: true };
+    });
+    setup({ location: "d3" });
+    db.replies.push(
+      reply({
+        resolution: "Three loops of heavy-gauge copper sit on the workbench.",
+        sceneItems: [copper],
+      }),
+      reply({
+        resolution: "Your hand reaches for the copper.",
+        proposedActions: [takeCopper, { kind: "travel", destination: "Ganymede Street Market" }],
+      }),
+      reply({ resolution: "You reach the market.", proposedActions: [takeCopper] }),
+    );
+    await liveTurn(await loadLife(CAMPAIGN_ID), "Look over the workbench.");
+    await liveTurn(
+      await loadLife(CAMPAIGN_ID),
+      "Pocket the three copper loops and walk to Ganymede.",
+    );
+    expect(db.prompts[1]).toContain("3 × Heavy-gauge copper · workbench");
+    expect(types().indexOf("inventory_changed")).toBeLessThan(types().indexOf("travelled"));
+    expect(inventoryCommits).toHaveBeenCalledTimes(1);
+    expect(db.campaign.location_key).toBe("o3");
+    expect((await loadLife(CAMPAIGN_ID)).inventory).toEqual([
+      expect.objectContaining({ item_id: "Heavy-gauge copper", quantity: 3 }),
+    ]);
+  });
+
+  it("does not let a claimed item create its own source on the pickup turn", async () => {
+    inventoryCommits.mockResolvedValue({
+      ok: false,
+      summary: "That quantity is no longer available.",
+    });
+    db.replies.push(
+      reply({
+        resolution: "You reach for the heavy-gauge copper on the workbench.",
+        sceneItems: [copper],
+        proposedActions: [takeCopper],
+      }),
+    );
+    await liveTurn(await loadLife(CAMPAIGN_ID), "I take the three coils on that workbench.");
+    expect(sceneItems).toEqual([]);
+    expect(db.inventory).toEqual([]);
+    expect(ofType("action_refused").at(-1)?.summary).toContain("no longer available");
+  });
+
+  it("removes only the explicitly named quantity from the carried stack", async () => {
+    db.inventory.push({
+      id: "carried-tape",
+      campaign_id: CAMPAIGN_ID,
+      kind: "gear",
+      item_id: "duct_tape",
+      quantity: 5,
+      equipped: false,
+      slot: "gear",
+      current_sp: null,
+      ammo_loaded: null,
+      notes: null,
+      condition: "ok",
+    });
+    inventoryCommits.mockImplementation(async (payload) => {
+      const item = db.inventory.find((row) => row.id === payload.inventory_item_id);
+      if (!item) throw new Error("Expected a carried item.");
+      item.quantity -= payload.quantity;
+      return { ok: true };
+    });
+    db.replies.push(
+      reply({
+        proposedActions: [{ kind: "give_item", item: "Duct Tape", quantity: 2, recipient: "Mika" }],
+      }),
+    );
+    await liveTurn(await loadLife(CAMPAIGN_ID), "Hand Mika two rolls of duct tape.");
+    expect(inventoryCommits).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "give",
+        inventory_item_id: "carried-tape",
+        quantity: 2,
+        destination: "Mika",
+      }),
+    );
+    expect((await loadLife(CAMPAIGN_ID)).inventory[0]?.quantity).toBe(3);
+  });
+
+  it.each([true, false])(
+    "gates a newly discovered item on the check outcome (%s)",
+    async (success) => {
+      const { commitLifeCheck } = await import("../lifeOps");
+      db.replies.push(
+        reply({
+          resolution: "The alternator casing resists your tools.",
+          proposedActions: [
+            { kind: "skill_check", skillId: "basic_tech", dv: 13, intent: "Strip the copper" },
+            takeCopper,
+          ],
+        }),
+        reply({
+          resolution: "You see heavy-gauge copper on the workbench.",
+          proposedActions: [takeCopper],
+          sceneItems: [copper],
+        }),
+      );
+      inventoryCommits.mockResolvedValue({ ok: true });
+      await liveTurn(await loadLife(CAMPAIGN_ID), "Strip the alternator and pocket the copper.");
+      expect(inventoryCommits).not.toHaveBeenCalled();
+      const bundle = await loadLife(CAMPAIGN_ID);
+      const pending = pendingCheckFrom(bundle.events, bundle.character)!;
+      const roll = rollPendingCheck({ ...bundle, pending });
+      if (roll.kind !== "dv") throw new Error("Expected a Basic Tech check.");
+      await commitLifeCheck(bundle, pending, { ...roll, result: { ...roll.result, success } });
+      if (success) {
+        expect(inventoryCommits).toHaveBeenCalledWith(
+          expect.objectContaining({
+            mode: "take",
+            quantity: 3,
+            scene_item_id: "scene-item-0",
+          }),
+        );
+      } else {
+        expect(sceneItems).toEqual([]);
+        expect(inventoryCommits).not.toHaveBeenCalled();
+      }
+    },
+  );
+
+  it("leaves the kit and scene untouched on an options turn", async () => {
+    db.replies.push(reply({ proposedActions: [takeCopper], sceneItems: [copper] }));
+    await liveTurn(await loadLife(CAMPAIGN_ID), "", { options: true });
+    expect(sceneItems).toEqual([]);
+    expect(inventoryCommits).not.toHaveBeenCalled();
+  });
 });

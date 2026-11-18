@@ -440,6 +440,62 @@ export type Database = {
           },
         ]
       }
+      campaign_scene_items: {
+        Row: {
+          ammo_loaded: number | null
+          campaign_id: string
+          condition: string
+          current_sp: number | null
+          id: string
+          item_id: string
+          item_kind: string
+          location_key: string
+          notes: string | null
+          origin_key: string
+          quantity: number
+          slot: string | null
+          source: string
+        }
+        Insert: {
+          ammo_loaded?: number | null
+          campaign_id: string
+          condition?: string
+          current_sp?: number | null
+          id?: string
+          item_id: string
+          item_kind: string
+          location_key: string
+          notes?: string | null
+          origin_key: string
+          quantity: number
+          slot?: string | null
+          source: string
+        }
+        Update: {
+          ammo_loaded?: number | null
+          campaign_id?: string
+          condition?: string
+          current_sp?: number | null
+          id?: string
+          item_id?: string
+          item_kind?: string
+          location_key?: string
+          notes?: string | null
+          origin_key?: string
+          quantity?: number
+          slot?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_scene_items_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_situations: {
         Row: {
           campaign_id: string
@@ -1206,6 +1262,7 @@ export type Database = {
     Functions: {
       award_improvement_points: { Args: { payload: Json }; Returns: number }
       close_aftermath: { Args: { payload: Json }; Returns: undefined }
+      commit_chat_inventory: { Args: { payload: Json }; Returns: Json }
       commit_neighborhood_action: { Args: { payload: Json }; Returns: Json }
       install_cyberware: { Args: { payload: Json }; Returns: Json }
       move_house: { Args: { payload: Json }; Returns: Json }

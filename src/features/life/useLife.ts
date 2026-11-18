@@ -387,8 +387,13 @@ export function useLife(campaignId: string) {
      */
     act: async (input: string, costs?: { minutes?: number; spend?: TurnOptions["spend"] }) => {
       try {
+        const requestId =
+          turn.isError && turn.variables?.input === input
+            ? (turn.variables.requestId ?? crypto.randomUUID())
+            : crypto.randomUUID();
         await turn.mutateAsync({
           input,
+          requestId,
           ...(costs?.minutes !== undefined ? { minutes: costs.minutes } : {}),
           ...(costs?.spend ? { spend: costs.spend } : {}),
         });
