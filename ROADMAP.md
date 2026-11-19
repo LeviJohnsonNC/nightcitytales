@@ -22,6 +22,28 @@ Ganymede and Evergreen have matched laptop and phone captures. Suggestions,
 required rolls, vendor detours and authored choices have a seeded browser
 walkthrough. The next gate is the owner's visual review. [Comparisons and device checks](docs/life-screen/README.md).
 
+## Campaign opening pilot
+
+Start with _A Night at the Opera_, from accepting the offer through confirming a
+way into the party. Use Life's scene-first presentation, radio, and free-text
+composer. The authored actions offer distinct choices: contact the promoter for
+an alias on the guest list, use the public listing without contacting anyone, or
+work the campus paper's press introduction. Clickable actions and their
+equivalent typed commands resolve the same way. The saved lead and route inform
+the GM and the case file. The opening's progress, clock, and history commit together.
+
+1. Apply `20261119010000_opera_action.sql` to staging and replay the three routes
+   from a signed-in campaign. Compare clicked and typed actions, test a less
+   predictable free-text approach, and check what changes at the door. Verify the
+   lead and costs after reload. Include an interrupted save and retry in the
+   regression checks.
+2. Use the same scene hierarchy on one generated Job. Review the acceptance,
+   first decision, handoff to a check or fight, and return from reload. Reuse the
+   parts that work for both Jobs and leave their scene content with their missions.
+3. After both openings play well on a laptop, prioritize the roughest moments
+   inside a Job and then the handoff into Aftermath. Add location art where it helps
+   the player notice or act on something specific.
+
 ## Old Japantown between jobs
 
 Nakamura’s Counter and the Paper Lantern each have a short authored scene. Help

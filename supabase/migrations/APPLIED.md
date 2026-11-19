@@ -157,3 +157,7 @@ these tables must tolerate their absence until the line moves up to Applied.
 - `20261118030000_chat_inventory.sql` — pending deployment. Apply before
   releasing typed pickups and removals. Scene items are scoped to the campaign
   and location. A transfer commits the kit change and its receipt together.
+
+- `20261119010000_opera_action.sql` — pending deployment. Apply before the Opera
+  opening pilot is released. Commits the authored move, elapsed time, and
+  history together, and recognizes a retry of a committed move.

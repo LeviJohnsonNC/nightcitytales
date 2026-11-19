@@ -5,6 +5,7 @@
  */
 
 import { readNeighborhood, type Neighborhood } from "@/engine/neighborhood";
+import { isOperaOpeningBeat } from "@/engine/missions/nightAtTheOpera";
 import { loadCombat } from "./combatOps";
 import { loadPlaceStates } from "@/features/campaign/placeState";
 import {
@@ -171,6 +172,7 @@ export function needsOpeningScene(bundle: PlayBundle): boolean {
     !bundle.mission ||
     !bundle.beat ||
     bundle.beat.evidenceDecision ||
+    isOperaOpeningBeat(bundle.mission, bundle.beat) ||
     (bundle.runtime && evidenceEnding(bundle.runtime))
   )
     return false;

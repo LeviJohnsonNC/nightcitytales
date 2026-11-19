@@ -5,6 +5,7 @@
  */
 
 import { advance, availableExits, getBeat, type BeatExit } from "@/engine";
+import { isOperaOpeningBeat } from "@/engine/missions/nightAtTheOpera";
 import { GmSuggestedActionSchema, type GmSuggestedAction } from "@/features/gm/gmResponse";
 import { z } from "zod";
 import { logBeatAdvanced } from "@/features/campaign/missionLog";
@@ -46,7 +47,7 @@ export async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void
     beat: toBeat,
     availableExits: availableExits(bundle.mission, next),
   };
-  if (toBeat.evidenceDecision) return; // The signed evidence is shown directly.
+  if (toBeat.evidenceDecision || isOperaOpeningBeat(bundle.mission, toBeat)) return;
   await narrate(advanced, `(You choose: ${exit.label}. Set the new scene.)`);
 }
 

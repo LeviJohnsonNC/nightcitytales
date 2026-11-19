@@ -1263,6 +1263,7 @@ export type Database = {
       award_improvement_points: { Args: { payload: Json }; Returns: number }
       close_aftermath: { Args: { payload: Json }; Returns: undefined }
       commit_chat_inventory: { Args: { payload: Json }; Returns: Json }
+      commit_opera_action: { Args: { payload: Json }; Returns: undefined }
       commit_neighborhood_action: { Args: { payload: Json }; Returns: Json }
       install_cyberware: { Args: { payload: Json }; Returns: Json }
       move_house: { Args: { payload: Json }; Returns: Json }

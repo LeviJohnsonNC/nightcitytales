@@ -5,7 +5,7 @@ type Props = {
   draft: string;
   onDraft: (value: string) => void;
   onAct: () => void;
-  onSuggest: () => void;
+  onSuggest?: () => void;
   onHangUp?: ((keyboard: boolean) => void) | undefined;
   busy: boolean;
   suggestions: ReactNode;
@@ -31,7 +31,7 @@ export function LifeComposer({
     >
       <div className="life-composer-heading">
         <label htmlFor="life-intent">{onHangUp ? "What do you say?" : "What do you do?"}</label>
-        {!onHangUp && (
+        {!onHangUp && onSuggest && (
           <button type="button" className="life-link" onClick={onSuggest} disabled={busy}>
             Suggest actions
           </button>

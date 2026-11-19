@@ -17,7 +17,22 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { CampaignEvent } from "@/lib/backend";
-import { agreedMissionFee, getSkill, resolveSkillId, DEFAULT_START } from "@/engine";
+import {
+  agreedMissionFee,
+  eventsForThisJob,
+  getSkill,
+  resolveSkillId,
+  DEFAULT_START,
+} from "@/engine";
+import {
+  isOperaOpeningBeat,
+  OPERA_OPENING_BEAT,
+  operaActionForExit,
+  operaEntryRoute,
+  operaFirstLead,
+} from "@/engine/missions/nightAtTheOpera";
+import { OperaOpening } from "./OperaOpening";
+import { LifeComposer } from "@/features/life/LifeComposer";
 import { IpTallyCard } from "./IpTallyCard";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
@@ -734,11 +749,13 @@ function InputBar({
   onAskOptions,
   busy,
   showOptions = true,
+  sceneLayout = false,
 }: {
   onSend: (text: string) => Promise<boolean> | void;
   onAskOptions: () => void;
   busy: boolean;
   showOptions?: boolean;
+  sceneLayout?: boolean;
 }) {
   const [text, setText] = useState("");
   const send = async () => {
@@ -750,6 +767,11 @@ function InputBar({
     // Keep the intent in the box when the turn failed, so it can be retried.
     if (result !== false) setText("");
   };
+  if (sceneLayout) {
+    return (
+      <LifeComposer draft={text} onDraft={setText} onAct={send} busy={busy} suggestions={null} />
+    );
+  }
   return (
     <div className="flex flex-col gap-2 sm:flex-row">
       <Textarea
@@ -851,6 +873,8 @@ export function PlayScreen({
     missionTitle: bundle.mission?.title ?? null,
   });
 
+  const operaLead = operaFirstLead(bundle.runtime);
+  const operaRoute = operaEntryRoute(bundle.runtime);
   const rail = (
     <>
       <StatusStrip status={standing} />
@@ -858,6 +882,13 @@ export function PlayScreen({
       <RoleAbilityPanel play={play} />
       <RollHistory rolls={play.rolls} />
       <PressurePanel pressure={bundle.pressure} />
+      {operaLead && (
+        <section className="space-y-1 border border-border bg-card p-4" aria-label="Case file">
+          <Label>First lead</Label>
+          <p className="text-sm">{operaLead.lead}</p>
+          {operaRoute && <p className="text-sm text-muted-foreground">{operaRoute.title}</p>}
+        </section>
+      )}
       {!bundle.beat?.evidenceDecision && (
         <ScenePanel bundle={bundle} onChoose={play.choose} busy={play.busy} />
       )}
@@ -1049,6 +1080,153 @@ export function PlayScreen({
     );
   }
 
+  const operaScene =
+    bundle.mission &&
+    bundle.beat &&
+    !play.finished &&
+    isOperaOpeningBeat(bundle.mission, bundle.beat);
+  const headerActions = (
+    <>
+      <MapButton
+        compact={!!operaScene}
+        clinicOpen={!!bundle.neighborhood.lease}
+        placeHere={(key) =>
+          key === CLINIC_PLACE && bundle.neighborhood.lease
+            ? { conditions: [clinicDescription(bundle.neighborhood)] }
+            : undefined
+        }
+        locationKey={bundle.campaign.location_key ?? DEFAULT_START}
+        knownPlaces={
+          Array.isArray(bundle.campaign.known_places)
+            ? (bundle.campaign.known_places as unknown[]).filter(
+                (v): v is string => typeof v === "string",
+              )
+            : []
+        }
+      />
+      <SheetDrawer
+        character={bundle.character}
+        inventory={bundle.inventory}
+        cyberware={bundle.cyberware}
+      />
+    </>
+  );
+  const prompts = (
+    <>
+      {play.actionError && (
+        <div className="flex flex-wrap items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
+          <p role="alert" className="text-sm text-destructive">
+            {play.actionError.message}
+          </p>
+          {play.canRetry && (
+            <Button size="sm" variant="outline" onClick={play.retry} disabled={play.busy}>
+              Retry
+            </Button>
+          )}
+        </div>
+      )}
+      {play.pendingCheck && (
+        <div className="space-y-1">
+          <CheckCard
+            key={play.pendingCheck.eventId}
+            pending={play.pendingCheck}
+            roll={(luckSpend) => play.rollCheck(play.pendingCheck!, luckSpend)}
+            odds={(luckSpend) => play.checkOdds(play.pendingCheck!, luckSpend)}
+            onSettled={(rolled) => play.commitCheck(play.pendingCheck!, rolled)}
+            busy={play.checkBusy}
+            luckRemaining={play.luck.remaining}
+          />
+          {play.pendingCheckCount > 1 && (
+            <p className="text-muted-foreground text-xs">
+              {play.pendingCheckCount - 1} more check
+              {play.pendingCheckCount - 1 === 1 ? "" : "s"} on the table after this one.
+            </p>
+          )}
+        </div>
+      )}
+      {play.pendingDeathSave && (
+        <DeathSaveCard
+          key={play.pendingDeathSave.eventId}
+          pending={play.pendingDeathSave}
+          roll={() => play.rollDeathSave()}
+          onSettled={(result) => play.commitDeathSave(play.pendingDeathSave!, result)}
+          busy={play.deathBusy}
+        />
+      )}
+    </>
+  );
+  const blocked =
+    play.busy ||
+    play.opening ||
+    Boolean(play.finished || play.pendingCheck || play.pendingAttack || play.pendingDeathSave);
+
+  if (operaScene) {
+    const latestTurn = eventsForThisJob(bundle.events)
+      .filter((event) => event.beat_id === bundle.beat?.id && event.type === "gm_narration")
+      .at(-1);
+    const prior = bundle.events.filter(({ id }) => id !== latestTurn?.id);
+    return (
+      <OperaOpening
+        bundle={bundle}
+        onChoose={(exit, input) => {
+          if (operaActionForExit(bundle.runtime, exit.to)) void play.submit(input ?? exit.label);
+          else play.choose(exit);
+        }}
+        busy={play.busy}
+        blocked={blocked}
+        tools={headerActions}
+        history={prior.map((event) => (
+          <EventBlock key={event.id} event={event} />
+        ))}
+        status={
+          <>
+            <CharacterPanel bundle={bundle} luck={play.luck} />
+            <RoleAbilityPanel play={play} />
+            <RollHistory rolls={play.rolls} />
+            <PressurePanel pressure={bundle.pressure} />
+            {sceneControls}
+          </>
+        }
+        currentTurn={
+          latestTurn && (
+            <div className="mb-3 space-y-3">
+              <EventBlock event={latestTurn} />
+              <SuggestionBar
+                suggestions={play.suggestions}
+                onPick={(suggestion) => void play.submit(suggestionInput(suggestion))}
+                busy={blocked}
+                character={bundle.character}
+              />
+              {bundle.beat?.id === OPERA_OPENING_BEAT &&
+                bundle.availableExits
+                  .filter((exit) => exit.to === "getting_tickets")
+                  .map((exit) => (
+                    <Button
+                      key={exit.to}
+                      variant="outline"
+                      onClick={() => play.choose(exit)}
+                      disabled={blocked}
+                    >
+                      {exit.label}
+                    </Button>
+                  ))}
+            </div>
+          )
+        }
+        prompts={prompts}
+        composer={
+          <InputBar
+            key={bundle.beat?.id}
+            onSend={play.submit}
+            onAskOptions={play.askOptions}
+            busy={blocked}
+            sceneLayout
+          />
+        }
+      />
+    );
+  }
+
   return (
     <div className="touch-play">
       <MobileStatusBar title={bundle.character.character.name} chips={chips}>
@@ -1067,31 +1245,7 @@ export function PlayScreen({
               )
             }
             className="lg:flex-none lg:bg-background"
-            actions={
-              <>
-                <MapButton
-                  clinicOpen={!!bundle.neighborhood.lease}
-                  placeHere={(key) =>
-                    key === CLINIC_PLACE && bundle.neighborhood.lease
-                      ? { conditions: [clinicDescription(bundle.neighborhood)] }
-                      : undefined
-                  }
-                  locationKey={bundle.campaign.location_key ?? DEFAULT_START}
-                  knownPlaces={
-                    Array.isArray(bundle.campaign.known_places)
-                      ? (bundle.campaign.known_places as unknown[]).filter(
-                          (v): v is string => typeof v === "string",
-                        )
-                      : []
-                  }
-                />
-                <SheetDrawer
-                  character={bundle.character}
-                  inventory={bundle.inventory}
-                  cyberware={bundle.cyberware}
-                />
-              </>
-            }
+            actions={headerActions}
           />
           {/*
             Everything that grows, in one scroller.
@@ -1124,44 +1278,7 @@ export function PlayScreen({
                 }
               />
             )}
-            {play.actionError && (
-              <div className="flex flex-wrap items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
-                <p className="text-sm text-destructive">{play.actionError.message}</p>
-                {play.canRetry && (
-                  <Button size="sm" variant="outline" onClick={play.retry} disabled={play.busy}>
-                    Retry
-                  </Button>
-                )}
-              </div>
-            )}
-            {play.pendingCheck && (
-              <div className="space-y-1">
-                <CheckCard
-                  key={play.pendingCheck.eventId}
-                  pending={play.pendingCheck}
-                  roll={(luckSpend) => play.rollCheck(play.pendingCheck!, luckSpend)}
-                  odds={(luckSpend) => play.checkOdds(play.pendingCheck!, luckSpend)}
-                  onSettled={(rolled) => play.commitCheck(play.pendingCheck!, rolled)}
-                  busy={play.checkBusy}
-                  luckRemaining={play.luck.remaining}
-                />
-                {play.pendingCheckCount > 1 && (
-                  <p className="text-muted-foreground text-xs">
-                    {play.pendingCheckCount - 1} more check
-                    {play.pendingCheckCount - 1 === 1 ? "" : "s"} on the table after this one.
-                  </p>
-                )}
-              </div>
-            )}
-            {play.pendingDeathSave && (
-              <DeathSaveCard
-                key={play.pendingDeathSave.eventId}
-                pending={play.pendingDeathSave}
-                roll={() => play.rollDeathSave()}
-                onSettled={(result) => play.commitDeathSave(play.pendingDeathSave!, result)}
-                busy={play.deathBusy}
-              />
-            )}
+            {prompts}
             {play.finished && <WrapUpCard bundle={bundle} status={play.finished} play={play} />}
           </div>
           {/* Pinned under the scroller: the two things the player acts THROUGH
