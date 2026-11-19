@@ -17,6 +17,7 @@ import {
   applyChatInventory,
 } from "@/features/campaign/chatInventory";
 import { isInventoryAction } from "@/features/narration/chatInventory";
+import { operaActionForExit, operaKnownFacts } from "@/engine/missions/nightAtTheOpera";
 import { loadCurrentScene, trySceneAttack } from "@/features/scenes/sceneOps";
 import { finishCombatAction, owesASave, snapshotFor } from "./combatOps";
 import { payLuck } from "./rollCosts";
@@ -326,7 +327,10 @@ export async function narrate(
         missionId: bundle.mission.id,
         beats: bundle.mission.beats,
       });
-      const found = knownTruths(all, discovered).map((truth) => truth.fact);
+      const found = [
+        ...operaKnownFacts(bundle.runtime),
+        ...knownTruths(all, discovered).map((truth) => truth.fact),
+      ];
       // There is something to be worked out and the pieces are in hand. The
       // model is told THAT and the number, never what the conclusion is: the
       // prerequisites were earned, so the offer is a pay-off rather than a hint.
@@ -336,7 +340,9 @@ export async function narrate(
         ...(offer ? { deduction: offer } : {}),
       };
     })(),
-    availableExits: bundle.beat.evidenceDecision ? [] : bundle.availableExits,
+    availableExits: bundle.beat.evidenceDecision
+      ? []
+      : bundle.availableExits.filter((exit) => !operaActionForExit(bundle.runtime, exit.to)),
     // Where they are standing goes with the sheet, so the Skill list reports
     // Local Expert for this district rather than for whichever one they know.
     character: {
@@ -717,7 +723,7 @@ export async function narrate(
       kit = applyItemUse(kit, use);
       capability = snapshotFor({ ...bundle, inventory: kit });
     } else if (action.kind === "advance_beat") {
-      if (bundle.beat.evidenceDecision) continue;
+      if (bundle.beat.evidenceDecision || operaActionForExit(bundle.runtime, action.to)) continue;
       // Only the model's proposed advancement is allowed to be wrong. Everything
       // after it is our own bookkeeping, and a failure there must surface — a
       // catch around the settlement is what hid a job silently failing to close.

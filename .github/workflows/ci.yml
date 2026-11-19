@@ -92,6 +92,10 @@ jobs:
         env:
           PGURL: postgres://postgres:postgres@localhost:5432/postgres
         run: psql "$PGURL" -v ON_ERROR_STOP=1 -f supabase/replay/chat-inventory.test.sql
+      - name: Opera opening persistence
+        env:
+          PGURL: postgres://postgres:postgres@localhost:5432/postgres
+        run: psql "$PGURL" -v ON_ERROR_STOP=1 -f supabase/replay/opera-action.test.sql
 
       - name: Neighborhood persistence regression
         env:

@@ -27,6 +27,8 @@ import {
 import {
   isOperaOpeningBeat,
   OPERA_OPENING_BEAT,
+  operaActionForExit,
+  operaEntryRoute,
   operaFirstLead,
 } from "@/engine/missions/nightAtTheOpera";
 import { OperaOpening } from "./OperaOpening";
@@ -872,6 +874,7 @@ export function PlayScreen({
   });
 
   const operaLead = operaFirstLead(bundle.runtime);
+  const operaRoute = operaEntryRoute(bundle.runtime);
   const rail = (
     <>
       <StatusStrip status={standing} />
@@ -883,6 +886,7 @@ export function PlayScreen({
         <section className="space-y-1 border border-border bg-card p-4" aria-label="Case file">
           <Label>First lead</Label>
           <p className="text-sm">{operaLead.lead}</p>
+          {operaRoute && <p className="text-sm text-muted-foreground">{operaRoute.title}</p>}
         </section>
       )}
       {!bundle.beat?.evidenceDecision && (
@@ -1111,7 +1115,9 @@ export function PlayScreen({
     <>
       {play.actionError && (
         <div className="flex flex-wrap items-center gap-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
-          <p className="text-sm text-destructive">{play.actionError.message}</p>
+          <p role="alert" className="text-sm text-destructive">
+            {play.actionError.message}
+          </p>
           {play.canRetry && (
             <Button size="sm" variant="outline" onClick={play.retry} disabled={play.busy}>
               Retry
@@ -1162,7 +1168,10 @@ export function PlayScreen({
     return (
       <OperaOpening
         bundle={bundle}
-        onChoose={play.choose}
+        onChoose={(exit, input) => {
+          if (operaActionForExit(bundle.runtime, exit.to)) void play.submit(input ?? exit.label);
+          else play.choose(exit);
+        }}
         busy={play.busy}
         blocked={blocked}
         tools={headerActions}
@@ -1207,6 +1216,7 @@ export function PlayScreen({
         prompts={prompts}
         composer={
           <InputBar
+            key={bundle.beat?.id}
             onSend={play.submit}
             onAskOptions={play.askOptions}
             busy={blocked}

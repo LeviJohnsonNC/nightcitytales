@@ -77,6 +77,8 @@ import {
   woundActionPenalty,
 } from "@/engine";
 import { type Json, appendCampaignEvent, updateCampaign } from "@/lib/backend";
+import { operaActionFromText, type OperaAction } from "@/engine/missions/nightAtTheOpera";
+import { resolveOperaAction } from "./operaActions";
 import {
   commitBackupCall,
   commitCharismaticImpact,
@@ -96,6 +98,8 @@ import {
 import type { IpTally, PlayBundle } from "./playOps";
 import { lastStoryDayFor } from "@/features/campaign/publishing";
 
+type JobTurn = { input: string; requestId: string; operaAction?: OperaAction };
+
 export function usePlay(campaignId: string) {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["play", campaignId], queryFn: () => loadPlay(campaignId) });
@@ -110,8 +114,9 @@ export function usePlay(campaignId: string) {
     ]);
 
   const turn = useMutation({
-    mutationFn: ({ input, requestId }: { input: string; requestId: string }) => {
+    mutationFn: ({ input, requestId, operaAction }: JobTurn) => {
       if (!query.data) throw new Error("Still loading.");
+      if (operaAction) return resolveOperaAction(query.data, operaAction, input, requestId);
       return narrate(query.data, input, { requestId });
     },
     onSettled: invalidate,
@@ -440,11 +445,18 @@ export function usePlay(campaignId: string) {
     /** Resolves true when the turn landed, false when it failed. */
     submit: async (input: string) => {
       try {
-        const requestId =
-          turn.isError && turn.variables?.input === input
-            ? turn.variables.requestId
-            : crypto.randomUUID();
-        await turn.mutateAsync({ input, requestId });
+        const retry = turn.isError && turn.variables?.input === input ? turn.variables : undefined;
+        const operaAction =
+          bundle?.campaign.phase === "job" && !bundle.encounter
+            ? operaActionFromText(bundle.runtime, input)
+            : undefined;
+        await turn.mutateAsync(
+          retry ?? {
+            input,
+            requestId: crypto.randomUUID(),
+            ...(operaAction ? { operaAction } : {}),
+          },
+        );
         return true;
       } catch {
         return false;

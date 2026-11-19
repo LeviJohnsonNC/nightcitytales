@@ -8,45 +8,105 @@
  * single Edgerunner (solo-scaling applies to the combat beats per the plan).
  */
 import type { Beat, Mission, MissionRuntime } from "../mission";
+import { TIME_COSTS } from "../clock";
 
 const OPERA_ID = "night-at-the-opera";
 export const OPERA_OPENING_BEAT = "hook";
 
-/** These are established leads. Following one can call for a check later. */
+/** The opening establishes facts and approaches. Entry is a separate decision. */
 export const operaApproaches = [
   {
     to: "opera_clerk",
     label: "Question the clerk",
-    hint: "Find out what the clerk saw.",
+    hint: "Ask about the handbill.",
+    minutes: TIME_COSTS.call,
+    aliases: [
+      "call the desk clerk",
+      "ask the clerk",
+      "ask the clerk about the flyer",
+      "ask the clerk about the handbill",
+      "ask the desk clerk about the flyer",
+    ],
     lead: "Len Vale, promoter",
     response:
       "The clerk sends a photo of a battered handbill. “Len Vale left these. He books the Vampyres. Tell him you’re after a ticket and keep my name out of it.” Someone has written Len’s number on the back.",
-    next: "Call the promoter",
+    fact: "The clerk sent a handbill with promoter Len Vale’s number on the back. The clerk asked the player to keep their name out of it.",
+    route: {
+      to: "opera_guest_list",
+      label: "Call the promoter",
+      aliases: ["call len vale", "call len", "ring the promoter"],
+      minutes: TIME_COSTS.call,
+      title: "A place on the guest list",
+      response:
+        "Len Vale agrees to put an alias of your choice on the guest list. Check in at the front desk tomorrow night. Len wants the alias when you arrive. There’s room for one, and he never asks who gave you his number.",
+      fact: "Len Vale is holding one place on the guest list. The player can use an alias at the Symphony Hall front desk, and has kept the clerk’s name out of the call.",
+      entry: "Enter on the guest list",
+    },
   },
   {
     to: "opera_broadcast",
     label: "Review the broadcast",
-    hint: "Look for a detail the report missed.",
+    hint: "Trace the flyer without contacting anyone.",
+    minutes: TIME_COSTS.quick,
+    aliases: [
+      "watch the broadcast",
+      "scrub through the broadcast",
+      "scrub the net 54 footage",
+      "review the net 54 broadcast",
+    ],
     lead: "Garden Patch invitation",
     response:
       "You pause on two frames the broadcast cuts away from. A black invitation is taped beside the campus gate. Under the Vampyres’ crest, there’s a Garden Patch handle and a listing code. The footage has enough detail to bring up the listing without contacting anyone.",
-    next: "Look up the invitation",
+    fact: "Two frames of the Net 54 report show a Garden Patch handle and listing code on the Vampyres’ handbill. The player recovered them without contacting anyone.",
+    route: {
+      to: "opera_public_listing",
+      label: "Look up the invitation",
+      aliases: [
+        "look up the listing",
+        "search garden patch",
+        "look up the garden patch invitation",
+      ],
+      minutes: TIME_COSTS.quick,
+      title: "The public ticket window",
+      response:
+        "The code opens tomorrow’s public listing for the old Symphony Hall. Tickets are still available. The front doors open at sundown. The dress code is black velvet and danger. You can join the public queue without attaching your name to a guest list or press pass.",
+      fact: "The Garden Patch code opened the public listing. The player found the sundown ticket window and dress code independently. Nobody was contacted and no ticket has been purchased yet.",
+      entry: "Buy a ticket and join the public queue",
+    },
   },
   {
     to: "opera_campus",
     label: "Call a campus source",
-    hint: "Find out what people on campus know.",
+    hint: "Work a contact at the campus paper.",
+    minutes: TIME_COSTS.call,
+    aliases: ["call the campus paper", "call the campus source", "phone the campus paper"],
     lead: "A press entrance at the Symphony Hall",
     response:
       "An editor at the campus paper recognizes the flyer. “Old Symphony Hall. The event crew uses the service door and they’ve got a press list. I can put you in touch with the person holding it. If you turn up anything about Lucy, give me a call.”",
-    next: "Ask for the press contact",
+    fact: "A campus paper editor identified a press list at the Symphony Hall service door. They offered an introduction and asked the player to call back with any news about Lucy.",
+    route: {
+      to: "opera_press_access",
+      label: "Ask for the press contact",
+      aliases: [
+        "contact the press",
+        "ask for an introduction",
+        "ask the editor for the press contact",
+      ],
+      minutes: TIME_COSTS.conversation,
+      title: "Press check-in at the service door",
+      response:
+        "The editor connects you to the press coordinator. You can check in at the service door before the general queue opens, using the campus paper’s name. The coordinator will expect you to identify yourself as press. The editor asks again to hear what turns up about Lucy.",
+      fact: "The editor introduced the player to the press coordinator. The invitation is for press check-in at the service door before the public doors open. The editor expects a follow-up about Lucy.",
+      entry: "Check in with the press coordinator",
+    },
   },
 ] as const;
 
 export function isOperaOpeningBeat(mission: Mission, beat: Beat): boolean {
   return (
     mission.id === OPERA_ID &&
-    (beat.id === OPERA_OPENING_BEAT || operaApproaches.some((approach) => approach.to === beat.id))
+    (beat.id === OPERA_OPENING_BEAT ||
+      operaApproaches.some(({ to, route }) => to === beat.id || route.to === beat.id))
   );
 }
 
@@ -57,14 +117,90 @@ export function operaFirstLead(runtime: MissionRuntime | null) {
   );
 }
 
-const operaLeadBeats: Beat[] = operaApproaches.map(({ to, lead, response, next }) => ({
+export function operaEntryRoute(runtime: MissionRuntime | null) {
+  const lead = operaFirstLead(runtime);
+  return lead && runtime?.branchChoices[lead.to] === lead.route.to ? lead.route : undefined;
+}
+
+export function operaKnownFacts(runtime: MissionRuntime | null): string[] {
+  const lead = operaFirstLead(runtime);
+  const route = operaEntryRoute(runtime);
+  if (!lead) return [];
+  if (!route) return [lead.fact];
+  const used = runtime?.branchChoices[route.to] === "night_at_opera";
+  return [
+    lead.fact,
+    used ? route.fact + " The player chose to enter using this route." : route.fact,
+  ];
+}
+
+export type OperaAction = {
+  from: string;
+  to: string;
+  label: string;
+  aliases: readonly string[];
+  minutes: number;
+};
+
+function operaActionsAt(runtime: MissionRuntime | null): OperaAction[] {
+  if (runtime?.missionId !== OPERA_ID || runtime.status !== "active") return [];
+  if (runtime.currentBeatId === OPERA_OPENING_BEAT) {
+    return operaApproaches.map(({ to, label, aliases, minutes }) => ({
+      from: OPERA_OPENING_BEAT,
+      to,
+      label,
+      aliases,
+      minutes,
+    }));
+  }
+  const lead = operaFirstLead(runtime);
+  return lead && runtime.currentBeatId === lead.to ? [{ ...lead.route, from: lead.to }] : [];
+}
+
+export function operaActionForExit(
+  runtime: MissionRuntime | null,
+  to: string,
+): OperaAction | undefined {
+  return operaActionsAt(runtime).find((action) => action.to === to);
+}
+
+/** Recognize a whole, unambiguous action. Leave any additional intent to the GM. */
+export function operaActionFromText(
+  runtime: MissionRuntime | null,
+  input: string,
+): OperaAction | undefined {
+  const normalized = input
+    .trim()
+    .toLowerCase()
+    .replace(/[.!?]+$/, "")
+    .replace(/^(?:i want to |i'll |i will |can i |i )/, "")
+    .replace(/ +/g, " ");
+  return operaActionsAt(runtime).find(
+    ({ label, aliases }) => label.toLowerCase() === normalized || aliases.includes(normalized),
+  );
+}
+
+const operaLeadBeats: Beat[] = operaApproaches.map(({ to, lead, response, route }) => ({
   id: to,
   type: "dev",
   title: lead,
   readAloud: response,
   gmBrief:
     "This lead has already been found. Continue from the player's response to it. Party access is still open, and the lead has not yet been followed.",
-  exits: [{ to: "getting_tickets", label: next }],
+  exits: [{ to: route.to, label: route.label }],
+}));
+
+const operaRouteBeats: Beat[] = operaApproaches.map(({ route }) => ({
+  id: route.to,
+  type: "dev",
+  title: route.title,
+  readAloud: route.response,
+  gmBrief:
+    "The player has established this way in. Let them decide how to use it. Keep entry conditions consistent with the known facts.",
+  exits: [
+    { to: "night_at_opera", label: route.entry },
+    { to: "getting_tickets", label: "Check the campus poster and talk to students" },
+  ],
 }));
 
 export const NIGHT_AT_THE_OPERA: Mission = {
@@ -135,6 +271,7 @@ export const NIGHT_AT_THE_OPERA: Mission = {
       ],
     },
     ...operaLeadBeats,
+    ...operaRouteBeats,
     {
       id: "getting_tickets",
       type: "dev",

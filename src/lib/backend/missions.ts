@@ -3,11 +3,15 @@
  * writes the single mission_progress row per (campaign, mission).
  */
 import { backendClient } from "./client";
-import type { MissionProgress, MissionProgressInsert, MissionProgressUpdate } from "./types";
+import type { Json, MissionProgress, MissionProgressInsert, MissionProgressUpdate } from "./types";
 
 function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
   if (res.error) throw new Error(res.error.message);
   return res.data as T;
+}
+
+export async function commitOperaAction(payload: Json): Promise<void> {
+  unwrap(await backendClient.rpc("commit_opera_action", { payload }));
 }
 
 /** The progress row for a mission in a campaign, if it has been started. */

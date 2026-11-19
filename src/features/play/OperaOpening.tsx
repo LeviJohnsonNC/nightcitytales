@@ -1,10 +1,17 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { ArrowRight, AudioLines, MessageSquareText, PhoneCall } from "lucide-react";
-import { agreedMissionFee, describePosition, placeKeyOf, type BeatExit } from "@/engine";
+import {
+  agreedMissionFee,
+  describePosition,
+  formatDuration,
+  placeKeyOf,
+  type BeatExit,
+} from "@/engine";
 import {
   NIGHT_AT_THE_OPERA,
   OPERA_OPENING_BEAT,
   operaApproaches,
+  operaEntryRoute,
   operaFirstLead,
 } from "@/engine/missions/nightAtTheOpera";
 import { NCAmp } from "@/features/music/ncamp/NCAmp";
@@ -28,7 +35,7 @@ export function OperaOpening({
   composer,
 }: {
   bundle: PlayBundle;
-  onChoose: (exit: BeatExit) => void;
+  onChoose: (exit: BeatExit, input?: string) => void;
   busy: boolean;
   blocked: boolean;
   tools: ReactNode;
@@ -41,6 +48,8 @@ export function OperaOpening({
   const atDesk = placeKeyOf(bundle.campaign.location_key) === "p4";
   const beforeLead = bundle.beat?.id === OPERA_OPENING_BEAT;
   const lead = operaFirstLead(bundle.runtime);
+  const route = operaEntryRoute(bundle.runtime);
+  const activeRoute = route?.to === bundle.beat?.id ? route : undefined;
   const leadHeading = useRef<HTMLHeadingElement>(null);
   const beatId = bundle.beat?.id;
   const previousBeatId = useRef(beatId);
@@ -100,9 +109,9 @@ export function OperaOpening({
             ) : lead ? (
               <section className="opera-result" aria-labelledby="opera-lead">
                 <h2 id="opera-lead" ref={leadHeading} tabIndex={-1} className="opera-eyebrow">
-                  Lead found
+                  {activeRoute ? "Way in confirmed" : "Lead found"}
                 </h2>
-                <p className="opera-passage">{lead.response}</p>
+                <p className="opera-passage">{activeRoute?.response ?? lead.response}</p>
               </section>
             ) : null}
             {currentTurn}
@@ -114,22 +123,22 @@ export function OperaOpening({
                     const exit = bundle.availableExits.find(({ to }) => to === approach.to);
                     if (!exit) return null;
                     const Icon = approachIcons[index]!;
+                    const label =
+                      approach.to === "opera_clerk" && !atDesk ? "Call the desk clerk" : exit.label;
                     return (
                       <button
                         key={exit.to}
                         className="opera-approach"
                         type="button"
-                        onClick={() => onChoose(exit)}
+                        onClick={() => onChoose(exit, label)}
                         disabled={blocked}
                       >
                         <Icon aria-hidden="true" size={18} />
                         <span>
-                          <strong>
-                            {approach.to === "opera_clerk" && !atDesk
-                              ? "Call the desk clerk"
-                              : exit.label}
-                          </strong>
-                          <small>{approach.hint}</small>
+                          <strong>{label}</strong>
+                          <small>
+                            {approach.hint} · {formatDuration(approach.minutes)}
+                          </small>
                         </span>
                         <ArrowRight aria-hidden="true" size={15} />
                       </button>
@@ -137,17 +146,19 @@ export function OperaOpening({
                   })}
                 </div>
               ) : (
-                bundle.availableExits.map((exit) => (
-                  <button
-                    key={exit.to}
-                    className="opera-follow"
-                    type="button"
-                    onClick={() => onChoose(exit)}
-                    disabled={blocked}
-                  >
-                    {exit.label} <ArrowRight aria-hidden="true" size={16} />
-                  </button>
-                ))
+                <div className="flex flex-wrap gap-2">
+                  {bundle.availableExits.map((exit) => (
+                    <button
+                      key={exit.to}
+                      className="opera-follow"
+                      type="button"
+                      onClick={() => onChoose(exit)}
+                      disabled={blocked}
+                    >
+                      {exit.label} <ArrowRight aria-hidden="true" size={16} />
+                    </button>
+                  ))}
+                </div>
               )}
               {composer}
               <p role="status" className="opera-wait">
@@ -166,6 +177,12 @@ export function OperaOpening({
                 <div className="opera-evidence">
                   <p className="opera-eyebrow">Current lead</p>
                   <p>{lead.lead}</p>
+                </div>
+              )}
+              {route && (
+                <div className="opera-evidence">
+                  <p className="opera-eyebrow">Way in</p>
+                  <p>{route.title}</p>
                 </div>
               )}
             </section>

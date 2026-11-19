@@ -1,26 +1,32 @@
 # A Night at the Opera opening — 2026-11-19
 
-Branch `codex/opera-campaign-opening`, based on `88d3dbb` (PR 393).
-The milestone runs from accepting the offer to finding a lead and seeing its next action.
+PR 394, branch `codex/opera-campaign-opening`, based on `88d3dbb`.
+The pilot covers accepting the offer, finding the first lead, and confirming a
+way into the party.
 
-- `acceptHook` opens Opera at The Hook. The opening uses Life’s visual treatment,
-  compact radio, and an original Evergreen front desk illustration.
-- The clerk, broadcast, and campus approaches are authored mission exits. The
-  saved branch choice reconstructs the lead after reload and later in the job.
-  Free text and the follow-up use the existing Job turn flow.
-- `OperaOpening.tsx` keeps the current scene and actions together. The case
-  file holds the objective, lead, and disclosures for history, terms, and status.
-- Production dependency checks use the frozen Bun lock. For this cloud
-  workspace, install from a temporary copy with npm registry tarball URLs
-  because the original Lovable package hosts returned HTTP 403.
+- The Evergreen illustration, case file, radio and composer carry over Life's
+  scene hierarchy. First moves show the engine's time costs.
+- The clerk, broadcast and campus approaches lead to the guest list, public
+  ticket queue or press check-in. Clicked actions and equivalent typed
+  commands share the Job submit path. Other free text goes to the Job GM.
+- Mission branch history restores each learned fact on reload and supplies it
+  to later GM turns. The case file keeps the lead and the confirmed way in.
+- `20261119010000_opera_action.sql` commits progress, clock and history together.
+  A retry uses the original request ID. Fresh local Postgres replay applied
+  20 migrations above the baseline and passed the atomicity, stale choice,
+  retry and ownership regression.
+- The [roadmap](../ROADMAP.md#campaign-opening-pilot) ranks the signed-in
+  Opera review, a single generated Job, then the broader Job and Aftermath pass.
 
-The production build, typecheck, and lint passed. Chromium exercised the real
-Life acceptance button, all three Job choices, keyboard selection, reload,
-free text, and the promoter follow-up with a mocked DB and narrator. The
-opening fits at 1280 × 690. The mobile result fits at 390 px without horizontal
-overflow. The fixtures do not call production Supabase or spend AI credits.
+All 4,799 tests, typecheck, lint, and the production build passed. Chromium
+used a mocked session, backend, and GM response to verify six walkthroughs,
+matching elapsed time for clicks and typed commands, reload, later GM facts,
+and failures before and after commit. The route confirmation fits at 1280 × 690
+and has no horizontal overflow at 390 px.
 
-Review the PR and play the opening on a signed-in staging campaign.
+The schema migration and signed-in staging playthrough are the release gate.
+This cloud workspace used npm registry tarball URLs for the temporary frozen
+install because Lovable's package hosts returned HTTP 403.
 
 [Previous handoff](https://github.com/LeviJohnsonNC/nightcitytales/blob/88d3dbb/docs/AI_HANDOFF.md)
 covers the inventory migration and staging follow-up.

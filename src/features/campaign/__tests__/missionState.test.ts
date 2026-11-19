@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import { NIGHT_AT_THE_OPERA, advance, availableExits, getBeat, startMission } from "@/engine";
 import {
   OPERA_OPENING_BEAT,
+  operaActionFromText,
   operaApproaches,
+  operaEntryRoute,
   operaFirstLead,
+  operaKnownFacts,
 } from "@/engine/missions/nightAtTheOpera";
 import type { MissionProgress } from "@/lib/backend";
 import { progressToRuntime, runtimeToUpsert } from "../missionState";
@@ -94,14 +97,37 @@ describe("runtimeToUpsert", () => {
     const mission = NIGHT_AT_THE_OPERA;
     const hook = advance(mission, startMission(mission), OPERA_OPENING_BEAT);
     expect(operaFirstLead(hook)).toBeUndefined();
+    expect(operaKnownFacts(hook)).toEqual([]);
+    const clicked = operaActionFromText(hook, approach.label);
+    expect(clicked).toMatchObject({
+      from: OPERA_OPENING_BEAT,
+      to: approach.to,
+      minutes: approach.minutes,
+    });
+    expect(operaActionFromText(hook, `I ${approach.aliases[0]}.`)).toEqual(clicked);
+    expect(operaActionFromText(hook, `${approach.label}, then check for cameras`)).toBeUndefined();
+    expect(operaActionFromText(hook, `Don't ${approach.label}`)).toBeUndefined();
     const choice = advance(mission, hook, approach.to);
     const reloaded = progressToRuntime(mission, row(runtimeToUpsert("camp-1", choice)));
     expect(operaFirstLead(reloaded)).toBe(approach);
     expect(reloaded.objectives[0]?.id).toBe("recover_lucy");
     expect(availableExits(mission, reloaded)).toEqual([
-      { to: "getting_tickets", label: approach.next },
+      { to: approach.route.to, label: approach.route.label },
     ]);
-    expect(operaFirstLead(advance(mission, reloaded, "getting_tickets"))).toBe(approach);
+    expect(operaKnownFacts(reloaded)).toEqual([approach.fact]);
+    expect(operaActionFromText(reloaded, approach.route.label)).toMatchObject({
+      to: approach.route.to,
+    });
+    const followUp = advance(mission, reloaded, approach.route.to);
+    const routeReloaded = progressToRuntime(mission, row(runtimeToUpsert("camp-1", followUp)));
+    expect(operaEntryRoute(routeReloaded)).toBe(approach.route);
+    expect(operaKnownFacts(routeReloaded)).toEqual([approach.fact, approach.route.fact]);
+    expect(availableExits(mission, routeReloaded)).toContainEqual({
+      to: "night_at_opera",
+      label: approach.route.entry,
+    });
+    const inside = advance(mission, routeReloaded, "night_at_opera");
+    expect(operaKnownFacts(inside)[1]).toContain("The player chose to enter using this route.");
   });
 });
 
