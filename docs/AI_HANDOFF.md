@@ -1,23 +1,26 @@
-# Chat inventory transfers — 2026-11-18
+# A Night at the Opera opening — 2026-11-19
 
-Branch `codex/chat-inventory-transfers`, based on `5604877`. The goal is for
-typed Life and Job actions to change the same campaign inventory the character
-sheet reads.
+Branch `codex/opera-campaign-opening`, based on `88d3dbb` (PR 393).
+The milestone runs from accepting the offer to finding a lead and seeing its next action.
 
-- Both narrators propose typed item transfers. The resolver selects from saved
-  scene stock or live kit at the current location. Successful checks can
-  establish salvage. A drop or stash keeps the item's condition and location.
-- A transactional RPC changes stock and kit and saves one receipt per transfer.
-  The client reuses the request ID for retries and continuation turns.
-- Life shows item counts in its receipt bar. Jobs show the ledger receipts in
-  the narrative log. Focused Life, Job parser and combat tests pass. Fresh
-  Postgres replay passes with the inventory regression. Apply
-  `20261118030000_chat_inventory.sql` to the target database before releasing
-  the client.
+- `acceptHook` opens Opera at The Hook. The opening uses Life’s visual treatment,
+  compact radio, and an original Evergreen front desk illustration.
+- The clerk, broadcast, and campus approaches are authored mission exits. The
+  saved branch choice reconstructs the lead after reload and later in the job.
+  Free text and the follow-up use the existing Job turn flow.
+- `OperaOpening.tsx` keeps the current scene and actions together. The case
+  file holds the objective, lead, and disclosures for history, terms, and status.
+- Production dependency checks use the frozen Bun lock. For this cloud
+  workspace, install from a temporary copy with npm registry tarball URLs
+  because the original Lovable package hosts returned HTTP 403.
 
-Next check a fresh campaign in Lovable after the schema and draft PR are
-reviewed. Try picking up an established object, moving, dropping it and
-retrieving it.
+The production build, typecheck, and lint passed. Chromium exercised the real
+Life acceptance button, all three Job choices, keyboard selection, reload,
+free text, and the promoter follow-up with a mocked DB and narrator. The
+opening fits at 1280 × 690. The mobile result fits at 390 px without horizontal
+overflow. The fixtures do not call production Supabase or spend AI credits.
 
-[Previous handoff](https://github.com/LeviJohnsonNC/nightcitytales/blob/5604877/docs/AI_HANDOFF.md)
-covers the Agent call strip and Lovable sync.
+Review the PR and play the opening on a signed-in staging campaign.
+
+[Previous handoff](https://github.com/LeviJohnsonNC/nightcitytales/blob/88d3dbb/docs/AI_HANDOFF.md)
+covers the inventory migration and staging follow-up.

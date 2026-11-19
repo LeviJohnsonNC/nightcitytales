@@ -7,10 +7,68 @@
  * to narrate; DVs are copied from the source and set in advance. The player is a
  * single Edgerunner (solo-scaling applies to the combat beats per the plan).
  */
-import type { Mission } from "../mission";
+import type { Beat, Mission, MissionRuntime } from "../mission";
+
+const OPERA_ID = "night-at-the-opera";
+export const OPERA_OPENING_BEAT = "hook";
+
+/** These are established leads. Following one can call for a check later. */
+export const operaApproaches = [
+  {
+    to: "opera_clerk",
+    label: "Question the clerk",
+    hint: "Find out what the clerk saw.",
+    lead: "Len Vale, promoter",
+    response:
+      "The clerk sends a photo of a battered handbill. “Len Vale left these. He books the Vampyres. Tell him you’re after a ticket and keep my name out of it.” Someone has written Len’s number on the back.",
+    next: "Call the promoter",
+  },
+  {
+    to: "opera_broadcast",
+    label: "Review the broadcast",
+    hint: "Look for a detail the report missed.",
+    lead: "Garden Patch invitation",
+    response:
+      "You pause on two frames the broadcast cuts away from. A black invitation is taped beside the campus gate. Under the Vampyres’ crest, there’s a Garden Patch handle and a listing code. The footage has enough detail to bring up the listing without contacting anyone.",
+    next: "Look up the invitation",
+  },
+  {
+    to: "opera_campus",
+    label: "Call a campus source",
+    hint: "Find out what people on campus know.",
+    lead: "A press entrance at the Symphony Hall",
+    response:
+      "An editor at the campus paper recognizes the flyer. “Old Symphony Hall. The event crew uses the service door and they’ve got a press list. I can put you in touch with the person holding it. If you turn up anything about Lucy, give me a call.”",
+    next: "Ask for the press contact",
+  },
+] as const;
+
+export function isOperaOpeningBeat(mission: Mission, beat: Beat): boolean {
+  return (
+    mission.id === OPERA_ID &&
+    (beat.id === OPERA_OPENING_BEAT || operaApproaches.some((approach) => approach.to === beat.id))
+  );
+}
+
+export function operaFirstLead(runtime: MissionRuntime | null) {
+  if (runtime?.missionId !== OPERA_ID) return undefined;
+  return operaApproaches.find(
+    (approach) => approach.to === runtime.branchChoices[OPERA_OPENING_BEAT],
+  );
+}
+
+const operaLeadBeats: Beat[] = operaApproaches.map(({ to, lead, response, next }) => ({
+  id: to,
+  type: "dev",
+  title: lead,
+  readAloud: response,
+  gmBrief:
+    "This lead has already been found. Continue from the player's response to it. Party access is still open, and the lead has not yet been followed.",
+  exits: [{ to: "getting_tickets", label: next }],
+}));
 
 export const NIGHT_AT_THE_OPERA: Mission = {
-  id: "night-at-the-opera",
+  id: OPERA_ID,
   title: "A Night at the Opera",
   subtitle: "Darkness and Desire in Night City",
   source: "Tales from the RED: Street Stories, pg. 5-14",
@@ -28,7 +86,7 @@ export const NIGHT_AT_THE_OPERA: Mission = {
       title: "Background",
       page: 6,
       readAloud:
-        "Net 54 Crimewatchers: a string of missing persons across the University District claims its latest victim — Lucy Rhinemeyer, 19, daughter of Rocklin Augmentics Executive Engineer George Edward Rhinemeyer. Seven women gone in four weeks; NCPD has no leads. Early the next morning, a message arrives from Mr. Rhinemeyer's representative offering 2,000eb per head — 500 up front — to recover Lucy, in whatever state you find her.",
+        "Net 54 Crimewatchers: a string of missing persons across the University District claims its latest victim — Lucy Rhinemeyer, 19, daughter of Rocklin Augmentics Executive Engineer George Edward Rhinemeyer. Seven women gone in four weeks; NCPD has no leads. Early the next morning, a message arrives from Mr. Rhinemeyer's representative offering 500eb up front and 2,000eb per head on recovery, in whatever state you find her.",
       gmBrief:
         "Set the neon-noir tone. A grieving Exec, a missing daughter, and a fee that is better than the work looks. Play it as the straightforward recovery it is being sold as — you have not been told otherwise, and neither has the Edgerunner.",
       truths: [
@@ -49,17 +107,17 @@ export const NIGHT_AT_THE_OPERA: Mission = {
         },
       ],
       playerBrief:
-        "Seven women have vanished from the University District in four weeks. The latest is Lucy Rhinemeyer, 19. Her father's representative is offering 2,000eb per head, 500 up front, to bring her back — in whatever state you find her.",
+        "Seven women have vanished from the University District in four weeks. The latest is Lucy Rhinemeyer, 19. Her father's representative is offering 500eb up front and 2,000eb per head on recovery, in whatever state you find her.",
       objectives: [{ key: "recover_lucy", text: "Recover Lucy Rhinemeyer" }],
       exits: [{ to: "hook", label: "Take the job" }],
     },
     {
-      id: "hook",
+      id: OPERA_OPENING_BEAT,
       type: "hook",
       title: "The Hook",
       page: 6,
       gmBrief:
-        "NCPD and Campus Security both like the Philharmonic Vampyres for this and neither can move on them on their own turf. The patron's task is plain: get inside one of the Vampyres' parties and investigate from there.",
+        "Lucy Rhinemeyer is the seventh woman missing near the university in four weeks. Her father's proxy hired the player. Both police leads point to the Philharmonic Vampyres. A Net 54 report, the desk clerk at Evergreen Apartments (in person if there, reachable otherwise), and the campus paper could turn up leads. Honor the player's own approach.",
       truths: [
         {
           id: "bribe",
@@ -71,8 +129,12 @@ export const NIGHT_AT_THE_OPERA: Mission = {
       ],
       playerBrief:
         "NCPD and Campus Security both like a campus crew called the Philharmonic Vampyres for the disappearances, and neither can move on them. Your patron wants you inside one of their parties, asking questions where badges can't.",
-      exits: [{ to: "getting_tickets", label: "Find a way into the Vampyres' party" }],
+      exits: [
+        ...operaApproaches.map(({ to, label }) => ({ to, label })),
+        { to: "getting_tickets", label: "Find a way into the Vampyres' party" },
+      ],
     },
+    ...operaLeadBeats,
     {
       id: "getting_tickets",
       type: "dev",

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { NIGHT_AT_THE_OPERA, getBeat, startMission } from "@/engine";
+import { NIGHT_AT_THE_OPERA, advance, availableExits, getBeat, startMission } from "@/engine";
+import {
+  OPERA_OPENING_BEAT,
+  operaApproaches,
+  operaFirstLead,
+} from "@/engine/missions/nightAtTheOpera";
 import type { MissionProgress } from "@/lib/backend";
 import { progressToRuntime, runtimeToUpsert } from "../missionState";
 import { beatAdvancedEvent } from "../missionLog";
@@ -83,6 +88,20 @@ describe("runtimeToUpsert", () => {
     expect(upsert.mission_id).toBe("night-at-the-opera");
     expect(upsert.current_beat_id).toBe("background");
     expect(upsert.status).toBe("active");
+  });
+
+  it.each(operaApproaches)("restores the lead from $label and its follow-up", (approach) => {
+    const mission = NIGHT_AT_THE_OPERA;
+    const hook = advance(mission, startMission(mission), OPERA_OPENING_BEAT);
+    expect(operaFirstLead(hook)).toBeUndefined();
+    const choice = advance(mission, hook, approach.to);
+    const reloaded = progressToRuntime(mission, row(runtimeToUpsert("camp-1", choice)));
+    expect(operaFirstLead(reloaded)).toBe(approach);
+    expect(reloaded.objectives[0]?.id).toBe("recover_lucy");
+    expect(availableExits(mission, reloaded)).toEqual([
+      { to: "getting_tickets", label: approach.next },
+    ]);
+    expect(operaFirstLead(advance(mission, reloaded, "getting_tickets"))).toBe(approach);
   });
 });
 

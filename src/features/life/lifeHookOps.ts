@@ -6,6 +6,7 @@
  */
 
 import {
+  advance,
   canAsk,
   getSkill,
   hookAskSpec,
@@ -20,6 +21,7 @@ import {
   type Opposition,
   canTravel,
 } from "@/engine";
+import { NIGHT_AT_THE_OPERA, OPERA_OPENING_BEAT } from "@/engine/missions/nightAtTheOpera";
 import {
   appendCampaignEvent,
   findCampaignNpc,
@@ -60,7 +62,11 @@ export async function acceptHook(bundle: LifeBundle): Promise<void> {
   // THE job, not A job: the mission that was pitched, generated before the offer
   // was ever made and carried on the hook ever since.
   const { missionId, mission } = hook;
-  await saveMissionRuntime(campaignId, startMission(mission));
+  const started = startMission(mission);
+  // Accepting the offer has already answered "Take the job" in the background beat.
+  const runtime =
+    mission.id === NIGHT_AT_THE_OPERA.id ? advance(mission, started, OPERA_OPENING_BEAT) : started;
+  await saveMissionRuntime(campaignId, runtime);
   // Taking the work puts the character where the work is: the offer names a
   // canonical atlas district, so the job starts on the real map.
   const jobDistrict = hook.offer.districtKey;
