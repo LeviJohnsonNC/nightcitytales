@@ -57,8 +57,9 @@ export async function sendPasswordReset(email: string) {
 }
 
 export async function signOut() {
-  const { error } = await backendClient.auth.signOut();
-  if (error) throw error;
+  const { error } = await backendClient.auth.signOut({ scope: "local" });
+  // Supabase can clear this browser’s session even if server revocation fails.
+  if (error && (await getAccessToken())) throw error;
 }
 
 export function onAuthChange(cb: (user: AuthUser | null) => void) {
