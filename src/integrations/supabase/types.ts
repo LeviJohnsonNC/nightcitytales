@@ -1264,6 +1264,7 @@ export type Database = {
       close_aftermath: { Args: { payload: Json }; Returns: undefined }
       commit_chat_inventory: { Args: { payload: Json }; Returns: Json }
       commit_neighborhood_action: { Args: { payload: Json }; Returns: Json }
+      commit_opera_action: { Args: { payload: Json }; Returns: undefined }
       install_cyberware: { Args: { payload: Json }; Returns: Json }
       move_house: { Args: { payload: Json }; Returns: Json }
       owns_campaign: { Args: { _campaign_id: string }; Returns: boolean }
