@@ -89,6 +89,24 @@ for (const route of ROUTES) {
 }
 
 test.describe("what the landing page promises", () => {
+  test("shows an Evergreen turn before asking a new player for an account", async ({ page }) => {
+    await open(page, "/");
+    await page.getByRole("link", { name: "See a turn" }).click();
+    const turn = page.getByRole("region", { name: "A turn at Evergreen Apartments." });
+    await expect(turn.getByText("Len Vale’s number")).toBeInViewport();
+    await expect(turn.getByRole("img")).toHaveJSProperty("complete", true);
+    expect(
+      await turn.getByRole("img").evaluate((image) => (image as HTMLImageElement).naturalWidth),
+    ).toBeGreaterThan(0);
+
+    await page.getByRole("banner").getByRole("link", { name: "Start your story" }).click();
+    await expect(page.getByRole("heading", { name: "Create an account" })).toBeVisible();
+    await expect(page.getByLabel("Password")).toHaveAttribute("autocomplete", "new-password");
+    await page.getByRole("link", { name: "Sign in", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+    await expect(page.getByLabel("Password")).toHaveAttribute("autocomplete", "current-password");
+  });
+
   test("its one-night timeline is a real list of nine moments", async ({ page }) => {
     await open(page, "/");
     // The reveal animation once wrapped each item in a div, which left the list
