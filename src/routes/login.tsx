@@ -9,7 +9,7 @@ import loginArt from "@/assets/login-skyline-v2.png.asset.json";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search): { mode?: "signup" } =>
-    search.mode === "signup" ? { mode: "signup" } : {},
+    search["mode"] === "signup" ? { mode: "signup" } : {},
   head: ({ match }) => ({
     meta: pageMeta({
       title:
