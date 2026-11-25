@@ -107,13 +107,24 @@ test.describe("what the landing page promises", () => {
     await expect(page.getByLabel("Password")).toHaveAttribute("autocomplete", "current-password");
   });
 
-  test("its one-night timeline is a real list of nine moments", async ({ page }) => {
-    await open(page, "/");
-    // The reveal animation once wrapped each item in a div, which left the list
-    // with children it is not allowed to have and the items with no list.
-    const items = page.locator("ol > li");
-    await expect(items).toHaveCount(9);
-    await expect(items.first()).toContainText("6:10 PM");
+  test("the sample night puts Dino’s offer between the purchase and its consequences", async ({
+    page,
+  }) => {
+    await open(page, "/#jobs");
+    const night = page.getByRole("region", { name: "Rent is due tomorrow." });
+    const moments = night.getByRole("listitem");
+    await expect(moments).toHaveCount(4);
+    await expect(moments.first()).toContainText("€400");
+    await expect(moments.last()).toContainText("We need to talk");
+    const offer = moments.nth(1);
+    const question = offer.getByText("Ask Dino who’s paying");
+    const answer = offer.getByText(/Client wants their name/);
+    await expect(answer).toBeHidden();
+    await question.focus();
+    await page.keyboard.press("Enter");
+    await expect(answer).toBeVisible();
+    await question.click();
+    await expect(answer).toBeHidden();
   });
 });
 
