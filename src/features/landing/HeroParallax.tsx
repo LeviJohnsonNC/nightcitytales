@@ -4,17 +4,16 @@
  * screens or anyone who asked for less motion.
  */
 import { useEffect, useRef, type ReactNode } from "react";
-import { prefersReducedMotion } from "@/features/opening/descent/descentDevice";
 
 /** How far the art travels, in pixels, at the edge of the screen. */
 export const PARALLAX_PX = 14;
 
-export function HeroParallax({ children }: { children: ReactNode }) {
+export function HeroParallax({ active, children }: { active: boolean; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || prefersReducedMotion() || window.matchMedia("(pointer: coarse)").matches) return;
+    if (!el || !active || window.matchMedia("(pointer: coarse)").matches) return;
     let raf = 0;
     const onMove = (e: PointerEvent) => {
       cancelAnimationFrame(raf);
@@ -28,8 +27,9 @@ export function HeroParallax({ children }: { children: ReactNode }) {
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("pointermove", onMove);
+      el.style.removeProperty("transform");
     };
-  }, []);
+  }, [active]);
 
   return (
     <div

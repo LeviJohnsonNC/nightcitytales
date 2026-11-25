@@ -5,7 +5,7 @@ import { getCurrentUser, onAuthChange, type AuthUser } from "@/lib/backend";
 import { Atmosphere, SignFlicker, WindowGlints } from "@/features/landing/Atmosphere";
 import { HeroParallax } from "@/features/landing/HeroParallax";
 import { HeroRain } from "@/features/landing/HeroRain";
-import { Reveal } from "@/features/landing/Reveal";
+import { useHeroMotion } from "@/features/landing/useHeroMotion";
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, pageMeta } from "@/lib/siteMeta";
 import { LandingNav } from "@/features/landing/LandingNav";
 import heroArt from "@/assets/hero-one.jpg.asset.json";
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
 
 function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.34em] text-text-dim">
+    <p className="font-mono text-xs font-semibold uppercase tracking-widest text-text-muted">
       {children}
     </p>
   );
@@ -56,14 +56,19 @@ function Index() {
   }, []);
 
   const signedIn = Boolean(user);
+  const { heroRef, active } = useHeroMotion();
 
   return (
     <div id="top" className="relative w-full overflow-x-hidden">
       <LandingNav signedIn={signedIn} />
 
       {/* ============================ 1. HERO ============================ */}
-      <section className="relative min-h-[100svh] w-full overflow-hidden">
-        <HeroParallax>
+      <section
+        ref={heroRef}
+        data-motion={active ? "running" : "paused"}
+        className="lp-hero relative min-h-[100svh] w-full overflow-hidden"
+      >
+        <HeroParallax active={active}>
           <img
             src={heroArt.url}
             fetchPriority="high"
@@ -127,7 +132,7 @@ function Index() {
         />
         <WindowGlints />
         <Atmosphere />
-        <HeroRain />
+        {active && <HeroRain />}
 
         <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-6xl flex-col px-6 pb-12 pt-8 sm:px-8 sm:py-12">
           <p className="font-display text-lg font-bold uppercase tracking-[0.12em] text-text sm:text-xl">
@@ -213,68 +218,55 @@ function Index() {
       {/* ============================= 3. LIFE ============================= */}
       <section id="life" className="relative border-t border-hairline/50 py-24 sm:py-32">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 sm:px-8 lg:grid-cols-2 lg:gap-16">
-          <Reveal>
-            <div className="relative overflow-hidden border border-hairline">
+          <div className="overflow-hidden border border-hairline">
+            <div className="relative aspect-video overflow-hidden bg-surface">
               <img
                 src={lifeArt.url}
                 alt="A cramped Night City apartment at night, rain on the window, gear spread across the table"
                 className="h-full w-full object-cover"
                 loading="lazy"
               />
-              <div
-                aria-hidden
-                className="absolute inset-0"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(to top, rgba(8,6,20,0.9) 0%, rgba(8,6,20,0.15) 45%, transparent 75%)",
-                }}
-              />
               <Atmosphere av={false} />
-              <div className="absolute inset-x-0 bottom-0 grid grid-cols-2 gap-2 p-4 sm:grid-cols-4">
-                {[
-                  { label: "Rent due", value: "3 days", tone: "text-amber" },
-                  { label: "Razor", value: "Wants to talk", tone: "text-ember" },
-                  { label: "Armor SP", value: "6 / 11", tone: "text-cool" },
-                  { label: "Balance", value: "€740", tone: "text-amber" },
-                ].map((chip) => (
-                  <div
-                    key={chip.label}
-                    className="border border-hairline/80 bg-ground/80 px-3 py-2 backdrop-blur-sm"
-                  >
-                    <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-text-dim">
-                      {chip.label}
-                    </p>
-                    <p className={`num mt-1 text-[13px] font-semibold ${chip.tone}`}>
-                      {chip.value}
-                    </p>
-                  </div>
-                ))}
-              </div>
             </div>
-          </Reveal>
+            <dl className="grid grid-cols-2 gap-px border-t border-hairline bg-hairline sm:grid-cols-4">
+              {[
+                { label: "Rent due", value: "3 days", tone: "text-amber" },
+                { label: "Razor", value: "Wants to talk", tone: "text-ember" },
+                { label: "Armor SP", value: "6 / 11", tone: "text-cool" },
+                { label: "Balance", value: "€740", tone: "text-amber" },
+              ].map((chip) => (
+                <div key={chip.label} className="bg-surface px-3 py-3">
+                  <dt className="font-mono text-xs uppercase tracking-widest text-text-muted">
+                    {chip.label}
+                  </dt>
+                  <dd className={`num mt-1 text-[13px] font-semibold ${chip.tone}`}>
+                    {chip.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
 
-          <Reveal delay={90}>
-            <div>
-              <Eyebrow>Life</Eyebrow>
-              <h2 className="mt-5 font-display text-3xl leading-[1.1] tracking-[-0.03em] text-text sm:text-4xl">
-                You're not always on a mission. You're alive.
-              </h2>
-              <div className="mt-6 space-y-4 text-base leading-relaxed text-text-muted">
-                <p>Jobs are only part of your story.</p>
-                <p>
-                  Between gigs, Night City keeps moving. Spend time with people you care about.
-                  Repair your gear. Chase rumors. Pay your rent. Visit your ripperdoc. Get drunk.
-                  Make promises. Break them.
-                </p>
-                <p className="text-text">
-                  Ignore a problem today and it may be waiting outside your apartment tomorrow.
-                </p>
-              </div>
-              <p className="mt-8 inline-block border-l-2 border-ember pl-4 font-mono text-[11px] uppercase tracking-[0.26em] text-text">
-                Your life. Your priorities.
+          <div>
+            <Eyebrow>Life</Eyebrow>
+            <h2 className="mt-5 font-display text-3xl leading-[1.1] tracking-[-0.03em] text-text sm:text-4xl">
+              You're not always on a mission. You're alive.
+            </h2>
+            <div className="mt-6 space-y-4 text-base leading-relaxed text-text-muted">
+              <p>Jobs are only part of your story.</p>
+              <p>
+                Between gigs, Night City keeps moving. Spend time with people you care about. Repair
+                your gear. Chase rumors. Pay your rent. Visit your ripperdoc. Get drunk. Make
+                promises. Break them.
+              </p>
+              <p className="text-text">
+                Ignore a problem today and it may be waiting outside your apartment tomorrow.
               </p>
             </div>
-          </Reveal>
+            <p className="mt-8 inline-block border-l-2 border-ember pl-4 font-mono text-xs uppercase tracking-widest text-text">
+              Your life. Your priorities.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -284,94 +276,81 @@ function Index() {
         style={{ background: "#06050f" }}
       >
         <div className="mx-auto max-w-6xl px-5 sm:px-8">
-          <Reveal>
-            <div className="text-center">
-              <Eyebrow>Every choice leaves a mark</Eyebrow>
-              <h2 className="mt-5 font-display text-3xl leading-[1.1] tracking-[-0.03em] text-text sm:text-5xl">
-                Night City remembers.
-              </h2>
-            </div>
-          </Reveal>
+          <div className="text-center">
+            <Eyebrow>Every choice leaves a mark</Eyebrow>
+            <h2 className="mt-5 font-display text-3xl leading-[1.1] tracking-[-0.03em] text-text sm:text-5xl">
+              Night City remembers.
+            </h2>
+          </div>
 
           <div className="mt-16 grid items-center gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-            <Reveal delay={80}>
-              <div className="relative mx-auto max-w-sm">
-                <div
-                  aria-hidden
-                  className="absolute -inset-6 rounded-full opacity-60 blur-3xl"
-                  style={{
-                    background:
-                      "radial-gradient(circle at 50% 50%, rgba(255,61,154,0.22), transparent 65%)",
-                  }}
-                />
-                <img
-                  src={fixerArt.url}
-                  alt="A fixer waiting at a bar, city lights behind the glass"
-                  className="relative w-full border border-hairline object-cover"
-                  loading="lazy"
-                />
-                <div className="relative mt-4 space-y-3 text-sm leading-relaxed text-text-muted">
-                  <p>Help someone and they may come back months later.</p>
-                  <p>Screw over a fixer and your calls may stop getting answered.</p>
-                  <p>Leave witnesses and somebody may start asking questions.</p>
-                  <p className="text-text">
-                    The campaign keeps track of the people, promises, debts, injuries and enemies
-                    you accumulate.
-                  </p>
-                </div>
+            <div className="relative mx-auto max-w-sm">
+              <div
+                aria-hidden
+                className="absolute -inset-6 rounded-full opacity-60 blur-3xl"
+                style={{
+                  background:
+                    "radial-gradient(circle at 50% 50%, rgba(255,61,154,0.22), transparent 65%)",
+                }}
+              />
+              <img
+                src={fixerArt.url}
+                alt="A fixer waiting at a bar, city lights behind the glass"
+                className="relative w-full border border-hairline object-cover"
+                loading="lazy"
+              />
+              <div className="relative mt-4 space-y-3 text-sm leading-relaxed text-text-muted">
+                <p>Help someone and they may come back months later.</p>
+                <p>Screw over a fixer and your calls may stop getting answered.</p>
+                <p>Leave witnesses and somebody may start asking questions.</p>
+                <p className="text-text">
+                  The campaign keeps track of the people, promises, debts, injuries and enemies you
+                  accumulate.
+                </p>
               </div>
-            </Reveal>
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <Reveal delay={140}>
-                <Panel className="h-full p-5">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-text-dim">
-                    Razor
-                  </p>
-                  <p className="num mt-3 text-lg font-semibold text-cool">Trust 4 / 6</p>
-                  <div className="mt-2 flex gap-1">
-                    {[0, 1, 2, 3, 4, 5].map((i) => (
-                      <span
-                        key={i}
-                        className={`h-1 flex-1 ${i < 4 ? "bg-cool" : "bg-hairline"}`}
-                        aria-hidden
-                      />
-                    ))}
-                  </div>
-                  <p className="mt-3 text-sm text-text-muted">You showed up when it mattered.</p>
-                </Panel>
-              </Reveal>
-              <Reveal delay={200}>
-                <Panel className="h-full p-5">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-text-dim">
-                    Arasaka investigation
-                  </p>
-                  <p className="mt-3 font-mono text-lg tracking-[0.3em] text-amber">● ● ● ○ ○ ○</p>
-                  <p className="mt-3 text-sm text-text-muted">
-                    Someone is looking for the prototype.
-                  </p>
-                </Panel>
-              </Reveal>
-              <Reveal delay={260}>
-                <Panel className="h-full p-5">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-text-dim">
-                    Rent
-                  </p>
-                  <p className="num mt-3 text-lg font-semibold text-amber">2 days</p>
-                  <p className="mt-3 text-sm text-text-muted">€600 due.</p>
-                </Panel>
-              </Reveal>
-              <Reveal delay={320}>
-                <Panel className="h-full p-5">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-text-dim">
-                    Viktor
-                  </p>
-                  <p className="mt-3 font-mono text-lg uppercase tracking-[0.12em] text-text">
-                    Owed a favor
-                  </p>
-                  <p className="mt-3 text-sm text-text-muted">He hasn't collected yet.</p>
-                </Panel>
-              </Reveal>
+              <Panel className="h-full p-5">
+                <p className="font-mono text-xs uppercase tracking-widest text-text-muted">Razor</p>
+                <p className="num mt-3 text-lg font-semibold text-cool">Trust 4 / 6</p>
+                <div className="mt-2 flex gap-1">
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <span
+                      key={i}
+                      className={`h-1 flex-1 ${i < 4 ? "bg-cool" : "bg-hairline"}`}
+                      aria-hidden
+                    />
+                  ))}
+                </div>
+                <p className="mt-3 text-sm text-text-muted">You showed up when it mattered.</p>
+              </Panel>
+
+              <Panel className="h-full p-5">
+                <p className="font-mono text-xs uppercase tracking-widest text-text-muted">
+                  Arasaka investigation
+                </p>
+                <p className="mt-3 font-mono text-lg tracking-[0.3em] text-amber">● ● ● ○ ○ ○</p>
+                <p className="mt-3 text-sm text-text-muted">
+                  Someone is looking for the prototype.
+                </p>
+              </Panel>
+
+              <Panel className="h-full p-5">
+                <p className="font-mono text-xs uppercase tracking-widest text-text-muted">Rent</p>
+                <p className="num mt-3 text-lg font-semibold text-amber">2 days</p>
+                <p className="mt-3 text-sm text-text-muted">€600 due.</p>
+              </Panel>
+
+              <Panel className="h-full p-5">
+                <p className="font-mono text-xs uppercase tracking-widest text-text-muted">
+                  Viktor
+                </p>
+                <p className="mt-3 font-mono text-lg uppercase tracking-[0.12em] text-text">
+                  Owed a favor
+                </p>
+                <p className="mt-3 text-sm text-text-muted">He hasn't collected yet.</p>
+              </Panel>
             </div>
           </div>
         </div>
@@ -380,61 +359,51 @@ function Index() {
       {/* ============================ 6. COMBAT ============================ */}
       <section id="combat" className="relative border-t border-hairline/50 py-24 sm:py-32">
         <div className="mx-auto max-w-6xl px-5 text-center sm:px-8">
-          <Reveal>
-            <h2 className="mx-auto max-w-3xl font-display text-3xl leading-[1.1] tracking-[-0.03em] text-text sm:text-5xl">
-              When talking stops, the game changes.
-            </h2>
-          </Reveal>
-          <Reveal delay={70}>
-            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-text-muted">
-              Cyberpunk RED combat becomes a tactical battlefield.
-            </p>
-          </Reveal>
+          <h2 className="mx-auto max-w-3xl font-display text-3xl leading-[1.1] tracking-[-0.03em] text-text sm:text-5xl">
+            When talking stops, the game changes.
+          </h2>
+
+          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-text-muted">
+            Cyberpunk RED combat becomes a tactical battlefield.
+          </p>
         </div>
 
-        <Reveal delay={120}>
-          <div className="relative mt-14 w-full overflow-hidden border-y border-hairline">
-            <img
-              src={combatArt.url}
-              alt="Top-down tactical view of a Night City warehouse with cover, vehicles and armed figures"
-              className="h-[46vh] w-full object-cover sm:h-[62vh]"
-              loading="lazy"
-            />
-            <div
-              aria-hidden
-              className="absolute inset-0"
-              style={{
-                backgroundImage:
-                  "linear-gradient(to top, rgba(6,5,15,0.85) 0%, rgba(6,5,15,0.1) 45%, rgba(6,5,15,0.35) 100%)",
-              }}
-            />
-            <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-6xl flex-wrap gap-x-6 gap-y-2 px-5 py-5 sm:px-8">
-              {[
-                "Move into position",
-                "Use cover",
-                "Manage range",
-                "Ablate armor",
-                "Run out of ammo",
-                "Get hurt",
-              ].map((t) => (
-                <span
-                  key={t}
-                  className="font-mono text-[10px] uppercase tracking-[0.24em] text-cool"
-                >
-                  {t}
-                </span>
-              ))}
-            </div>
+        <div className="relative mt-14 w-full overflow-hidden border-y border-hairline">
+          <img
+            src={combatArt.url}
+            alt="Top-down tactical view of a Night City warehouse with cover, vehicles and armed figures"
+            className="h-[46vh] w-full object-cover sm:h-[62vh]"
+            loading="lazy"
+          />
+          <div
+            aria-hidden
+            className="absolute inset-0"
+            style={{
+              backgroundImage:
+                "linear-gradient(to top, rgba(6,5,15,0.85) 0%, rgba(6,5,15,0.1) 45%, rgba(6,5,15,0.35) 100%)",
+            }}
+          />
+          <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-6xl flex-wrap gap-x-6 gap-y-2 px-5 py-5 sm:px-8">
+            {[
+              "Move into position",
+              "Use cover",
+              "Manage range",
+              "Ablate armor",
+              "Run out of ammo",
+              "Get hurt",
+            ].map((t) => (
+              <span key={t} className="font-mono text-xs uppercase tracking-widest text-cool">
+                {t}
+              </span>
+            ))}
           </div>
-        </Reveal>
+        </div>
 
-        <Reveal delay={80}>
-          <p className="mx-auto mt-12 max-w-xl px-5 text-center font-display text-xl leading-snug tracking-[-0.02em] text-text sm:text-2xl">
-            The rules engine handles the numbers.
-            <br />
-            You handle surviving.
-          </p>
-        </Reveal>
+        <p className="mx-auto mt-12 max-w-xl px-5 text-center font-display text-xl leading-snug tracking-[-0.02em] text-text sm:text-2xl">
+          The rules engine handles the numbers.
+          <br />
+          You handle surviving.
+        </p>
       </section>
 
       {/* ====================== 7. FREEFORM ACTIONS ====================== */}
@@ -451,81 +420,71 @@ function Index() {
         />
         <div aria-hidden className="absolute inset-0" style={{ background: "rgba(4,3,9,0.82)" }} />
         <div className="relative z-10 mx-auto max-w-4xl px-5 py-24 sm:px-8 sm:py-32">
-          <Reveal>
-            <h2 className="font-display text-3xl leading-[1.08] tracking-[-0.03em] text-text sm:text-5xl">
-              No button for your idea? Try it anyway.
-            </h2>
-          </Reveal>
+          <h2 className="font-display text-3xl leading-[1.08] tracking-[-0.03em] text-text sm:text-5xl">
+            No button for your idea? Try it anyway.
+          </h2>
 
-          <Reveal delay={90}>
-            <div className="mt-12">
-              <div className="flex flex-wrap gap-2">
-                {["Shoot", "Move", "Reload", "Aim"].map((b) => (
-                  <span
-                    key={b}
-                    className="border border-hairline px-4 py-2 font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim"
-                  >
-                    {b}
-                  </span>
-                ))}
-                <span className="border border-ember px-4 py-2 font-mono text-[11px] uppercase tracking-[0.2em] text-ember">
-                  Do something else…
+          <div className="mt-12">
+            <div className="flex flex-wrap gap-2">
+              {["Shoot", "Move", "Reload", "Aim"].map((b) => (
+                <span
+                  key={b}
+                  className="border border-hairline px-4 py-2 font-mono text-xs uppercase tracking-widest text-text-muted"
+                >
+                  {b}
                 </span>
-              </div>
-
-              <Panel className="mt-4 p-5">
-                <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-text-dim">
-                  Your action
-                </p>
-                <p className="mt-3 border-l-2 border-ember pl-4 text-base text-text">
-                  Shoot the sprinkler pipe above them and kill the lights.
-                </p>
-              </Panel>
-
-              <Panel className="mt-3 p-5">
-                <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-cool">
-                  Handgun check · DV 15
-                </p>
-                <p className="mt-3 text-base leading-relaxed text-text-muted">
-                  The pipe ruptures. Water rains across the warehouse as half the room falls into
-                  darkness.
-                </p>
-              </Panel>
+              ))}
+              <span className="border border-ember px-4 py-2 font-mono text-xs uppercase tracking-widest text-ember">
+                Do something else…
+              </span>
             </div>
-          </Reveal>
 
-          <Reveal delay={140}>
-            <p className="mt-12 max-w-xl font-display text-xl leading-snug tracking-[-0.02em] text-text sm:text-2xl">
-              You're playing a tactical RPG. You're just not trapped inside its buttons.
-            </p>
-          </Reveal>
+            <Panel className="mt-4 p-5">
+              <p className="font-mono text-xs uppercase tracking-widest text-text-muted">
+                Your action
+              </p>
+              <p className="mt-3 border-l-2 border-ember pl-4 text-base text-text">
+                Shoot the sprinkler pipe above them and kill the lights.
+              </p>
+            </Panel>
+
+            <Panel className="mt-3 p-5">
+              <p className="font-mono text-xs uppercase tracking-widest text-cool">
+                Handgun check · DV 15
+              </p>
+              <p className="mt-3 text-base leading-relaxed text-text-muted">
+                The pipe ruptures. Water rains across the warehouse as half the room falls into
+                darkness.
+              </p>
+            </Panel>
+          </div>
+
+          <p className="mt-12 max-w-xl font-display text-xl leading-snug tracking-[-0.02em] text-text sm:text-2xl">
+            You're playing a tactical RPG. You're just not trapped inside its buttons.
+          </p>
         </div>
       </section>
 
       {/* ============================ 8. THE GM ============================ */}
       <section className="relative border-t border-hairline/50 py-24 sm:py-32">
         <div className="mx-auto max-w-4xl px-5 sm:px-8">
-          <Reveal>
-            <Eyebrow>The AI Game Master</Eyebrow>
-            <h2 className="mt-5 font-display text-3xl leading-[1.1] tracking-[-0.03em] text-text sm:text-4xl">
-              A Game Master that never runs out of Night City.
-            </h2>
-          </Reveal>
-          <Reveal delay={80}>
-            <div className="mt-8 max-w-2xl space-y-4 text-base leading-relaxed text-text-muted">
-              <p>Your GM runs characters, consequences and the world around you.</p>
-              <p>
-                It knows the rules. It remembers what you've done. It adapts when you abandon the
-                obvious plan.
-              </p>
-              <p>It isn't here to write the story for you.</p>
-            </div>
-          </Reveal>
-          <Reveal delay={140}>
-            <p className="mt-12 font-display text-2xl uppercase leading-[1.08] tracking-[-0.01em] text-chrome sm:text-4xl">
-              It's here to find out what happens.
+          <Eyebrow>The AI Game Master</Eyebrow>
+          <h2 className="mt-5 font-display text-3xl leading-[1.1] tracking-[-0.03em] text-text sm:text-4xl">
+            A Game Master that never runs out of Night City.
+          </h2>
+
+          <div className="mt-8 max-w-2xl space-y-4 text-base leading-relaxed text-text-muted">
+            <p>Your GM runs characters, consequences and the world around you.</p>
+            <p>
+              It knows the rules. It remembers what you've done. It adapts when you abandon the
+              obvious plan.
             </p>
-          </Reveal>
+            <p>It isn't here to write the story for you.</p>
+          </div>
+
+          <p className="mt-12 font-display text-2xl uppercase leading-[1.08] tracking-[-0.01em] text-chrome sm:text-4xl">
+            It's here to find out what happens.
+          </p>
         </div>
       </section>
 
@@ -548,22 +507,19 @@ function Index() {
         />
         <Atmosphere av={false} />
         <div className="relative z-10 mx-auto flex min-h-[80svh] max-w-4xl flex-col items-center justify-center px-5 py-24 text-center sm:px-8">
-          <Reveal>
-            <h2 className="font-display text-4xl leading-[1.06] tracking-[-0.03em] text-chrome sm:text-6xl">
-              So. What do you do?
-            </h2>
-          </Reveal>
-          <Reveal delay={80}>
-            <p className="mt-6 text-base text-text-muted sm:text-lg">
-              Night City is waiting. Try to survive it.
-            </p>
-          </Reveal>
-          <Reveal delay={140}>
-            <div className="mt-10 flex flex-col items-center gap-4">
-              <StoryEntryLink signedIn={signedIn} className="h-12 px-7 text-base font-semibold" />
-            </div>
-          </Reveal>
-          <p className="mt-14 font-mono text-[10px] uppercase tracking-[0.24em] text-text-dim">
+          <h2 className="font-display text-4xl leading-[1.06] tracking-[-0.03em] text-chrome sm:text-6xl">
+            So. What do you do?
+          </h2>
+
+          <p className="mt-6 text-base text-text-muted sm:text-lg">
+            Night City is waiting. Try to survive it.
+          </p>
+
+          <div className="mt-10 flex flex-col items-center gap-4">
+            <StoryEntryLink signedIn={signedIn} className="h-12 px-7 text-base font-semibold" />
+          </div>
+
+          <p className="mt-14 font-mono text-xs uppercase tracking-widest text-text-muted">
             Solo Cyberpunk RED · AI Game Master · Persistent campaign
           </p>
         </div>

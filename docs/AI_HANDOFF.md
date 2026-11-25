@@ -1,3 +1,21 @@
+# Landing readability and motion — 2026-11-25 17:11 UTC
+
+[Draft PR #398](https://github.com/LeviJohnsonNC/nightcitytales/pull/398),
+branch `codex/landing-reading-motion`, based on the merge of #397 at `5471e895`.
+Implementation `4a60aed7` is pushed. The index renders copy and actions on first
+paint and puts Life’s status labels in a strip beneath the illustration.
+The landing components and styles gate rooftop effects on viewport, document
+visibility, and motion preference. Regression coverage is in
+`e2e/public-routes.spec.ts`.
+
+Production build, typecheck, changed-file lint, 11 landing unit tests and all
+14 desktop/phone landing browser checks passed. The browser checks cover
+scrolling, live motion preferences and text visibility with JavaScript disabled.
+Visually inspected the status strip at 1440×900 and 390×844. The environment
+returned HTTP 403 for the hosted rooftop artwork. Review its crop at both sizes
+in Lovable before merging. Fresh-chat prompt after merge: continue from #398
+and check the hosted hero artwork at phone and desktop sizes.
+
 # Public landing page, one night — 2026-11-25 17:02 UTC
 
 [Draft PR #397](https://github.com/LeviJohnsonNC/nightcitytales/pull/397),

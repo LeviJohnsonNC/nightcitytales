@@ -44,8 +44,7 @@ async function open(page: Page, path: string) {
       failed.push(`${r.status()} ${url.pathname}`);
     }
   });
-  // Reduced motion: a scroll-reveal caught halfway through is a contrast failure
-  // that is not there a moment later.
+  // Use a still scene for repeatable checks. The motion lifecycle is tested separately.
   await page.emulateMedia({ reducedMotion: "reduce" });
   const response = await page.goto(path, { waitUntil: "load" });
   await page.waitForLoadState("networkidle").catch(() => {});
@@ -89,6 +88,40 @@ for (const route of ROUTES) {
 }
 
 test.describe("what the landing page promises", () => {
+  test("rooftop motion follows the viewport and the visitor’s motion preference", async ({
+    page,
+  }) => {
+    await open(page, "/");
+    const rain = page.locator("#top canvas").first();
+    await expect(rain).toHaveCount(0);
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await expect(rain).toBeVisible();
+    await page.locator("#life").scrollIntoViewIfNeeded();
+    await expect(rain).toHaveCount(0);
+    await page.getByRole("heading", { name: /Live your life in/ }).scrollIntoViewIfNeeded();
+    await expect(rain).toBeVisible();
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(rain).toHaveCount(0);
+  });
+
+  test.describe("before JavaScript runs", () => {
+    test.use({ javaScriptEnabled: false });
+    test("the Life labels and closing action are fully painted", async ({ page }) => {
+      await page.goto("/#life");
+      const rent = page.locator("#life").getByText("Rent due", { exact: true });
+      const closing = page
+        .locator("section")
+        .last()
+        .getByRole("link", { name: "Start your story" });
+      for (const content of [rent, closing]) {
+        await content.scrollIntoViewIfNeeded();
+        expect(await content.evaluate((el) => el.checkVisibility({ opacityProperty: true }))).toBe(
+          true,
+        );
+      }
+    });
+  });
+
   test("shows an Evergreen turn before asking a new player for an account", async ({ page }) => {
     await open(page, "/");
     await page.getByRole("link", { name: "See a turn" }).click();
