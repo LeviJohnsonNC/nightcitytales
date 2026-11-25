@@ -1,3 +1,21 @@
+# Public landing page, one night — 2026-11-25 17:02 UTC
+
+[Draft PR #397](https://github.com/LeviJohnsonNC/nightcitytales/pull/397),
+branch `codex/landing-one-night`, based on the merge of #396 at `36626fbf`.
+Implementation `07adf807` is pushed. The index places `OneNight` immediately
+after Evergreen and retains the Jobs anchor. LandingNav follows reading order.
+The four-moment example combines the former Jobs panel and timeline, with the
+existing motel artwork and a native disclosure for Dino’s sample reply.
+
+Production build, typecheck, changed-file lint, 11 landing unit tests and
+10 desktop/phone landing browser checks passed. The public-route regression
+covers keyboard open and pointer close. Visually inspected the expanded section
+at 1440×900 and collapsed at 390×844. The new section's artwork loads locally.
+The previously requested hosted rooftop check still requires the Lovable preview
+because the review environment returned HTTP 403 for the asset.
+
+Next, review the One night section in Lovable and merge #397 when ready.
+
 # Public landing page first pass — 2026-11-25 16:45 UTC
 
 `LeviJohnsonNC/nightcitytales`, branch `codex/landing-evergreen-first-pass`,
