@@ -11,7 +11,7 @@ import { LandingNav } from "@/features/landing/LandingNav";
 import heroArt from "@/assets/hero-one.jpg.asset.json";
 import lifeArt from "@/assets/hero-two.jpg.asset.json";
 import fixerArt from "@/assets/hero-three.jpg.asset.json";
-import alleyArt from "@/assets/hero-four.jpg.asset.json";
+import { OneNight } from "@/features/landing/OneNight";
 import combatArt from "@/assets/hero-five.jpg.asset.json";
 import streetArt from "@/assets/hero-six.jpg.asset.json";
 import dawnArt from "@/assets/hero-seven.jpg.asset.json";
@@ -208,6 +208,8 @@ function Index() {
         </div>
       </section>
 
+      <OneNight />
+
       {/* ============================= 3. LIFE ============================= */}
       <section id="life" className="relative border-t border-hairline/50 py-24 sm:py-32">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 sm:px-8 lg:grid-cols-2 lg:gap-16">
@@ -375,78 +377,6 @@ function Index() {
         </div>
       </section>
 
-      {/* ============================= 5. JOBS ============================= */}
-      <section id="jobs" className="relative overflow-hidden border-t border-hairline/50">
-        <img
-          src={alleyArt.url}
-          alt=""
-          aria-hidden
-          className="absolute inset-0 h-full w-full object-cover"
-          loading="lazy"
-        />
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "linear-gradient(90deg, rgba(6,5,15,0.96) 0%, rgba(6,5,15,0.86) 45%, rgba(6,5,15,0.55) 100%)",
-          }}
-        />
-        <Atmosphere />
-        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 px-5 py-24 sm:px-8 sm:py-32 lg:grid-cols-2">
-          <Reveal>
-            <div>
-              <Eyebrow>Jobs</Eyebrow>
-              <h2 className="mt-5 font-display text-3xl leading-[1.1] tracking-[-0.03em] text-text sm:text-4xl">
-                Every job begins with a choice.
-              </h2>
-              <div className="mt-6 space-y-3 text-base leading-relaxed text-text-muted">
-                <p>A fixer calls.</p>
-                <p>The money's good.</p>
-                <p>The details aren't.</p>
-                <p>
-                  Ask questions. Negotiate. Do your legwork. Find another way in. Betray the client.
-                  Abandon the job entirely.
-                </p>
-              </div>
-              <p className="mt-8 font-display text-xl tracking-[-0.02em] text-text sm:text-2xl">
-                The GM gives you situations, not solutions.
-              </p>
-            </div>
-          </Reveal>
-
-          <Reveal delay={110}>
-            <Panel className="p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-text-dim">
-                    Incoming · Fixer
-                  </p>
-                  <p className="mt-2 font-display text-2xl tracking-[-0.02em] text-text">Dino</p>
-                </div>
-                <p className="num text-lg font-semibold text-amber">€2,000</p>
-              </div>
-              <p className="mt-5 border-l-2 border-hairline pl-4 text-sm leading-relaxed text-text-muted">
-                "Need someone tonight. Quiet extraction."
-              </p>
-              <div className="mt-6 grid gap-2 sm:grid-cols-2">
-                {["Hear him out", "Who's paying?", "Negotiate", "Not tonight"].map((choice) => (
-                  <div
-                    key={choice}
-                    className="cursor-default border border-ember/45 px-3 py-2 text-sm text-text transition-colors hover:border-ember hover:bg-ember/10"
-                  >
-                    {choice}
-                  </div>
-                ))}
-              </div>
-              <p className="mt-3 border border-dashed border-hairline px-3 py-2 font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
-                Do something else…
-              </p>
-            </Panel>
-          </Reveal>
-        </div>
-      </section>
-
       {/* ============================ 6. COMBAT ============================ */}
       <section id="combat" className="relative border-t border-hairline/50 py-24 sm:py-32">
         <div className="mx-auto max-w-6xl px-5 text-center sm:px-8">
@@ -594,87 +524,6 @@ function Index() {
           <Reveal delay={140}>
             <p className="mt-12 font-display text-2xl uppercase leading-[1.08] tracking-[-0.01em] text-chrome sm:text-4xl">
               It's here to find out what happens.
-            </p>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* =========================== 9. TIMELINE =========================== */}
-      <section
-        className="relative border-t border-hairline/50 py-24 sm:py-32"
-        style={{ background: "#06050f" }}
-      >
-        <div className="mx-auto max-w-3xl px-5 sm:px-8">
-          <Reveal>
-            <div className="text-center">
-              <Eyebrow>One night in Night City</Eyebrow>
-              <h2 className="mt-5 font-display text-3xl leading-[1.1] tracking-[-0.03em] text-text sm:text-4xl">
-                One night can go very wrong.
-              </h2>
-            </div>
-          </Reveal>
-
-          <ol className="mt-14 space-y-0">
-            {[
-              { t: "6:10 PM", b: "Your ripperdoc offers you discounted cyberware." },
-              { t: "7:35 PM", b: "You spend €400 you were saving for rent.", tone: "amber" },
-              { t: "9:12 PM", b: "Dino offers you an extraction job." },
-              { t: "10:48 PM", b: "You discover the target is an old friend." },
-              { t: "11:17 PM", b: "You abandon the extraction.", tone: "ember" },
-              { t: "11:19 PM", b: "Dino's Trust ↓", tone: "ember" },
-              { t: "12:06 AM", b: "Maelstrom finds you first." },
-              {
-                t: "12:23 AM",
-                b: "Broken Ribs · Armor SP 4/11 · 7 rounds remaining",
-                tone: "cool",
-              },
-              {
-                t: "2:14 AM",
-                b: "Your landlord messages: \u201cWe need to talk.\u201d",
-                tone: "amber",
-              },
-            ].map((row, i) => (
-              <Reveal
-                key={row.t}
-                as="li"
-                delay={i * 70}
-                className="grid grid-cols-[5.5rem_auto_minmax(0,1fr)] items-start gap-4 py-3"
-              >
-                <span className="num pt-0.5 text-right text-xs uppercase tracking-widest text-text-dim">
-                  {row.t}
-                </span>
-                <span aria-hidden className="relative flex h-full justify-center">
-                  <span className="absolute inset-y-0 w-px bg-hairline" />
-                  <span
-                    className={`relative mt-1.5 h-1.5 w-1.5 rounded-full ${
-                      row.tone === "ember"
-                        ? "bg-ember"
-                        : row.tone === "amber"
-                          ? "bg-amber"
-                          : row.tone === "cool"
-                            ? "bg-cool"
-                            : "bg-text-dim"
-                    }`}
-                  />
-                </span>
-                <span
-                  className={`text-sm leading-relaxed ${
-                    row.tone === "amber"
-                      ? "text-amber"
-                      : row.tone === "cool"
-                        ? "text-cool"
-                        : "text-text-muted"
-                  }`}
-                >
-                  {row.b}
-                </span>
-              </Reveal>
-            ))}
-          </ol>
-
-          <Reveal delay={120}>
-            <p className="mt-12 text-center font-display text-xl tracking-[-0.02em] text-text sm:text-2xl">
-              Tomorrow is already waiting.
             </p>
           </Reveal>
         </div>

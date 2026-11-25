@@ -5,8 +5,8 @@ import { StoryEntryLink } from "./StoryEntryLink";
 
 const SECTIONS = [
   { id: "the-game", label: "Sample turn" },
+  { id: "jobs", label: "One night" },
   { id: "life", label: "Life" },
-  { id: "jobs", label: "Jobs" },
   { id: "combat", label: "Combat" },
 ];
 
