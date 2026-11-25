@@ -1,10 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { Button } from "@/components/ui/button";
-import { useMinWidth } from "@/hooks/use-min-width";
+import { StoryEntryLink } from "@/features/landing/StoryEntryLink";
 import { getCurrentUser, onAuthChange, type AuthUser } from "@/lib/backend";
 import { Atmosphere, SignFlicker, WindowGlints } from "@/features/landing/Atmosphere";
-import { HeroDemoCard } from "@/features/landing/HeroDemoCard";
 import { HeroParallax } from "@/features/landing/HeroParallax";
 import { HeroRain } from "@/features/landing/HeroRain";
 import { Reveal } from "@/features/landing/Reveal";
@@ -24,12 +22,6 @@ export const Route = createFileRoute("/")({
   }),
   component: Index,
 });
-
-/**
- * The scene from the game beside the runner (`HeroDemoCard`). Built and tested,
- * but not shown while its look is reworked: flip this to bring it back.
- */
-const SHOW_HERO_DEMO = false;
 
 /* ---------- small shared pieces ---------- */
 
@@ -63,11 +55,7 @@ function Index() {
     return unsubscribe;
   }, []);
 
-  // One copy, placed by width: over the art on a desktop, under the copy on a phone.
-  const wide = useMinWidth(1024);
   const signedIn = Boolean(user);
-  const startLabel = signedIn ? "Continue your story" : "Enter Night City";
-  const startTo = signedIn ? "/roster" : "/login";
 
   return (
     <div id="top" className="relative w-full overflow-x-hidden">
@@ -78,6 +66,7 @@ function Index() {
         <HeroParallax>
           <img
             src={heroArt.url}
+            fetchPriority="high"
             alt=""
             aria-hidden
             className="lp-drift absolute inset-0 h-full w-full object-cover"
@@ -140,97 +129,81 @@ function Index() {
         <Atmosphere />
         <HeroRain />
 
-        {SHOW_HERO_DEMO && wide && (
-          <HeroDemoCard className="absolute bottom-10 right-8 z-10 w-[19rem] xl:right-[6vw]" />
-        )}
-
-        <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-6xl items-center px-5 py-24 sm:px-8">
-          <div className="lp-boot w-full max-w-xl lg:max-w-[56%]">
-            <Eyebrow>A solo RPG powered by an AI Game Master</Eyebrow>
+        <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-6xl flex-col px-6 pb-12 pt-8 sm:px-8 sm:py-12">
+          <p className="font-display text-lg font-bold uppercase tracking-[0.12em] text-text sm:text-xl">
+            Night City Tales
+          </p>
+          <div className="my-auto w-full max-w-xl py-14 lg:max-w-[56%]">
+            <p className="text-base font-medium text-text sm:text-lg">A solo Cyberpunk RED RPG</p>
             <h1 className="mt-5 pb-[0.08em] font-display text-[clamp(2rem,10vw,2.75rem)] leading-[1.04] tracking-[-0.03em] sm:text-6xl xl:text-7xl">
               {/* One gradient a line, so the last word is as bright as the first, and
                   the name of the city never breaks across two. */}
               <span className="block text-chrome sm:whitespace-nowrap">Live your life in</span>
               <span className="block whitespace-nowrap text-chrome">Night City.</span>
             </h1>
-            <p className="mt-6 max-w-lg text-base leading-relaxed text-text-muted sm:text-lg">
-              Rent comes due. Your fixer keeps calling. Your ripperdoc remembers what you owe. An AI
-              tells the story, and the dice are never its to roll.
+            <p className="mt-6 max-w-[44ch] text-lg leading-relaxed text-text sm:text-xl">
+              Rent comes due. Your fixer keeps calling. Tell the GM what you do. The rules settle
+              the roll, and the city remembers what happened.
             </p>
-
-            <div className="mt-9 flex flex-wrap items-center gap-5">
-              <Button asChild size="lg" className="lp-cta h-12 px-9 uppercase tracking-[0.2em]">
-                <Link to={startTo}>{startLabel}</Link>
-              </Button>
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2">
+              <StoryEntryLink signedIn={signedIn} className="h-12 px-7 text-base font-semibold" />
               <a
                 href="#the-game"
-                className="border-b border-text-dim/60 pb-0.5 font-mono text-[11px] uppercase tracking-[0.22em] text-text transition-colors hover:border-ember hover:text-ember"
+                className="inline-flex min-h-12 items-center gap-2 text-base font-medium text-text underline decoration-text-muted underline-offset-4 hover:text-cool"
               >
-                See how it plays ↓
+                See a turn <span aria-hidden="true">↓</span>
               </a>
             </div>
-
-            <ul className="mt-10 flex flex-wrap gap-2">
-              {["Built on Cyberpunk RED", "Solo play", "Persistent campaign"].map((chip) => (
-                <li
-                  key={chip}
-                  className="border border-hairline/80 bg-surface/50 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted backdrop-blur-sm"
-                >
-                  {chip}
-                </li>
-              ))}
-            </ul>
-
-            {SHOW_HERO_DEMO && !wide && <HeroDemoCard className="mt-10 max-w-sm" />}
           </div>
         </div>
       </section>
 
-      {/* ======================= 2. WHAT IS THIS ======================= */}
-      <section id="the-game" className="relative border-t border-hairline/50 py-24 sm:py-32">
-        <div className="mx-auto max-w-5xl px-5 text-center sm:px-8">
-          <Reveal>
-            <h2 className="mx-auto max-w-3xl font-display text-3xl leading-[1.12] tracking-[-0.03em] text-text sm:text-5xl">
-              Not a chatbot. A world that plays back.
-            </h2>
-          </Reveal>
-          <Reveal delay={80}>
-            <div className="mx-auto mt-8 max-w-2xl space-y-4 text-base leading-relaxed text-text-muted">
-              <p>
-                Night City Tales is a solo Cyberpunk RED campaign where an AI Game Master runs a
-                persistent world around your character.
-              </p>
-              <p>
-                Your friends remember you. Your enemies remember you. Rent comes due. Armor gets
-                shredded. Deals go bad. Jobs have consequences.
-              </p>
-            </div>
-          </Reveal>
-
-          <div className="mt-16 grid gap-4 text-left md:grid-cols-3">
-            {[
-              {
-                key: "LIVE",
-                body: "Wake up wounded. Your landlord wants rent. Your ripperdoc has something interesting for sale. Your fixer keeps calling.",
-              },
-              {
-                key: "WORK",
-                body: "Take jobs on your terms. Investigate. Negotiate. Improvise. Walk away if the money isn't worth the blood.",
-              },
-              {
-                key: "SURVIVE",
-                body: "When violence starts, combat becomes tactical. Position. Cover. Range. Armor. Ammunition. Consequences.",
-              },
-            ].map((card, i) => (
-              <Reveal key={card.key} delay={120 + i * 90}>
-                <Panel className="h-full p-6">
-                  <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.3em] text-cool">
-                    {card.key}
-                  </p>
-                  <p className="mt-4 text-sm leading-relaxed text-text-muted">{card.body}</p>
-                </Panel>
-              </Reveal>
-            ))}
+      <section
+        id="the-game"
+        aria-labelledby="sample-turn"
+        className="border-t border-hairline/60 bg-ground py-20 sm:py-24"
+      >
+        <div className="mx-auto max-w-6xl px-6 sm:px-8">
+          <h2
+            id="sample-turn"
+            className="max-w-3xl text-balance font-display text-3xl leading-tight tracking-tight text-text sm:text-5xl"
+          >
+            A turn at Evergreen Apartments.
+          </h2>
+          <div className="mt-7 grid items-center gap-7 sm:mt-10 md:grid-cols-[1.45fr_1fr] lg:gap-12">
+            <img
+              src="/images/missions/evergreen-desk-720.webp"
+              srcSet="/images/missions/evergreen-desk-720.webp 720w, /images/missions/evergreen-desk-1440.webp 1440w"
+              sizes="(min-width: 1152px) 620px, (min-width: 768px) 56vw, 100vw"
+              width={1440}
+              height={480}
+              loading="lazy"
+              alt="Behind the Evergreen front desk, a clerk watches a missing-person report on TV."
+              className="aspect-[2.5] w-full object-cover object-[40%_center] md:aspect-[2.25]"
+            />
+            <dl className="space-y-5">
+              <div>
+                <dt className="font-mono text-xs font-semibold uppercase tracking-widest text-text-muted">
+                  Your move
+                </dt>
+                <dd className="mt-1 font-display text-xl text-text">Question the clerk.</dd>
+              </div>
+              <div>
+                <dt className="font-mono text-xs font-semibold uppercase tracking-widest text-text-muted">
+                  Game Master
+                </dt>
+                <dd className="mt-1 text-lg leading-snug text-text">
+                  “Len Vale left these. He books the Vampyres. Tell him you’re after a ticket and
+                  keep my name out of it.”
+                </dd>
+              </div>
+              <div className="border-l-2 border-cool pl-4">
+                <dt className="font-mono text-xs font-semibold uppercase tracking-widest text-cool">
+                  Added to case file
+                </dt>
+                <dd className="mt-1 font-display text-xl text-text">Len Vale’s number</dd>
+              </div>
+            </dl>
           </div>
         </div>
       </section>
@@ -738,15 +711,7 @@ function Index() {
           </Reveal>
           <Reveal delay={140}>
             <div className="mt-10 flex flex-col items-center gap-4">
-              <Button asChild size="lg" className="uppercase tracking-[0.18em]">
-                <Link to={startTo}>{startLabel}</Link>
-              </Button>
-              <Link
-                to={signedIn ? "/roster" : "/login"}
-                className="font-mono text-[11px] uppercase tracking-[0.2em] text-text-muted transition-colors hover:text-text"
-              >
-                Already playing? Continue your campaign
-              </Link>
+              <StoryEntryLink signedIn={signedIn} className="h-12 px-7 text-base font-semibold" />
             </div>
           </Reveal>
           <p className="mt-14 font-mono text-[10px] uppercase tracking-[0.24em] text-text-dim">

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,14 @@ import { pageMeta } from "@/lib/siteMeta";
 import loginArt from "@/assets/login-skyline-v2.png.asset.json";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({
+  validateSearch: (search): { mode?: "signup" } =>
+    search["mode"] === "signup" ? { mode: "signup" } : {},
+  head: ({ match }) => ({
     meta: pageMeta({
-      title: "Sign In · Night City Tales",
+      title:
+        match.search.mode === "signup"
+          ? "Create an account · Night City Tales"
+          : "Sign In · Night City Tales",
       description:
         "Sign in with your Google account or email and password to reach your character roster.",
       path: "/login",
@@ -20,6 +25,11 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
+  const { mode } = Route.useSearch();
+  return <AccountForm key={mode ?? "signin"} signup={mode === "signup"} />;
+}
+
+function AccountForm({ signup }: { signup: boolean }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,20 +50,21 @@ function LoginPage() {
     }
   };
 
-  const onSignIn = (event: FormEvent) => {
+  const onSubmit = (event: FormEvent) => {
     event.preventDefault();
     void run(async () => {
-      await signInWithPassword(email, password);
+      if (signup) {
+        const { needsEmailConfirmation } = await signUpWithPassword(email, password);
+        if (needsEmailConfirmation) {
+          setMessage("Check your email to confirm your account.");
+          return;
+        }
+      } else {
+        await signInWithPassword(email, password);
+      }
       await navigate({ to: "/roster" });
     });
   };
-
-  const onSignUp = () =>
-    void run(async () => {
-      const { needsEmailConfirmation } = await signUpWithPassword(email, password);
-      if (needsEmailConfirmation) setMessage("Check your email to confirm your account.");
-      else await navigate({ to: "/roster" });
-    });
 
   const onGoogle = () =>
     void run(async () => {
@@ -81,16 +92,18 @@ function LoginPage() {
         }}
       />
       <form
-        onSubmit={onSignIn}
+        onSubmit={onSubmit}
         className="relative w-full max-w-sm space-y-5 border border-hairline bg-surface/90 p-7 backdrop-blur-[2px] lg:ml-[8%]"
       >
         <div className="space-y-2">
           <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-ember">
             Night City Tales
           </p>
-          <h1 className="text-2xl text-text">Sign in</h1>
+          <h1 className="text-2xl text-text">{signup ? "Create an account" : "Sign in"}</h1>
           <p className="text-sm text-text-muted">
-            Use your Google account, or an email and password.
+            {signup
+              ? "Save your character and campaign with Google or an email and password."
+              : "Use your Google account, or an email and password."}
           </p>
         </div>
 
@@ -123,24 +136,38 @@ function LoginPage() {
           <Input
             id="password"
             type="password"
-            autoComplete="current-password"
+            required
+            autoComplete={signup ? "new-password" : "current-password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
 
-        {error && <p className="border-l-2 border-danger pl-3 text-sm text-text">{error}</p>}
+        {error && (
+          <p role="alert" className="border-l-2 border-danger pl-3 text-sm text-text">
+            {error}
+          </p>
+        )}
         {message && (
-          <p className="border-l-2 border-success pl-3 text-sm text-text-muted">{message}</p>
+          <p role="status" className="border-l-2 border-success pl-3 text-sm text-text-muted">
+            {message}
+          </p>
         )}
 
         <div className="flex flex-col gap-2">
           <Button type="submit" disabled={busy}>
-            Sign in
+            {signup ? "Create account" : "Sign in"}
           </Button>
-          <Button type="button" variant="secondary" disabled={busy} onClick={onSignUp}>
-            Create account
-          </Button>
+          <p className="pt-2 text-center text-sm text-text-muted">
+            {signup ? "Already playing? " : "New to Night City? "}
+            <Link
+              to="/login"
+              search={signup ? {} : { mode: "signup" }}
+              className="inline-flex min-h-8 items-center font-semibold text-text underline underline-offset-4 hover:text-cool"
+            >
+              {signup ? "Sign in" : "Create an account"}
+            </Link>
+          </p>
         </div>
       </form>
     </main>

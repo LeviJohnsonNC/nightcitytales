@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
+import { StoryEntryLink } from "./StoryEntryLink";
+
 const SECTIONS = [
-  { id: "the-game", label: "The Game" },
+  { id: "the-game", label: "Sample turn" },
   { id: "life", label: "Life" },
   { id: "jobs", label: "Jobs" },
   { id: "combat", label: "Combat" },
@@ -30,11 +32,11 @@ export function LandingNav({ signedIn }: { signedIn: boolean }) {
       // Hidden is out of the tab order too: transparent links still took focus.
       inert={!visible}
     >
-      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-3 sm:px-8">
+      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-3 sm:px-8">
         <div className="flex min-w-0 items-center gap-8">
           <a
             href="#top"
-            className="shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.28em] text-text"
+            className="font-mono text-[11px] font-semibold uppercase tracking-[0.28em] text-text"
           >
             Night City Tales
           </a>
@@ -43,7 +45,7 @@ export function LandingNav({ signedIn }: { signedIn: boolean }) {
               <a
                 key={s.id}
                 href={`#${s.id}`}
-                className="font-mono text-[10px] uppercase tracking-[0.24em] text-text-dim transition-colors hover:text-ember"
+                className="font-mono text-xs uppercase tracking-widest text-text-muted transition-colors hover:text-ember"
               >
                 {s.label}
               </a>
@@ -54,17 +56,12 @@ export function LandingNav({ signedIn }: { signedIn: boolean }) {
           {!signedIn ? (
             <Link
               to="/login"
-              className="hidden font-mono text-[10px] uppercase tracking-[0.24em] text-text-dim transition-colors hover:text-text sm:block"
+              className="hidden font-mono text-xs uppercase tracking-widest text-text-muted transition-colors hover:text-text sm:block"
             >
               Sign in
             </Link>
           ) : null}
-          <Link
-            to={signedIn ? "/roster" : "/login"}
-            className="inline-flex h-8 items-center rounded-sm bg-ember px-4 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-ground transition-colors hover:bg-ember-deep"
-          >
-            {signedIn ? "Continue story" : "Start story"}
-          </Link>
+          <StoryEntryLink signedIn={signedIn} className="min-h-10 px-3 text-sm font-semibold" />
         </div>
       </div>
     </header>
