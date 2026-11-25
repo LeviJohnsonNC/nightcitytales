@@ -5,11 +5,7 @@
  */
 import { useEffect, useRef } from "react";
 import { createRain } from "@/features/opening/descent/rain";
-import {
-  RAIN_SEED,
-  prefersReducedMotion,
-  weakDevice,
-} from "@/features/opening/descent/descentDevice";
+import { RAIN_SEED, weakDevice } from "@/features/opening/descent/descentDevice";
 import { STORM_HORIZON_MS, STORM_SEED, flashAt, stormIntensity, strikeTimes } from "./landingStorm";
 
 /** A rain you watch rather than one you fall through: a third of the descent's pace. */
@@ -24,7 +20,7 @@ export function HeroRain({ faceAt = "74% 38%" }: { faceAt?: string }) {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || prefersReducedMotion()) return;
+    if (!canvas) return;
     const weak = weakDevice();
     const rain = createRain(canvas, {
       source: null,
@@ -35,16 +31,10 @@ export function HeroRain({ faceAt = "74% 38%" }: { faceAt?: string }) {
     const strikes = strikeTimes(STORM_SEED, STORM_HORIZON_MS);
     const start = performance.now();
     let raf = 0;
-    let visible = true;
-    const onVisibility = () => {
-      visible = !document.hidden;
-    };
-    document.addEventListener("visibilitychange", onVisibility);
     const onResize = () => rain.resize();
     window.addEventListener("resize", onResize);
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
-      if (!visible) return;
       const ms = now - start;
       const lit = flashAt(ms, strikes);
       rain.draw(WIND_OFFSET_MS + ms, now, {
@@ -58,7 +48,6 @@ export function HeroRain({ faceAt = "74% 38%" }: { faceAt?: string }) {
     raf = requestAnimationFrame(frame);
     return () => {
       cancelAnimationFrame(raf);
-      document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("resize", onResize);
       rain.dispose();
     };
