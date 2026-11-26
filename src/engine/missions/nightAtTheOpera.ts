@@ -7,9 +7,10 @@
  * to narrate; DVs are copied from the source and set in advance. The player is a
  * single Edgerunner (solo-scaling applies to the combat beats per the plan).
  */
-import type { Beat, Mission, MissionRuntime } from "../mission";
+import { stableKey, type Beat, type Mission, type MissionRuntime } from "../mission";
 import { TIME_COSTS } from "../clock";
 
+const patron = "George Edward Rhinemeyer (Rocklin Augmentics) — hiring through a representative";
 const OPERA_ID = "night-at-the-opera";
 export const OPERA_OPENING_BEAT = "hook";
 
@@ -208,7 +209,19 @@ export const NIGHT_AT_THE_OPERA: Mission = {
   title: "A Night at the Opera",
   subtitle: "Darkness and Desire in Night City",
   source: "Tales from the RED: Street Stories, pg. 5-14",
-  patron: "George Edward Rhinemeyer (Rocklin Augmentics) — hiring through a representative",
+  patron,
+  offer: {
+    brokerName: "Rhinemeyer family representative",
+    brokerKey: stableKey(patron), // Existing campaigns know the representative by this key.
+    brokerLine: "Private message",
+    patronName: "George Edward Rhinemeyer",
+    patronOrg: "Rocklin Augmentics",
+    district: "University District",
+    opposition: "The official investigation has stalled. The campus paper is still taking tips.",
+    pitch:
+      "Lucy, 19, is the seventh woman to disappear near the university in four weeks. The report is still on your Agent when a private message comes in. Her family wants you to find her.",
+    ask: "Recover Lucy Rhinemeyer",
+  },
   reward: {
     eurobucksPerHead: 2000,
     upfront: 500,

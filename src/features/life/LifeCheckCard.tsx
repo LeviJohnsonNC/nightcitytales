@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { HoloDie, type DieTone } from "@/features/dice/HoloDie";
 import { lifeCheckVerdict } from "./lifeCheckView";
 import { LuckStepper } from "@/features/play/LuckStepper";
@@ -75,6 +75,7 @@ type Reveal =
 
 export function LifeCheckCard({
   pending,
+  focusHeading = false,
   busy,
   luckRemaining,
   odds,
@@ -82,12 +83,17 @@ export function LifeCheckCard({
   onLanded,
 }: {
   pending: PendingCheck;
+  focusHeading?: boolean;
   busy: boolean;
   luckRemaining: number;
   odds: (luck: number) => CheckPreview | null;
   roll: (luck: number) => CheckRoll;
   onLanded: (roll: CheckRoll, restoreFocus: boolean) => void;
 }) {
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (focusHeading) heading.current?.focus();
+  }, [focusHeading, pending.eventId]);
   const [dedicated, setDedicated] = useState(0);
   const [reveal, setReveal] = useState<Reveal | null>(null);
   const locked = useRef(false);
@@ -119,7 +125,9 @@ export function LifeCheckCard({
   return (
     <section className="life-check" aria-label="Required check">
       <header className="life-check-heading">
-        <h2>{pending.skillName} check</h2>
+        <h2 ref={heading} tabIndex={-1}>
+          {pending.skillName} check
+        </h2>
         {pending.intent && <p className="life-check-intent">{pending.intent}</p>}
         <p className="life-check-spec">
           {signed(preview?.base ?? pending.base)} ·{" "}

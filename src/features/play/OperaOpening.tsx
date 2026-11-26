@@ -78,8 +78,10 @@ export function OperaOpening({
         <div className="opera-layout">
           <main className="opera-main">
             <header className="opera-heading">
-              <p className="opera-eyebrow">{describePosition(bundle.campaign.location_key)}</p>
-              <h1>{mission.title}</h1>
+              <p className="opera-eyebrow">
+                Job accepted · {describePosition(bundle.campaign.location_key)}
+              </p>
+              <h1>Find Lucy Rhinemeyer</h1>
             </header>
             <figure className="opera-art">
               <img
@@ -99,11 +101,10 @@ export function OperaOpening({
             </figure>
             {beforeLead ? (
               <p className="opera-passage">
-                Lucy Rhinemeyer’s student ID fills the Net 54 broadcast. She’s the seventh person to
-                disappear near the university in four weeks. The report cuts past a handbill with
-                the Philharmonic Vampyres’ crest.{" "}
+                A handbill flashes past in the Net 54 footage. In one corner you catch the
+                Philharmonic Vampyres’ crest.{" "}
                 {atDesk
-                  ? "The man behind the front desk leans closer to the screen."
+                  ? "The front desk has the same report on its monitor."
                   : "The report is still on your Agent. The Evergreen front desk and the campus paper both take tips."}
               </p>
             ) : lead ? (
@@ -190,15 +191,16 @@ export function OperaOpening({
               <summary>Job brief</summary>
               <div className="opera-disclosure-body">
                 <p>{mission.patron}</p>
-                <p>
-                  {total.toLocaleString("en-CA")}eb total · {mission.reward?.upfront}eb up front
-                </p>
+                <p>{total.toLocaleString("en-CA")} eb agreed for recovery</p>
                 <p>{mission.beats.find(({ id }) => id === OPERA_OPENING_BEAT)?.playerBrief}</p>
               </div>
             </details>
             <details className="opera-disclosure">
               <summary>History</summary>
-              <div className="opera-disclosure-body opera-history">{history}</div>
+              <div className="opera-disclosure-body opera-history">
+                {history}
+                <p>Adventure source · {mission.source}</p>
+              </div>
             </details>
             <details className="opera-disclosure">
               <summary>Character status</summary>

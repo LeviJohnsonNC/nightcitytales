@@ -4,6 +4,7 @@ import {
   generateJob,
   jobIdForSeed,
   missionOffer,
+  NIGHT_AT_THE_OPERA,
   settleHookAsk,
   type LifeSituation,
 } from "@/engine";
@@ -107,6 +108,23 @@ describe("the job on the wire", () => {
 describe("hook round trip", () => {
   const mission = generateJob(SEED);
   const offer = missionOffer(mission);
+
+  it("restores a negotiated Opera offer from before the representative had player-facing copy", () => {
+    const mission = NIGHT_AT_THE_OPERA;
+    const current = missionOffer(mission);
+    const prior = { ...current, brokerName: mission.patron!, brokerLine: mission.source };
+    const terms = settleHookAsk(offerTerms(mission), prior, "pay", {
+      success: true,
+      margin: 2,
+    }).terms;
+    const key = hookKeyFor(prior, mission.id);
+    const saved = hookFromSituation(situationFrom(hookUpsert(key, mission, prior, terms)));
+    expect(saved?.offer).toEqual(current);
+    expect(saved?.situationKey).toBe(key);
+    expect(saved?.terms).toEqual(terms);
+    expect(current.pitch).not.toContain(current.patronOrg);
+    expect(current.opposition).not.toBe("Unknown.");
+  });
 
   it("survives being written and read back", () => {
     const terms = offerTerms(mission);

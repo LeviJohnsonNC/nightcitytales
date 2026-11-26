@@ -1,0 +1,185 @@
+.lucy-offer {
+  color: #f4f1ed;
+  background: #191a20;
+  border: 1px solid #424247;
+}
+.lucy-location,
+.lucy-kicker,
+.lucy-asks small {
+  font: 550 0.76rem/1.5 var(--font-mono);
+}
+.lucy-location {
+  padding: 0.65rem clamp(1rem, 3vw, 2rem);
+  color: #c2bfbe;
+  border-bottom: 1px solid #44434b;
+}
+.lucy-report {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  background: #161b25;
+}
+.lucy-story,
+.lucy-terms,
+.lucy-negotiation {
+  padding: clamp(1.1rem, 3vw, 2rem);
+}
+.lucy-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #a4e7eb;
+}
+.lucy-story h1 {
+  font: 850 clamp(2.15rem, 4.2vw, 3.4rem)/1.01 var(--font-display);
+  letter-spacing: -0.05em;
+  margin: 0.8rem 0;
+  text-wrap: balance;
+}
+.lucy-story > p:last-child {
+  color: #e1ddd8;
+  max-width: 50ch;
+  line-height: 1.55;
+}
+.lucy-photo {
+  position: relative;
+  overflow: hidden;
+  background: #172837;
+}
+.lucy-photo img {
+  position: absolute;
+  width: 100%;
+  height: 135%;
+  max-width: none;
+  object-fit: cover;
+  object-position: right top;
+}
+.lucy-terms {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-block-end: 0.8rem;
+}
+.lucy-terms h2,
+.lucy-negotiation h2 {
+  font: 700 1.25rem/1.25 var(--font-display);
+  margin-top: 0.35rem;
+}
+.lucy-fee {
+  display: grid;
+}
+.lucy-fee strong {
+  font: 700 1.45rem/1.2 var(--font-mono);
+  color: #ffe0a1;
+}
+.lucy-fee span,
+.lucy-pass label {
+  font-size: 0.875rem;
+  color: #c5c2c5;
+}
+.lucy-decisions,
+.lucy-pass {
+  display: flex;
+  align-items: end;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin: 0 clamp(1.1rem, 3vw, 2rem) 1rem;
+}
+.lucy-decisions button,
+.lucy-pass button {
+  min-height: 44px;
+}
+.lucy-pass input {
+  display: block;
+  padding: 0.55rem;
+  border: 1px solid #66636e;
+  background: #111216;
+  color: white;
+}
+.lucy-negotiation {
+  border-top: 1px solid #44434b;
+  padding-block-start: 0.95rem;
+}
+.lucy-asks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+.lucy-asks button {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-content: start;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  padding: 0.85rem;
+  text-align: left;
+  background: #21242b;
+  border: 1px solid #474b56;
+}
+.lucy-asks button:enabled:hover {
+  border-color: #9ddde1;
+  background: #272d36;
+}
+.lucy-asks button:disabled {
+  opacity: 0.6;
+}
+.lucy-asks svg,
+.lucy-asks small {
+  color: #a4e7eb;
+}
+.lucy-asks span,
+.lucy-asks small {
+  grid-column: 1 / -1;
+}
+.lucy-asks span {
+  color: #d3cfd2;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.lucy-learned {
+  border-inline-start: 2px solid #a4e7eb;
+  margin: 1rem 2rem;
+  padding-inline-start: 1rem;
+}
+.lucy-disclosure > summary {
+  cursor: pointer;
+  min-height: 44px;
+  align-content: center;
+  color: #a4e7eb;
+}
+@media (max-width: 600px) {
+  .lucy-report {
+    grid-template-columns: 1fr;
+  }
+  .lucy-photo {
+    grid-row: 1;
+    height: 7rem;
+  }
+  .lucy-photo img {
+    height: 300%;
+    object-position: right top;
+    top: -32%;
+  }
+  .lucy-story h1 {
+    margin: 0.45rem 0;
+  }
+  .lucy-terms {
+    gap: 0.65rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .life-layout.lucy-layout {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 64rem;
+    margin-inline: auto;
+    gap: 0.6rem;
+  }
+  .lucy-layout .life-desktop-status {
+    position: static;
+  }
+}

@@ -1,3 +1,22 @@
+# Lucy’s opening offer — 2026-11-26 15:06 UTC
+
+[Draft PR #399](https://github.com/LeviJohnsonNC/nightcitytales/pull/399), branch
+`codex/lucy-job-offer`, base `d0995fc9`, tested implementation `32c54979` pushed.
+Opera’s authored offer, LifeScreen, LucyOffer and CSS, LifeCheckCard, the saved
+hook reader and its regression, OperaOpening, and ROADMAP comprise this pass.
+The first offer shows Lucy’s broadcast and the saved fee with no automatic GM
+turn. The quoted total reflects existing settlement behavior.
+
+Production build, typecheck, changed-file lint, and all 4,800 unit tests passed.
+Chromium exercised the shipping play route with a fixture Supabase backend at
+1440×900 and 390×844. Verified the decline reason and freeform disclosure, the
+Trading check and keyboard focus, and reload/acceptance of a legacy negotiated
+offer with all three leads available. Inspected desktop, phone and accepted
+screens. The staging campaign and the existing Opera action RPC were not
+exercised against a live service. Next: review/merge #399 and play through
+one lead on staging. Fresh-chat prompt: verify Lucy’s offer and first lead on
+a signed-in staging campaign after #399.
+
 # Landing readability and motion — 2026-11-25 17:11 UTC
 
 [Draft PR #398](https://github.com/LeviJohnsonNC/nightcitytales/pull/398),
