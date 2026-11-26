@@ -32,7 +32,7 @@ work the campus paper's press introduction. Clickable actions and their
 equivalent typed commands resolve the same way. The saved lead and route inform
 the GM and the case file. The opening's progress, clock, and history commit together.
 
-The pre-acceptance offer opens on Lucy’s Net 54 report and the saved fee. The player can negotiate, decline, or take the job before choosing a lead. The public offer shows the agreed total because cash settles in Aftermath.
+The Net 54 report leads into a private message from Lucy’s family representative with the saved fee. Players can ask about pay, the employer or street leads, reply in their own words, then accept or pass. Negotiated terms stay visible beside the message and street leads stay with the contact action. The public offer shows the agreed total because cash settles in Aftermath.
 
 1. Apply `20261119010000_opera_action.sql` to staging and replay the three routes
    from a signed-in campaign. Compare clicked and typed actions, test a less
