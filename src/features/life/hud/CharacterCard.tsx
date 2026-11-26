@@ -180,7 +180,7 @@ export function CharacterCard({
       <div className="space-y-2.5 border-t border-hairline px-3 py-3">
         <VitalBar label="HP" current={hp.current} max={hp.max} />
         {cash !== undefined ? (
-          <dl className="lucy-reserves">
+          <dl className="life-reserves">
             <div>
               <dt>Cash</dt>
               <dd>{cash}</dd>

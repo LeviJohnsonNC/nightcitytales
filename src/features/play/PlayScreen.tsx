@@ -25,13 +25,16 @@ import {
   DEFAULT_START,
 } from "@/engine";
 import {
-  isOperaOpeningBeat,
-  OPERA_OPENING_BEAT,
+  isOperaInvestigationScene,
   operaActionForExit,
   operaEntryRoute,
   operaFirstLead,
 } from "@/engine/missions/nightAtTheOpera";
 import { OperaOpening } from "./OperaOpening";
+import { CharacterCard as LifeCharacterCard } from "@/features/life/hud/CharacterCard";
+import { PeopleStrip } from "@/features/life/hud/PeopleStrip";
+import { lifePeople } from "@/features/life/lifeModel";
+import { formatMoney } from "@/features/status/statusModel";
 import { LifeComposer } from "@/features/life/LifeComposer";
 import { IpTallyCard } from "./IpTallyCard";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -769,7 +772,14 @@ function InputBar({
   };
   if (sceneLayout) {
     return (
-      <LifeComposer draft={text} onDraft={setText} onAct={send} busy={busy} suggestions={null} />
+      <LifeComposer
+        draft={text}
+        onDraft={setText}
+        onAct={send}
+        busy={busy}
+        suggestions={null}
+        {...(showOptions && { onSuggest: onAskOptions })}
+      />
     );
   }
   return (
@@ -1084,7 +1094,7 @@ export function PlayScreen({
     bundle.mission &&
     bundle.beat &&
     !play.finished &&
-    isOperaOpeningBeat(bundle.mission, bundle.beat);
+    isOperaInvestigationScene(bundle.mission, bundle.beat);
   const headerActions = (
     <>
       <MapButton
@@ -1104,11 +1114,13 @@ export function PlayScreen({
             : []
         }
       />
-      <SheetDrawer
-        character={bundle.character}
-        inventory={bundle.inventory}
-        cyberware={bundle.cyberware}
-      />
+      {!operaScene && (
+        <SheetDrawer
+          character={bundle.character}
+          inventory={bundle.inventory}
+          cyberware={bundle.cyberware}
+        />
+      )}
     </>
   );
   const prompts = (
@@ -1161,10 +1173,11 @@ export function PlayScreen({
     Boolean(play.finished || play.pendingCheck || play.pendingAttack || play.pendingDeathSave);
 
   if (operaScene) {
-    const latestTurn = eventsForThisJob(bundle.events)
+    const jobEvents = eventsForThisJob(bundle.events);
+    const latestTurn = jobEvents
       .filter((event) => event.beat_id === bundle.beat?.id && event.type === "gm_narration")
       .at(-1);
-    const prior = bundle.events.filter(({ id }) => id !== latestTurn?.id);
+    const player = bundle.character.character;
     return (
       <OperaOpening
         bundle={bundle}
@@ -1172,16 +1185,45 @@ export function PlayScreen({
           if (operaActionForExit(bundle.runtime, exit.to)) void play.submit(input ?? exit.label);
           else play.choose(exit);
         }}
-        busy={play.busy}
+        busy={play.busy || play.opening}
         blocked={blocked}
         tools={headerActions}
-        history={prior.map((event) => (
+        history={jobEvents.map((event) => (
           <EventBlock key={event.id} event={event} />
         ))}
         status={
+          <LifeCharacterCard
+            name={player.name}
+            handle={player.handle}
+            role={player.role}
+            portraitPath={player.portrait_path}
+            portraitId={player.portrait_id}
+            hp={{ current: bundle.vitals.hp_current, max: bundle.vitals.hp_max }}
+            humanity={{ current: bundle.vitals.humanity_current, max: bundle.vitals.humanity_max }}
+            wound={bundle.vitals.wound_state}
+            luck={{ left: play.luck.remaining, max: play.luck.max }}
+            cash={formatMoney(bundle.vitals.eurobucks)}
+          />
+        }
+        navigation={
           <>
-            <CharacterPanel bundle={bundle} luck={play.luck} />
+            <SheetDrawer
+              label="Character"
+              character={bundle.character}
+              inventory={bundle.inventory}
+              cyberware={bundle.cyberware}
+            />
+            <PeopleStrip
+              people={lifePeople(bundle.npcs, bundle.campaign.day)}
+              standings={bundle.factionStandings}
+            />
+          </>
+        }
+        roleLabel={play.roleAbility?.info.abilityName ?? "Character tools"}
+        roleTools={
+          <>
             <RoleAbilityPanel play={play} />
+            <StatusStrip status={standing} />
             <RollHistory rolls={play.rolls} />
             <PressurePanel pressure={bundle.pressure} />
             {sceneControls}
@@ -1189,37 +1231,34 @@ export function PlayScreen({
         }
         currentTurn={
           latestTurn && (
-            <div className="mb-3 space-y-3">
-              <EventBlock event={latestTurn} />
+            <div className="opera-current-turn">
+              <SceneFaces faces={currentFaces([latestTurn], bundle.npcs)} />
+              <EventBlock event={latestTurn} isCurrentTurn />
               <SuggestionBar
                 suggestions={play.suggestions}
                 onPick={(suggestion) => void play.submit(suggestionInput(suggestion))}
                 busy={blocked}
                 character={bundle.character}
               />
-              {bundle.beat?.id === OPERA_OPENING_BEAT &&
-                bundle.availableExits
-                  .filter((exit) => exit.to === "getting_tickets")
-                  .map((exit) => (
-                    <Button
-                      key={exit.to}
-                      variant="outline"
-                      onClick={() => play.choose(exit)}
-                      disabled={blocked}
-                    >
-                      {exit.label}
-                    </Button>
-                  ))}
             </div>
           )
         }
         prompts={prompts}
+        pendingId={(play.pendingCheck ?? play.pendingAttack ?? play.pendingDeathSave)?.eventId}
+        chips={chips
+          .filter(({ label }) => label !== "Wound")
+          .map((chip) =>
+            chip.label === "eb"
+              ? { label: "Cash", value: formatMoney(bundle.vitals.eurobucks) }
+              : chip,
+          )}
         composer={
           <InputBar
             key={bundle.beat?.id}
             onSend={play.submit}
             onAskOptions={play.askOptions}
             busy={blocked}
+            showOptions
             sceneLayout
           />
         }

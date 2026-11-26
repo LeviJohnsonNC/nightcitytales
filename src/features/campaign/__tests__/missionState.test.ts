@@ -5,6 +5,7 @@ import {
   operaActionFromText,
   operaApproaches,
   operaEntryRoute,
+  jobSceneExits,
   operaFirstLead,
   operaKnownFacts,
 } from "@/engine/missions/nightAtTheOpera";
@@ -93,6 +94,17 @@ describe("runtimeToUpsert", () => {
     expect(upsert.status).toBe("active");
   });
 
+  it("offers public tickets on a save that predates the entry routes", () => {
+    const mission = NIGHT_AT_THE_OPERA;
+    const hook = advance(mission, startMission(mission), OPERA_OPENING_BEAT);
+    const tickets = advance(mission, hook, "getting_tickets");
+    expect(operaEntryRoute(tickets)).toBeUndefined();
+    expect(jobSceneExits(mission, tickets)[0]).toEqual({
+      to: "night_at_opera",
+      label: "Buy tickets and attend the show",
+    });
+  });
+
   it.each(operaApproaches)("restores the lead from $label and its follow-up", (approach) => {
     const mission = NIGHT_AT_THE_OPERA;
     const hook = advance(mission, startMission(mission), OPERA_OPENING_BEAT);
@@ -126,6 +138,25 @@ describe("runtimeToUpsert", () => {
       to: "night_at_opera",
       label: approach.route.entry,
     });
+    const lookingAtPoster = advance(mission, routeReloaded, "getting_tickets");
+    const posterReloaded = progressToRuntime(
+      mission,
+      row(runtimeToUpsert("camp-1", lookingAtPoster)),
+    );
+    expect(jobSceneExits(mission, posterReloaded)).toEqual([
+      { to: "night_at_opera", label: approach.route.entry },
+      {
+        to: "empty_office_hours",
+        label: "Follow up on the silent professor",
+        sets: ["investigated_professor"],
+      },
+    ]);
+    expect(operaKnownFacts(advance(mission, posterReloaded, "night_at_opera"))[1]).toContain(
+      "The player chose to enter using this route.",
+    );
+    expect(operaKnownFacts(advance(mission, posterReloaded, "empty_office_hours"))[1]).toBe(
+      approach.route.fact,
+    );
     const inside = advance(mission, routeReloaded, "night_at_opera");
     expect(operaKnownFacts(inside)[1]).toContain("The player chose to enter using this route.");
   });

@@ -1,9 +1,18 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import { ArrowRight, AudioLines, MessageSquareText, PhoneCall } from "lucide-react";
+import {
+  ArrowRight,
+  AudioLines,
+  FileText,
+  MessageSquareText,
+  NotebookPen,
+  PhoneCall,
+  SlidersHorizontal,
+} from "lucide-react";
 import {
   agreedMissionFee,
   describePosition,
   formatDuration,
+  formatLifeClock,
   placeKeyOf,
   type BeatExit,
 } from "@/engine";
@@ -14,12 +23,40 @@ import {
   operaEntryRoute,
   operaFirstLead,
 } from "@/engine/missions/nightAtTheOpera";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import type { CampaignEvent } from "@/lib/backend";
 import { NCAmp } from "@/features/music/ncamp/NCAmp";
+import { MobileStatusBar, type StatChip } from "./mobileShell";
 import type { PlayBundle } from "./playBundleOps";
 import "@/features/life/life.css";
 import "./opera-opening.css";
 
 const DESK = "/images/missions/evergreen-desk";
+const HANDBILL = "/images/missions/opera-handbill.webp";
+
+function disclosedClient(events: CampaignEvent[]) {
+  const start = events.map(({ type }) => type).lastIndexOf("mission_started");
+  if (start < 0) return null;
+  const started = events[start]?.data as { missionId?: unknown } | null;
+  if (started?.missionId !== NIGHT_AT_THE_OPERA.id) return null;
+  const previous = events.slice(0, start);
+  const offered = previous.map(({ type }) => type).lastIndexOf("hook_offered");
+  if (offered < 0) return null;
+  const offer = previous[offered]?.data as { missionId?: unknown; situationKey?: unknown } | null;
+  if (offer?.missionId !== started.missionId || typeof offer.situationKey !== "string") return null;
+  const learned = previous.slice(offered + 1).some((event) => {
+    const data = event.data as { situationKey?: unknown; ask?: unknown; success?: unknown } | null;
+    return (
+      event.type === "hook_negotiated" &&
+      data?.situationKey === offer.situationKey &&
+      data?.ask === "patron" &&
+      data.success === true
+    );
+  });
+  return learned ? NIGHT_AT_THE_OPERA.offer : null;
+}
+
 const approachIcons = [MessageSquareText, AudioLines, PhoneCall];
 
 export function OperaOpening({
@@ -30,9 +67,14 @@ export function OperaOpening({
   tools,
   history,
   status,
+  navigation,
+  roleTools,
+  roleLabel,
   currentTurn,
   prompts,
   composer,
+  pendingId,
+  chips,
 }: {
   bundle: PlayBundle;
   onChoose: (exit: BeatExit, input?: string) => void;
@@ -41,26 +83,110 @@ export function OperaOpening({
   tools: ReactNode;
   history: ReactNode;
   status: ReactNode;
+  navigation: ReactNode;
+  roleTools: ReactNode;
+  roleLabel: string;
   currentTurn: ReactNode;
   prompts: ReactNode;
   composer: ReactNode;
+  pendingId: string | undefined;
+  chips: StatChip[];
 }) {
   const atDesk = placeKeyOf(bundle.campaign.location_key) === "p4";
   const beforeLead = bundle.beat?.id === OPERA_OPENING_BEAT;
   const lead = operaFirstLead(bundle.runtime);
   const route = operaEntryRoute(bundle.runtime);
   const activeRoute = route?.to === bundle.beat?.id ? route : undefined;
-  const leadHeading = useRef<HTMLHeadingElement>(null);
+  const sceneHeading = useRef<HTMLHeadingElement>(null);
   const beatId = bundle.beat?.id;
   const previousBeatId = useRef(beatId);
+  const pending = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (beatId !== previousBeatId.current) leadHeading.current?.focus();
+    if (pendingId) pending.current?.focus();
+  }, [pendingId]);
+  useEffect(() => {
+    if (!pendingId && beatId !== previousBeatId.current) sceneHeading.current?.focus();
     previousBeatId.current = beatId;
-  }, [beatId]);
+  }, [beatId, pendingId]);
 
   const mission = NIGHT_AT_THE_OPERA;
-  const objective = bundle.runtime?.objectives.find((item) => item.status === "active");
+  const gettingTickets = beatId === "getting_tickets";
+  const inShow = beatId === "night_at_opera";
+  const atOffice = beatId === "empty_office_hours";
+  const hasHandbill = !beforeLead && !inShow && !atOffice;
+  const result = gettingTickets ? route : activeRoute;
+  const title = gettingTickets
+    ? (route?.title ?? "Find a way into the show")
+    : (activeRoute?.title ?? (atOffice ? "The professor’s office" : bundle.beat?.title));
+  const client = disclosedClient(bundle.events);
   const total = agreedMissionFee(mission, bundle.agreedPayout);
+
+  const rail = (
+    <div className="opera-case">
+      {status}
+      <nav className="life-rail-nav opera-navigation" aria-label="Campaign">
+        {navigation}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost">
+              <FileText aria-hidden="true" />
+              Case file
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="overflow-y-auto" aria-describedby={undefined}>
+            <SheetHeader>
+              <SheetTitle>Case file</SheetTitle>
+            </SheetHeader>
+            <div className="opera-reference">
+              <h3>Find Lucy Rhinemeyer</h3>
+              <p>Last seen near the University District.</p>
+              <p>
+                {client
+                  ? `${client.patronName} · ${client.patronOrg}`
+                  : "Rhinemeyer family representative"}
+              </p>
+              <p>
+                <strong>{total.toLocaleString("en-CA")} eb</strong> agreed for recovery
+              </p>
+              {lead && <p>{lead.response}</p>}
+              {route && <p>{route.response}</p>}
+            </div>
+          </SheetContent>
+        </Sheet>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost">
+              <NotebookPen aria-hidden="true" />
+              Journal
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="overflow-y-auto" aria-describedby={undefined}>
+            <SheetHeader>
+              <SheetTitle>Journal</SheetTitle>
+            </SheetHeader>
+            <div className="opera-reference">
+              {history}
+              <p>Adventure source · {mission.source}</p>
+            </div>
+          </SheetContent>
+        </Sheet>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost">
+              <SlidersHorizontal aria-hidden="true" />
+              {roleLabel}
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="overflow-y-auto" aria-describedby={undefined}>
+            <SheetHeader>
+              <SheetTitle>{roleLabel}</SheetTitle>
+            </SheetHeader>
+            <div className="opera-reference">{roleTools}</div>
+          </SheetContent>
+        </Sheet>
+      </nav>
+    </div>
+  );
 
   return (
     <div className="life-play opera-play">
@@ -75,48 +201,88 @@ export function OperaOpening({
             <NCAmp compact />
           </div>
         </header>
+        <MobileStatusBar title={bundle.character.character.name} chips={chips} showRadio={false}>
+          {rail}
+        </MobileStatusBar>
         <div className="opera-layout">
           <main className="opera-main">
             <header className="opera-heading">
               <p className="opera-eyebrow">
-                Job accepted · {describePosition(bundle.campaign.location_key)}
+                {describePosition(bundle.campaign.location_key)} ·{" "}
+                {formatLifeClock(bundle.campaign)}
               </p>
-              <h1>Find Lucy Rhinemeyer</h1>
+              <h1 ref={beforeLead ? sceneHeading : undefined} tabIndex={-1}>
+                Find Lucy Rhinemeyer
+              </h1>
             </header>
-            <figure className="opera-art">
-              <img
-                src={DESK + "-1440.webp"}
-                srcSet={DESK + "-720.webp 720w, " + DESK + "-1440.webp 1440w"}
-                sizes="(min-width: 1300px) 870px, (min-width: 900px) 70vw, 100vw"
-                width={1440}
-                height={480}
-                fetchPriority="high"
-                alt="An Evergreen Apartments clerk watches Lucy Rhinemeyer’s missing-person report."
-              />
-              <figcaption>
-                {atDesk
-                  ? "Evergreen Apartments · Front desk"
-                  : "Evergreen Apartments · Net 54 relay"}
-              </figcaption>
-            </figure>
-            {beforeLead ? (
-              <p className="opera-passage">
-                A handbill flashes past in the Net 54 footage. In one corner you catch the
-                Philharmonic Vampyres’ crest.{" "}
-                {atDesk
-                  ? "The front desk has the same report on its monitor."
-                  : "The report is still on your Agent. The Evergreen front desk and the campus paper both take tips."}
-              </p>
-            ) : lead ? (
-              <section className="opera-result" aria-labelledby="opera-lead">
-                <h2 id="opera-lead" ref={leadHeading} tabIndex={-1} className="opera-eyebrow">
-                  {activeRoute ? "Way in confirmed" : "Lead found"}
-                </h2>
-                <p className="opera-passage">{activeRoute?.response ?? lead.response}</p>
+            {beforeLead && (
+              <>
+                <figure className="opera-art">
+                  <img
+                    src={DESK + "-1440.webp"}
+                    srcSet={DESK + "-720.webp 720w, " + DESK + "-1440.webp 1440w"}
+                    sizes="(min-width: 1300px) 870px, (min-width: 900px) 70vw, 100vw"
+                    width={1440}
+                    height={480}
+                    fetchPriority="high"
+                    alt="An Evergreen Apartments clerk watches Lucy Rhinemeyer’s missing-person report."
+                  />
+                  <figcaption>
+                    {atDesk
+                      ? "Evergreen Apartments · Front desk"
+                      : "Evergreen Apartments · Net 54 relay"}
+                  </figcaption>
+                </figure>
+                <p className="opera-passage">
+                  A handbill flashes past in the Net 54 footage. In one corner you catch the
+                  Philharmonic Vampyres’ crest.{" "}
+                  {atDesk
+                    ? "The front desk has the same report on its monitor."
+                    : "The report is still on your Agent. The Evergreen front desk and the campus paper both take tips."}
+                </p>
+              </>
+            )}
+            {!beforeLead && (
+              <section
+                className={hasHandbill ? "opera-investigation" : "opera-result"}
+                aria-labelledby="opera-lead"
+              >
+                {hasHandbill && (
+                  <figure className="opera-handbill">
+                    <img
+                      src={HANDBILL}
+                      width={900}
+                      height={600}
+                      alt="A worn black concert handbill with a silver engraving"
+                    />
+                    <figcaption>Philharmonic Vampyres · Old Symphony Hall</figcaption>
+                  </figure>
+                )}
+                <div className="opera-lead">
+                  <h2 id="opera-lead" ref={sceneHeading} tabIndex={-1}>
+                    {title}
+                  </h2>
+                  {result && <p className="opera-passage">{result.response}</p>}
+                  {!result && hasHandbill && !gettingTickets && lead && (
+                    <p className="opera-passage">{lead.response}</p>
+                  )}
+                  {gettingTickets && (
+                    <p className="opera-passage">
+                      {!route &&
+                        "Garden Patch lists tickets for tomorrow night at the old Symphony Hall. "}
+                      A student says their psychology advisor has stopped answering messages.
+                    </p>
+                  )}
+                  {(inShow || atOffice) && !currentTurn && bundle.beat?.playerBrief && (
+                    <p className="opera-passage">{bundle.beat.playerBrief}</p>
+                  )}
+                </div>
               </section>
-            ) : null}
+            )}
             {currentTurn}
-            {prompts}
+            <div ref={pending} tabIndex={-1} aria-label="Action feedback">
+              {prompts}
+            </div>
             <section aria-label="Scene actions" className="opera-actions">
               {beforeLead ? (
                 <div className="opera-approaches">
@@ -145,9 +311,22 @@ export function OperaOpening({
                       </button>
                     );
                   })}
+                  {bundle.availableExits
+                    .filter(({ to }) => to === "getting_tickets")
+                    .map((exit) => (
+                      <button
+                        key={exit.to}
+                        className="opera-follow"
+                        type="button"
+                        onClick={() => onChoose(exit)}
+                        disabled={blocked}
+                      >
+                        {exit.label} <ArrowRight aria-hidden="true" size={16} />
+                      </button>
+                    ))}
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="opera-next">
                   {bundle.availableExits.map((exit) => (
                     <button
                       key={exit.to}
@@ -161,51 +340,17 @@ export function OperaOpening({
                   ))}
                 </div>
               )}
-              {composer}
+              <details className="opera-freeform" key={beatId}>
+                <summary>Do something else</summary>
+                {composer}
+              </details>
               <p role="status" className="opera-wait">
                 {busy ? "Resolving your action…" : ""}
               </p>
             </section>
           </main>
-          <aside className="opera-case" aria-labelledby="opera-case-title">
-            <section className="opera-case-file">
-              <h2 id="opera-case-title" className="opera-eyebrow">
-                Case file
-              </h2>
-              {objective && <p className="opera-objective">{objective.text}</p>}
-              <p className="opera-case-detail">Last seen near the University District</p>
-              {lead && (
-                <div className="opera-evidence">
-                  <p className="opera-eyebrow">Current lead</p>
-                  <p>{lead.lead}</p>
-                </div>
-              )}
-              {route && (
-                <div className="opera-evidence">
-                  <p className="opera-eyebrow">Way in</p>
-                  <p>{route.title}</p>
-                </div>
-              )}
-            </section>
-            <details className="opera-disclosure">
-              <summary>Job brief</summary>
-              <div className="opera-disclosure-body">
-                <p>{mission.patron}</p>
-                <p>{total.toLocaleString("en-CA")} eb agreed for recovery</p>
-                <p>{mission.beats.find(({ id }) => id === OPERA_OPENING_BEAT)?.playerBrief}</p>
-              </div>
-            </details>
-            <details className="opera-disclosure">
-              <summary>History</summary>
-              <div className="opera-disclosure-body opera-history">
-                {history}
-                <p>Adventure source · {mission.source}</p>
-              </div>
-            </details>
-            <details className="opera-disclosure">
-              <summary>Character status</summary>
-              <div className="opera-disclosure-body">{status}</div>
-            </details>
+          <aside className="opera-rail" aria-label="Character and case">
+            {rail}
           </aside>
         </div>
       </div>

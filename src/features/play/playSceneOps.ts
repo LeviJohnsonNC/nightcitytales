@@ -4,8 +4,8 @@
  * re-exports them. No React and no TanStack Query in here.
  */
 
-import { advance, availableExits, getBeat, type BeatExit } from "@/engine";
-import { isOperaOpeningBeat } from "@/engine/missions/nightAtTheOpera";
+import { advance, getBeat, type BeatExit } from "@/engine";
+import { isOperaAuthoredScene, jobSceneExits } from "@/engine/missions/nightAtTheOpera";
 import { GmSuggestedActionSchema, type GmSuggestedAction } from "@/features/gm/gmResponse";
 import { z } from "zod";
 import { logBeatAdvanced } from "@/features/campaign/missionLog";
@@ -45,9 +45,9 @@ export async function takeExit(bundle: PlayBundle, exit: BeatExit): Promise<void
     ...bundle,
     runtime: next,
     beat: toBeat,
-    availableExits: availableExits(bundle.mission, next),
+    availableExits: jobSceneExits(bundle.mission, next),
   };
-  if (toBeat.evidenceDecision || isOperaOpeningBeat(bundle.mission, toBeat)) return;
+  if (toBeat.evidenceDecision || isOperaAuthoredScene(bundle.mission, toBeat)) return;
   await narrate(advanced, `(You choose: ${exit.label}. Set the new scene.)`);
 }
 
