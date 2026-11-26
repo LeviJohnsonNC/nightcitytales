@@ -114,13 +114,17 @@ export function hookFromSituation(situation: LifeSituation): LifeHook | null {
         }
       : null;
   const offer = missionOffer(mission);
+  // Older authored offers saved the book citation as the broker’s description.
+  const legacyCredit =
+    mission.offer && stored?.standing === mission.source && stored.name === mission.patron;
   return {
     situationKey: situation.key,
     missionId,
     mission,
-    offer: stored
-      ? { ...offer, brokerKey: stored.key, brokerName: stored.name, brokerLine: stored.standing }
-      : offer,
+    offer:
+      stored && !legacyCredit
+        ? { ...offer, brokerKey: stored.key, brokerName: stored.name, brokerLine: stored.standing }
+        : offer,
     terms: {
       basePayout,
       payout: int(data.payout, basePayout),

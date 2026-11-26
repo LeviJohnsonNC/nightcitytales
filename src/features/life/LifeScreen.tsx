@@ -1,3 +1,4 @@
+import { LucyOffer } from "./LucyOffer";
 import { NeighborhoodCard } from "./NeighborhoodCard";
 import { neighborhoodContext } from "./neighborhoodOps";
 import { clinicDescription, CLINIC_PLACE } from "@/engine/neighborhood";
@@ -38,6 +39,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ChevronDown, ShoppingBag } from "lucide-react";
 import {
+  NIGHT_AT_THE_OPERA,
+  formatLifeClock,
   clampLuckSpend,
   formatDuration,
   getSkill,
@@ -754,6 +757,7 @@ function CampaignLife({
 }) {
   const life = useLife(campaignId);
   const bundle = life.bundle;
+  const lucyHook = life.hook?.missionId === NIGHT_AT_THE_OPERA.id ? life.hook : null;
   const [draft, setDraft] = useState("");
   const [submitted, setSubmitted] = useState("");
   const sending = useRef(false);
@@ -971,7 +975,7 @@ function CampaignLife({
   // Open the first moment automatically, once, so Life is never a blank page.
   const opened = useRef<string | null>(null);
   useEffect(() => {
-    if (!bundle || life.busy || life.actionError) return;
+    if (!bundle || lucyHook || life.busy || life.actionError) return;
     if (life.narration || life.pendingCheck) return;
     const last = bundle.events.at(-1)?.type;
     if (life.atNeighborhoodScene || last === "neighborhood_action" || last === "travelled") return;
@@ -979,7 +983,7 @@ function CampaignLife({
     if (opened.current === key) return;
     opened.current = key;
     life.openMoment();
-  }, [bundle, life]);
+  }, [bundle, life, lucyHook]);
 
   if (life.isPending) {
     return <p className="p-8 text-sm text-muted-foreground">Loading your life…</p>;
@@ -1202,6 +1206,7 @@ function CampaignLife({
 
   const journal = (close: () => void) => (
     <>
+      {lucyHook && <p>Adventure source · {lucyHook.mission.source}</p>}
       {life.phase === "life" && (
         <NeighborhoodCard
           journal
@@ -1266,6 +1271,43 @@ function CampaignLife({
     standing &&
     standing === (bundle.campaign.home_place_key ?? bundle.character.finance?.home_place_key);
   const latest = visibleEvents.at(-1);
+  // A resumed offer may contain the old automatic introduction. Show replies to
+  // player actions here, while keeping earlier narration available in the Journal.
+  const offeredAt = lucyHook
+    ? bundle.events.filter((e) => e.type === "hook_offered").at(-1)?.seq
+    : undefined;
+  const showPassage =
+    !lucyHook ||
+    !!call ||
+    bundle.events.some(
+      (e) =>
+        e.type === "player_input" &&
+        e.seq > (offeredAt ?? -1) &&
+        e.seq < (life.narration?.event.seq ?? -1),
+    );
+  const composer = (
+    <LifeComposer
+      draft={draft}
+      onDraft={setDraft}
+      busy={waiting}
+      onAct={() => void send(draft.trim())}
+      onSuggest={life.askOptions}
+      onHangUp={call ? (keyboard) => void hangUp(keyboard) : undefined}
+      suggestions={
+        life.actions.length > 0 && (
+          <div className="life-suggestions" aria-label="Suggested actions">
+            {suggested.slice(0, 2)}
+            {suggested.length > 2 && (
+              <details className="life-more-actions">
+                <summary>More actions ({suggested.length - 2})</summary>
+                {suggested.slice(2)}
+              </details>
+            )}
+          </div>
+        )
+      }
+    />
+  );
   return (
     <TooltipProvider delayDuration={150}>
       <div className="life-play">
@@ -1299,7 +1341,7 @@ function CampaignLife({
           >
             {rail}
           </MobileStatusBar>
-          <div className="life-layout">
+          <div className={lucyHook ? "life-layout lucy-layout" : "life-layout"}>
             <div className="life-main" ref={shopHeading} tabIndex={-1}>
               {shopOpen ? (
                 // The Counter, in place of the scene. The input is hidden: a
@@ -1350,35 +1392,46 @@ function CampaignLife({
 
                   <LifeSceneContent
                     lead={
-                      <>
-                        <SceneHero
-                          key={locationKey}
-                          locationKey={locationKey}
-                          clock={bundle.clock}
+                      lucyHook ? (
+                        <LucyOffer
+                          hook={lucyHook}
+                          location={sceneTitle + " · " + formatLifeClock(bundle.clock)}
+                          busy={waiting || !!life.pendingCheck}
+                          onAccept={life.acceptHook}
+                          onPass={life.declineHook}
+                          onAsk={life.pushHook}
                         />
-                        {(faces.length > 0 ||
-                          sellerHere ||
-                          (atHome && bundle.character.character.role === "tech")) && (
-                          <div className="life-presence">
-                            <SceneFaces faces={faces} compact />
-                            <div className="life-local-actions">
-                              {sellerHere && (
-                                <button
-                                  type="button"
-                                  id="life-browse"
-                                  className="life-link"
-                                  onClick={() => openShop(sellerHere.id)}
-                                >
-                                  Browse the counter
-                                </button>
-                              )}
-                              {atHome && bundle.character.character.role === "tech" && (
-                                <WorkshopSheet bundle={bundle} contextual />
-                              )}
+                      ) : (
+                        <>
+                          <SceneHero
+                            key={locationKey}
+                            locationKey={locationKey}
+                            clock={bundle.clock}
+                          />
+                          {(faces.length > 0 ||
+                            sellerHere ||
+                            (atHome && bundle.character.character.role === "tech")) && (
+                            <div className="life-presence">
+                              <SceneFaces faces={faces} compact />
+                              <div className="life-local-actions">
+                                {sellerHere && (
+                                  <button
+                                    type="button"
+                                    id="life-browse"
+                                    className="life-link"
+                                    onClick={() => openShop(sellerHere.id)}
+                                  >
+                                    Browse the counter
+                                  </button>
+                                )}
+                                {atHome && bundle.character.character.role === "tech" && (
+                                  <WorkshopSheet bundle={bundle} contextual />
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </>
+                          )}
+                        </>
+                      )
                     }
                     narration={
                       <>
@@ -1388,16 +1441,18 @@ function CampaignLife({
                             : callEnded}
                         </p>
                         {call && <AgentCallStrip player={bundle.character.character} call={call} />}
-                        {passage ? (
+                        {showPassage && passage ? (
                           <article className="life-passage">
-                            {passage.title &&
+                            {!lucyHook &&
+                              passage.title &&
                               passage.title.trim().toLowerCase() !==
                                 sceneTitle.trim().toLowerCase() && <h2>{passage.title}</h2>}
                             <div>
                               <NpcText text={passage.text} />
                             </div>
                           </article>
-                        ) : !checkResult &&
+                        ) : !lucyHook &&
+                          !checkResult &&
                           !life.atNeighborhoodScene &&
                           latest &&
                           latest.type !== "neighborhood_action" ? (
@@ -1435,7 +1490,7 @@ function CampaignLife({
                       onDismiss={life.dismissLifeIp}
                     />
                   )}
-                  {life.hook && <HookCard life={life} />}
+                  {life.hook && !lucyHook && <HookCard life={life} />}
                   <div className="life-turn-area">
                     {life.actionError && (
                       <p role="alert" className="life-error">
@@ -1491,6 +1546,7 @@ function CampaignLife({
                       <LifeCheckCard
                         key={canRoll.eventId}
                         pending={canRoll}
+                        focusHeading={!!lucyHook}
                         roll={(luckSpend) => rollCheck(canRoll, luckSpend)}
                         odds={(luckSpend) => checkOdds(canRoll, luckSpend)}
                         onLanded={(rolled, hadFocus) => {
@@ -1513,35 +1569,30 @@ function CampaignLife({
                         ))}
                       </div>
                     )}
-                    {!canRoll && !life.checkBusy && !unresolved && (
-                      <LifeComposer
-                        draft={draft}
-                        onDraft={setDraft}
-                        busy={waiting}
-                        onAct={() => void send(draft.trim())}
-                        onSuggest={life.askOptions}
-                        onHangUp={call ? (keyboard) => void hangUp(keyboard) : undefined}
-                        suggestions={
-                          life.actions.length > 0 && (
-                            <div className="life-suggestions" aria-label="Suggested actions">
-                              {suggested.slice(0, 2)}
-                              {suggested.length > 2 && (
-                                <details className="life-more-actions">
-                                  <summary>More actions ({suggested.length - 2})</summary>
-                                  {suggested.slice(2)}
-                                </details>
-                              )}
-                            </div>
-                          )
-                        }
-                      />
-                    )}
+                    {!canRoll &&
+                      !life.checkBusy &&
+                      !unresolved &&
+                      (lucyHook && !call ? (
+                        <details className="lucy-disclosure">
+                          <summary>Say or do something else</summary>
+                          {composer}
+                        </details>
+                      ) : (
+                        composer
+                      ))}
                   </div>
                 </>
               )}
             </div>
             <aside className="life-desktop-status" aria-label="Character status">
-              {rail}
+              {lucyHook ? (
+                <details className="lucy-disclosure">
+                  <summary>{bundle.character.character.name} · Character status</summary>
+                  {rail}
+                </details>
+              ) : (
+                rail
+              )}
             </aside>
           </div>
         </div>
