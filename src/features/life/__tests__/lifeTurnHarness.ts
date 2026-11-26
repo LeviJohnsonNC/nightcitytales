@@ -296,6 +296,11 @@ export function fakeBackend(db: () => Db) {
     listSituations: async () => clone(db().situations),
     upsertSituation: async (_id: string, input: SituationUpsert) => situationRow(input),
     upsertSituations: async (_id: string, inputs: SituationUpsert[]) => inputs.map(situationRow),
+    markSituationShown: async (_id: string, key: string, day: number) => {
+      const row = db().situations.find((s) => s.situation_key === key);
+      if (row && (row.last_shown_day === null || row.last_shown_day < day))
+        row.last_shown_day = day;
+    },
     setSituationStatus: async (_id: string, key: string, status: string) => {
       const row = db().situations.find((s) => s.situation_key === key);
       if (row) row.status = status;
