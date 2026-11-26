@@ -1,6 +1,12 @@
+# Lucy’s character sidebar — 2026-11-26 16:20 UTC
+
+[PR #401](https://github.com/LeviJohnsonNC/nightcitytales/pull/401), branch `codex/lucy-character-sidebar`, base `b836ca0b`, implementation `b83dbdc4` pushed. LifeScreen, CharacterCard, mobileShell and lucy-offer.css restore desktop status beside the offer, keep the sheet below 1280 px and collapse the idle feedback band.
+Production build, typecheck, changed-file lint and all 4,801 unit tests passed. Inspected desktop and phone captures. Chromium verified geometry and drawer focus at 390, 1024, 1279, 1280 and 1440 px against fixture campaigns. Checked wound display and pending-roll focus. Live staging remains for review.
+Next after merge: “Check Lucy’s offer with my staging character and follow the first lead.”
+
 # Lucy’s private message — 2026-11-26 15:54 UTC
 
-[PR #400](https://github.com/LeviJohnsonNC/nightcitytales/pull/400) is open on `codex/lucy-private-message`, base `0c0b054c`, tested implementation `d740cbe4` pushed.
+[PR #400](https://github.com/LeviJohnsonNC/nightcitytales/pull/400) merged from `codex/lucy-private-message`, base `0c0b054c`, tested implementation `d740cbe4` pushed.
 The Opera pitch, LucyOffer, its CSS and LifeScreen put the family message, fee, questions, freeform reply and decision together. The campaign adapter now updates only the last-shown day when narration ends. This prevents stale offer terms or a declined offer returning. A Life turn regression covers the write.
 Production build, typecheck, changed-file lint and 4,801 unit tests passed. Visually inspected the offer at 1440 and 390 px. Chromium exercised the shipping route with fixture campaign data and narrator replies, including a completed opposed roll, outcome persistence, hidden/revealed information, legacy acceptance, passing and freeform replies. Staging and live AI were not exercised.
 Next after review and merge: “Open Lucy’s offer on a staging character, ask who is paying, then take the first lead.”

@@ -87,7 +87,7 @@ import { previouslyFor, readDismissed, writeDismissed } from "@/features/campaig
 import { MapButton } from "@/features/atlas/MapButton";
 import { carriedKit } from "@/features/play/carriedKit";
 import { SheetDrawer } from "@/features/play/SheetDrawer";
-import { CharacterCard } from "./hud/CharacterCard";
+import { CharacterCard, VitalBar } from "./hud/CharacterCard";
 import { PeopleStrip } from "./hud/PeopleStrip";
 import { ResourceStrip } from "./hud/ResourceStrip";
 import {
@@ -659,6 +659,7 @@ function LifeRail({
   luckMax,
   status,
   journal,
+  compact = false,
   onOpenShop,
 }: {
   life: ReturnType<typeof useLife>;
@@ -666,12 +667,73 @@ function LifeRail({
   luckLeft: number;
   luckMax: number;
   status: StatusView;
+  compact?: boolean;
   /** History and neighborhood leads, with a way to return to the scene. */
   journal: (close: () => void) => ReactNode;
   /** Turn the main column into the shop (the Counter). */
   onOpenShop: () => void;
 }) {
   const [reachOpen, setReachOpen] = useState(false);
+  const navigation = (
+    <nav className="life-rail-nav" aria-label="Campaign">
+      <SheetDrawer
+        label="Character"
+        character={bundle.character}
+        inventory={bundle.inventory}
+        cyberware={bundle.cyberware}
+      />
+      <PeopleStrip people={life.people} standings={life.standings} />
+      <RecordSheet bundle={bundle} journal={journal} />
+      {!compact && <ScreamsheetSheet bundle={bundle} />}
+    </nav>
+  );
+  const resources = (
+    <>
+      <ResourceStrip status={status} />
+
+      <ClimbIntro
+        campaignId={bundle.campaign.id}
+        pinnedCount={life.pinned.length}
+        onShow={() => setReachOpen(true)}
+      />
+    </>
+  );
+  const services = (
+    <>
+      <WithinReachSheet life={life} open={reachOpen} onOpenChange={setReachOpen} />
+      <HomeSheet life={life} />
+      {/* Renders nothing unless the place you are standing in has taken to you. */}
+      <FavoursSheet bundle={bundle} />
+      <DockTile icon={<ShoppingBag className="size-6" />} label="Shop" onClick={onOpenShop} />
+      <RipperdocSheet
+        bundle={bundle}
+        narrate={life.narrateFixedResult}
+        onTravel={life.travelTo}
+        travelBusy={life.travelBusy}
+        travelMode={life.vehicleRule}
+      />
+      {/* Renders nothing at all for a character without Maker. */}
+      <WorkshopSheet bundle={bundle} />
+    </>
+  );
+  const tools = (
+    <>
+      {compact ? (
+        <div className="life-tools">{services}</div>
+      ) : (
+        <details className="life-tools">
+          <summary>Tools and services</summary>
+          {services}
+        </details>
+      )}
+      <Link
+        to="/roster"
+        className="block text-center font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim hover:text-foreground"
+      >
+        Back to the roster
+      </Link>
+    </>
+  );
   return (
     <>
       <CharacterCard
@@ -684,55 +746,33 @@ function LifeRail({
         humanity={{ current: bundle.vitals.humanity_current, max: bundle.vitals.humanity_max }}
         luck={{ left: luckLeft, max: luckMax }}
         wound={bundle.vitals.wound_state}
+        cash={compact ? formatMoney(status.money.eurobucks) : undefined}
       />
 
-      {/*
-       * Where they stand, as three chips: what rent is doing, what the banked
-       * points are close to buying, and what they have taken on. The detail
-       * waits behind each one rather than standing open down the rail.
-       */}
-      <ResourceStrip status={status} />
-
-      <ClimbIntro
-        campaignId={bundle.campaign.id}
-        pinnedCount={life.pinned.length}
-        onShow={() => setReachOpen(true)}
-      />
-      <nav className="life-rail-nav" aria-label="Campaign">
-        <SheetDrawer
-          label="Character"
-          character={bundle.character}
-          inventory={bundle.inventory}
-          cyberware={bundle.cyberware}
-        />
-        <PeopleStrip people={life.people} standings={life.standings} />
-        <RecordSheet bundle={bundle} journal={journal} />
-        <ScreamsheetSheet bundle={bundle} />
-      </nav>
-      <details className="life-tools">
-        <summary>Tools and services</summary>
-        <WithinReachSheet life={life} open={reachOpen} onOpenChange={setReachOpen} />
-        <HomeSheet life={life} />
-        {/* Renders nothing unless the place you are standing in has taken to you. */}
-        <FavoursSheet bundle={bundle} />
-        <DockTile icon={<ShoppingBag className="size-6" />} label="Shop" onClick={onOpenShop} />
-        <RipperdocSheet
-          bundle={bundle}
-          narrate={life.narrateFixedResult}
-          onTravel={life.travelTo}
-          travelBusy={life.travelBusy}
-          travelMode={life.vehicleRule}
-        />
-        {/* Renders nothing at all for a character without Maker. */}
-        <WorkshopSheet bundle={bundle} />
-      </details>
-
-      <Link
-        to="/roster"
-        className="block text-center font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim hover:text-foreground"
-      >
-        Back to the roster
-      </Link>
+      {compact ? (
+        <>
+          {navigation}
+          <details className="lucy-rail-details">
+            <summary>More status and tools</summary>
+            <div>
+              <VitalBar
+                label="Humanity"
+                current={bundle.vitals.humanity_current}
+                max={bundle.vitals.humanity_max}
+              />
+              {resources}
+              <ScreamsheetSheet bundle={bundle} />
+              {tools}
+            </div>
+          </details>
+        </>
+      ) : (
+        <>
+          {resources}
+          {navigation}
+          {tools}
+        </>
+      )}
     </>
   );
 }
@@ -1242,9 +1282,10 @@ function CampaignLife({
       )}
     </>
   );
-  const rail = (
+  const rail = (compact = false) => (
     <div className="life-rail">
       <LifeRail
+        compact={compact}
         life={life}
         bundle={bundle}
         luckLeft={luckLeft}
@@ -1312,7 +1353,7 @@ function CampaignLife({
   return (
     <TooltipProvider delayDuration={150}>
       <div className="life-play">
-        <div className="life-shell">
+        <div className={lucyHook ? "life-shell lucy-shell" : "life-shell"}>
           <header className="life-mast">
             <div className="life-brand">
               Night City Tales <b aria-hidden="true">//</b>
@@ -1339,8 +1380,9 @@ function CampaignLife({
             open={statusOpen}
             onOpenChange={setStatusOpen}
             showRadio={false}
+            wideDesktop={!!lucyHook}
           >
-            {rail}
+            {rail()}
           </MobileStatusBar>
           <div className={lucyHook ? "life-layout lucy-layout" : "life-layout"}>
             <div className="life-main" ref={shopHeading} tabIndex={-1}>
@@ -1577,14 +1619,7 @@ function CampaignLife({
               )}
             </div>
             <aside className="life-desktop-status" aria-label="Character status">
-              {lucyHook ? (
-                <details className="lucy-disclosure">
-                  <summary>{bundle.character.character.name} · Character status</summary>
-                  {rail}
-                </details>
-              ) : (
-                rail
-              )}
+              {rail(!!lucyHook)}
             </aside>
           </div>
         </div>

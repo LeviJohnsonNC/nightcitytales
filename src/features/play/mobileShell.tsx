@@ -22,8 +22,10 @@ export function MobileStatusBar({
   open,
   onOpenChange,
   showRadio = true,
+  wideDesktop = false,
 }: {
   showRadio?: boolean;
+  wideDesktop?: boolean;
   title: string;
   chips: StatChip[];
   children: ReactNode;
@@ -32,10 +34,10 @@ export function MobileStatusBar({
   onOpenChange?: (open: boolean) => void;
 }) {
   // The desktop has the player in the campaign header; this bar is the phone's.
-  const desktop = useMinWidth(DESKTOP_PX);
+  const desktop = useMinWidth(wideDesktop ? 1280 : DESKTOP_PX);
   return (
     <div
-      className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur lg:hidden"
+      className={`sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur ${wideDesktop ? "xl:hidden" : "lg:hidden"}`}
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <Sheet {...(open !== undefined ? { open } : {})} {...(onOpenChange ? { onOpenChange } : {})}>

@@ -98,6 +98,7 @@ export function CharacterCard({
   humanity,
   luck,
   wound,
+  cash,
 }: {
   name: string;
   handle?: string | null;
@@ -108,6 +109,8 @@ export function CharacterCard({
   humanity: { current: number; max: number };
   luck: { left: number; max: number };
   wound: string | null | undefined;
+  /** The job offer pairs cash with Luck; Humanity is in the expanded status. */
+  cash?: string | undefined;
 }) {
   const generated = usePortraitUrl(portraitPath ?? null);
   const preset = portraitId ? portraitById(portraitId) : undefined;
@@ -176,8 +179,25 @@ export function CharacterCard({
       </div>
       <div className="space-y-2.5 border-t border-hairline px-3 py-3">
         <VitalBar label="HP" current={hp.current} max={hp.max} />
-        <VitalBar label="Humanity" current={humanity.current} max={humanity.max} />
-        {luck.max > 0 && <LuckReadout left={luck.left} max={luck.max} />}
+        {cash !== undefined ? (
+          <dl className="lucy-reserves">
+            <div>
+              <dt>Cash</dt>
+              <dd>{cash}</dd>
+            </div>
+            <div>
+              <dt>Luck</dt>
+              <dd>
+                {luck.left}/{luck.max}
+              </dd>
+            </div>
+          </dl>
+        ) : (
+          <>
+            <VitalBar label="Humanity" current={humanity.current} max={humanity.max} />
+            {luck.max > 0 && <LuckReadout left={luck.left} max={luck.max} />}
+          </>
+        )}
       </div>
     </section>
   );
