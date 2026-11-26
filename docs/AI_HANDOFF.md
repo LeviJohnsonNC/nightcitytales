@@ -1,6 +1,13 @@
+# Lucy’s private message — 2026-11-26 15:54 UTC
+
+[PR #400](https://github.com/LeviJohnsonNC/nightcitytales/pull/400) is open on `codex/lucy-private-message`, base `0c0b054c`, tested implementation `d740cbe4` pushed.
+The Opera pitch, LucyOffer, its CSS and LifeScreen put the family message, fee, questions, freeform reply and decision together. The campaign adapter now updates only the last-shown day when narration ends. This prevents stale offer terms or a declined offer returning. A Life turn regression covers the write.
+Production build, typecheck, changed-file lint and 4,801 unit tests passed. Visually inspected the offer at 1440 and 390 px. Chromium exercised the shipping route with fixture campaign data and narrator replies, including a completed opposed roll, outcome persistence, hidden/revealed information, legacy acceptance, passing and freeform replies. Staging and live AI were not exercised.
+Next after review and merge: “Open Lucy’s offer on a staging character, ask who is paying, then take the first lead.”
+
 # Lucy’s opening offer — 2026-11-26 15:06 UTC
 
-[Draft PR #399](https://github.com/LeviJohnsonNC/nightcitytales/pull/399), branch
+[Merged PR #399](https://github.com/LeviJohnsonNC/nightcitytales/pull/399), branch
 `codex/lucy-job-offer`, base `d0995fc9`, tested implementation `32c54979` pushed.
 Opera’s authored offer, LifeScreen, LucyOffer and CSS, LifeCheckCard, the saved
 hook reader and its regression, OperaOpening, and ROADMAP comprise this pass.
