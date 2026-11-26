@@ -42,6 +42,7 @@ import {
   setInventoryQuantity,
   setCampaignClock,
   setCampaignPhase,
+  markSituationShown,
   setNpcDisposition,
   setCampaignFlag,
   updateCampaignVitals,
@@ -84,7 +85,7 @@ import {
   spendFiredClock,
   type LivePressure,
 } from "@/features/campaign/pressure";
-import { kindOfTrip, placesToOffer, situationToUpsert, type TurnOutcome } from "./lifeModel";
+import { kindOfTrip, placesToOffer, type TurnOutcome } from "./lifeModel";
 import {
   type LifeBundle,
   type TurnOptions,
@@ -724,9 +725,7 @@ export async function applyResponse(
 
   // The situation just put to the player does not come round again today.
   if (bundle.current) {
-    await upsertSituations(campaignId, [
-      { ...situationToUpsert(bundle.current), lastShownDay: bundle.clock.day },
-    ]);
+    await markSituationShown(campaignId, bundle.current.key, bundle.clock.day);
   }
 
   await settleBalance();

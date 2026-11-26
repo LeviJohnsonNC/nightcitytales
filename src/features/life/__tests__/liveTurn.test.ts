@@ -149,6 +149,36 @@ beforeEach(() => {
 });
 
 describe("a plain narration turn", () => {
+  it("keeps the saved offer terms and decision when a narration finishes", async () => {
+    const backend = fakeBackend(() => db);
+    const situation = {
+      situationKey: "lucy-offer",
+      category: "hook",
+      title: "Find Lucy",
+      severity: 5,
+    };
+    await backend.upsertSituation(CAMPAIGN_ID, {
+      ...situation,
+      data: { missionId: "night-at-the-opera", payout: 2500 },
+    });
+    const bundle = await loadLife(CAMPAIGN_ID);
+    expect(bundle.current?.key).toBe(situation.situationKey);
+    await backend.upsertSituation(CAMPAIGN_ID, {
+      ...situation,
+      data: { missionId: "night-at-the-opera", payout: 3150, asked: ["pay"] },
+      status: "expired",
+    });
+    db.replies.push(reply());
+    await liveTurn(bundle, "", { resolved: "The player passed on the offer." });
+    expect(db.situations.find((row) => row.situation_key === situation.situationKey)).toMatchObject(
+      {
+        status: "expired",
+        data: { payout: 3150, asked: ["pay"] },
+        last_shown_day: bundle.clock.day,
+      },
+    );
+  });
+
   it("puts the protected source's call in Life for the first time a week later", async () => {
     db.situations.push({
       id: "evidence-call",

@@ -218,8 +218,7 @@ export const NIGHT_AT_THE_OPERA: Mission = {
     patronOrg: "Rocklin Augmentics",
     district: "University District",
     opposition: "The official investigation has stalled. The campus paper is still taking tips.",
-    pitch:
-      "Lucy, 19, is the seventh woman to disappear near the university in four weeks. The report is still on your Agent when a private message comes in. Her family wants you to find her.",
+    pitch: "I represent Lucy’s family. We’d like you to find her.",
     ask: "Recover Lucy Rhinemeyer",
   },
   reward: {

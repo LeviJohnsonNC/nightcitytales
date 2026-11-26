@@ -1285,6 +1285,7 @@ function CampaignLife({
         e.seq > (offeredAt ?? -1) &&
         e.seq < (life.narration?.event.seq ?? -1),
     );
+  const showComposer = !canRoll && !life.checkBusy && !unresolved;
   const composer = (
     <LifeComposer
       draft={draft}
@@ -1400,6 +1401,7 @@ function CampaignLife({
                           onAccept={life.acceptHook}
                           onPass={life.declineHook}
                           onAsk={life.pushHook}
+                          composer={showComposer && !call ? composer : null}
                         />
                       ) : (
                         <>
@@ -1569,17 +1571,7 @@ function CampaignLife({
                         ))}
                       </div>
                     )}
-                    {!canRoll &&
-                      !life.checkBusy &&
-                      !unresolved &&
-                      (lucyHook && !call ? (
-                        <details className="lucy-disclosure">
-                          <summary>Say or do something else</summary>
-                          {composer}
-                        </details>
-                      ) : (
-                        composer
-                      ))}
+                    {showComposer && (!lucyHook || call) && composer}
                   </div>
                 </>
               )}

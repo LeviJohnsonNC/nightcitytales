@@ -92,6 +92,21 @@ export async function upsertSituations(
   );
 }
 
+/** Mark the scene as shown without writing an older offer back over its terms or status. */
+export async function markSituationShown(
+  campaignId: string,
+  situationKey: string,
+  day: number,
+): Promise<void> {
+  const { error } = await backendClient
+    .from("campaign_situations")
+    .update({ last_shown_day: day })
+    .eq("campaign_id", campaignId)
+    .eq("situation_key", situationKey)
+    .or(`last_shown_day.is.null,last_shown_day.lt.${day}`);
+  if (error) throw new Error(error.message);
+}
+
 export async function setSituationStatus(
   campaignId: string,
   situationKey: string,
