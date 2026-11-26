@@ -7,7 +7,13 @@
  * to narrate; DVs are copied from the source and set in advance. The player is a
  * single Edgerunner (solo-scaling applies to the combat beats per the plan).
  */
-import { stableKey, type Beat, type Mission, type MissionRuntime } from "../mission";
+import {
+  availableExits,
+  stableKey,
+  type Beat,
+  type Mission,
+  type MissionRuntime,
+} from "../mission";
 import { TIME_COSTS } from "../clock";
 
 const patron = "George Edward Rhinemeyer (Rocklin Augmentics) — hiring through a representative";
@@ -39,7 +45,7 @@ export const operaApproaches = [
       minutes: TIME_COSTS.call,
       title: "A place on the guest list",
       response:
-        "Len Vale agrees to put an alias of your choice on the guest list. Check in at the front desk tomorrow night. Len wants the alias when you arrive. There’s room for one, and he never asks who gave you his number.",
+        "Len Vale is holding one spot for you at the old Symphony Hall tomorrow night. Give an alias at the front desk.",
       fact: "Len Vale is holding one place on the guest list. The player can use an alias at the Symphony Hall front desk, and has kept the clerk’s name out of the call.",
       entry: "Enter on the guest list",
     },
@@ -111,6 +117,29 @@ export function isOperaOpeningBeat(mission: Mission, beat: Beat): boolean {
   );
 }
 
+export function isOperaAuthoredScene(mission: Mission, beat: Beat): boolean {
+  return (
+    isOperaOpeningBeat(mission, beat) || (mission.id === OPERA_ID && beat.id === "getting_tickets")
+  );
+}
+
+export function isOperaInvestigationScene(mission: Mission, beat: Beat): boolean {
+  return (
+    isOperaAuthoredScene(mission, beat) ||
+    (mission.id === OPERA_ID && ["night_at_opera", "empty_office_hours"].includes(beat.id))
+  );
+}
+
+/** Backward-compatible with rooms reached before routes were recorded. */
+export function jobSceneExits(mission: Mission, runtime: MissionRuntime) {
+  const exits = availableExits(mission, runtime);
+  const route = operaEntryRoute(runtime);
+  if (runtime.currentBeatId !== "getting_tickets" || !route) return exits;
+  return exits.map((exit) =>
+    exit.to === "night_at_opera" ? { ...exit, label: route.entry } : exit,
+  );
+}
+
 export function operaFirstLead(runtime: MissionRuntime | null) {
   if (runtime?.missionId !== OPERA_ID) return undefined;
   return operaApproaches.find(
@@ -128,7 +157,9 @@ export function operaKnownFacts(runtime: MissionRuntime | null): string[] {
   const route = operaEntryRoute(runtime);
   if (!lead) return [];
   if (!route) return [lead.fact];
-  const used = runtime?.branchChoices[route.to] === "night_at_opera";
+  const used = [route.to, "getting_tickets"].some(
+    (beat) => runtime?.branchChoices[beat] === "night_at_opera",
+  );
   return [
     lead.fact,
     used ? route.fact + " The player chose to enter using this route." : route.fact,
@@ -297,7 +328,7 @@ export const NIGHT_AT_THE_OPERA: Mission = {
         { to: "night_at_opera", label: "Buy tickets and attend the show" },
         {
           to: "empty_office_hours",
-          label: "Follow up on the professor who has gone silent",
+          label: "Follow up on the silent professor",
           sets: ["investigated_professor"],
         },
       ],
@@ -308,7 +339,7 @@ export const NIGHT_AT_THE_OPERA: Mission = {
       title: "Night at the Opera",
       page: 7,
       gmBrief:
-        "Just after sundown, a line forms outside the symphony hall; a battered Campus Security aerodyne is parked out front. A top-hatted, ghost-white host barks invitations while burlesque dancers writhe. No one checks for weapons. Inside, a futuristic staging of Dracula unfolds — style, swagger, and menace. Play the spectacle straight and let them watch it.",
+        "Just after sundown, a line forms outside the symphony hall; a battered Campus Security aerodyne is parked out front. A top-hatted, ghost-white host barks invitations while burlesque dancers writhe. Honor the player's recorded way in and its conditions as they arrive. No one checks for weapons. Inside, a futuristic staging of Dracula unfolds — style, swagger, and menace. Play the spectacle straight and let them watch it.",
       truths: [
         {
           id: "theatre_not_threat",
@@ -326,7 +357,7 @@ export const NIGHT_AT_THE_OPERA: Mission = {
         },
       ],
       playerBrief:
-        "You're in line outside the Symphony Hall after sundown. Nobody checks for weapons. Inside is a staging of Dracula with real teeth behind the theatre — and plenty to notice if you're watching.",
+        "The show is at the old Symphony Hall. Inside is a staging of Dracula — and plenty to notice if you're watching.",
       checks: [
         // The note said what the check WOULD FIND, which handed the model the
         // answer before the player had it. It is a truth now; the note names

@@ -1,8 +1,13 @@
+# Lucy’s investigation handoff — 2026-11-26 17:16 UTC
+
+[PR #402](https://github.com/LeviJohnsonNC/nightcitytales/pull/402) from `codex/opera-investigation`, base `ec8d3bc8`, implementation `2548eb6c` pushed.
+OperaOpening, PlayScreen, job loading and scene advancement, the authored mission, and the handbill WebP cover Getting Tickets and arrival at the show or the professor’s office. The case file uses the saved fee and offers keep their earned entry route.
+Build, typecheck, changed-file lint and 4,802 tests passed. Chromium verified all three routes, a legacy save, both next scenes, fee and identity disclosure, Journal and Credibility dialogs, and focus on navigation and a resumed roll. Browser runs used a fixture backend and GM response at 390, 800, 1024 and 1440 px. Staging smoke test remains.
+Fresh-chat prompt after merge: “Resume my staging campaign at Getting Tickets, then review how the next noncombat Job scenes could reuse this layout.”
+
 # Lucy’s character sidebar — 2026-11-26 16:20 UTC
 
 [PR #401](https://github.com/LeviJohnsonNC/nightcitytales/pull/401), branch `codex/lucy-character-sidebar`, base `b836ca0b`, implementation `b83dbdc4` pushed. LifeScreen, CharacterCard, mobileShell and lucy-offer.css restore desktop status beside the offer, keep the sheet below 1280 px and collapse the idle feedback band.
-Production build, typecheck, changed-file lint and all 4,801 unit tests passed. Inspected desktop and phone captures. Chromium verified geometry and drawer focus at 390, 1024, 1279, 1280 and 1440 px against fixture campaigns. Checked wound display and pending-roll focus. Live staging remains for review.
-Next after merge: “Check Lucy’s offer with my staging character and follow the first lead.”
 
 # Lucy’s private message — 2026-11-26 15:54 UTC
 
@@ -109,15 +114,7 @@ way into the party.
 - The [roadmap](../ROADMAP.md#campaign-opening-pilot) ranks the signed-in
   Opera review, a single generated Job, then the broader Job and Aftermath pass.
 
-All 4,799 tests, typecheck, lint, and the production build passed. Chromium
-used a mocked session, backend, and GM response to verify six walkthroughs,
-matching elapsed time for clicks and typed commands, reload, later GM facts,
-and failures before and after commit. The route confirmation fits at 1280 × 690
-and has no horizontal overflow at 390 px.
-
-The schema migration and signed-in staging playthrough are the release gate.
-This cloud workspace used npm registry tarball URLs for the temporary frozen
-install because Lovable's package hosts returned HTTP 403.
+The opening passed 4,799 tests and six browser walkthroughs using fixtures. The schema migration and signed-in staging playthrough were the release gate.
 
 [Previous handoff](https://github.com/LeviJohnsonNC/nightcitytales/blob/88d3dbb/docs/AI_HANDOFF.md)
 covers the inventory migration and staging follow-up.

@@ -34,6 +34,8 @@ the GM and the case file. The opening's progress, clock, and history commit toge
 
 The Net 54 report leads into a private message from Lucy’s family representative with the saved fee. Players can ask about pay, the employer or street leads, reply in their own words, then accept or pass. Negotiated terms stay visible beside the message and street leads stay with the contact action. The desktop offer keeps HP, cash and Luck in a character sidebar. Narrow screens retain the status sheet. The public offer shows the agreed total because cash settles in Aftermath.
 
+The investigation layout now continues through Getting Tickets and the first scene at the show or the professor’s office. Saved entry routes label the show action, the professor lead sits beside it, and Journal, Case file, and Role Ability open on demand.
+
 1. Apply `20261119010000_opera_action.sql` to staging and replay the three routes
    from a signed-in campaign. Compare clicked and typed actions, test a less
    predictable free-text approach, and check what changes at the door. Verify the

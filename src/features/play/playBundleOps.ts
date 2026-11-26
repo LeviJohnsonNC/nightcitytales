@@ -5,12 +5,11 @@
  */
 
 import { readNeighborhood, type Neighborhood } from "@/engine/neighborhood";
-import { isOperaOpeningBeat } from "@/engine/missions/nightAtTheOpera";
+import { isOperaAuthoredScene, jobSceneExits } from "@/engine/missions/nightAtTheOpera";
 import { loadCombat } from "./combatOps";
 import { loadPlaceStates } from "@/features/campaign/placeState";
 import {
   LEDGER_EVENTS,
-  availableExits,
   currentBeat,
   evidenceEnding,
   getMission,
@@ -112,7 +111,7 @@ export async function loadPlay(campaignId: string): Promise<PlayBundle> {
     mission = getMission(full.campaign.current_mission_id);
     runtime = await loadMissionRuntime(campaignId, mission);
     beat = currentBeat(mission, runtime);
-    exits = availableExits(mission, runtime);
+    exits = jobSceneExits(mission, runtime);
   }
 
   // What the character has already learned about the ground, so a job at a
@@ -172,7 +171,7 @@ export function needsOpeningScene(bundle: PlayBundle): boolean {
     !bundle.mission ||
     !bundle.beat ||
     bundle.beat.evidenceDecision ||
-    isOperaOpeningBeat(bundle.mission, bundle.beat) ||
+    isOperaAuthoredScene(bundle.mission, bundle.beat) ||
     (bundle.runtime && evidenceEnding(bundle.runtime))
   )
     return false;

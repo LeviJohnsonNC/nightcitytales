@@ -762,6 +762,19 @@
   display: grid;
   gap: 0.6rem;
 }
+.life-reserves {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.life-reserves dt {
+  color: #c7c5ca;
+  font-size: 0.8rem;
+}
+.life-reserves dd {
+  font: 650 1rem/1.5 var(--font-mono);
+  overflow-wrap: anywhere;
+}
 .life-character {
   background: none;
   border: 0;
