@@ -219,6 +219,12 @@ export const operaShowActions = [
   { label: "Record the show and crowd", skill: null, item: "video_camera" },
 ] as const;
 
+/** Ways to follow up on the invitation before committing to the meeting. */
+export const operaAfterShowActions = [
+  { label: "Examine the invitation for clues", skill: "perception" },
+  { label: "Ask a contact what they know about the Master", skill: null },
+] as const;
+
 const operaLeadBeats: Beat[] = operaApproaches.map(({ to, lead, response, route }) => ({
   id: to,
   type: "dev",

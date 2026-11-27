@@ -1,3 +1,9 @@
+# Job scene continuity — 2026-11-27 17:08 UTC
+
+[Draft PR #405](https://github.com/LeviJohnsonNC/nightcitytales/pull/405), branch `codex/job-scene-continuity` in `/workspace/nightcitytales`, stacked on #404 at `ef99f5ea`. Implementation `0c7f1f60` is pushed. `CityTurns` shares Life’s wait bar, and `JobScene`, `PlayScreen` and `usePlay` put the current turn, receipts and saved roll results beside the decision. The authored Opera scene adds two optional ways to investigate the invitation.
+Typecheck, changed-file lint, formatting, and build passed. The full suite passed 4,804 of 4,805 tests. The timed-out nightclub composition test passed with all 11 tests in its isolated rerun. Chromium at 1440 and 390 px verified the delayed wait, reduced motion, after-show transition and a generated Job through a check and Journal with fixture data. Reviewed after-show layouts at both widths.
+Next: review #404, then retarget #405 to main for review. The signed-in Lovable playthrough remains. Fresh-chat prompt after merge: “Verify the wait bar and the transition out of Symphony Hall in my Lovable campaign.”
+
 # Player-facing copy cleanup — 2026-11-27 16:41 UTC
 
 [Draft PR #404](https://github.com/LeviJohnsonNC/nightcitytales/pull/404), branch `codex/trim-ui-copy` in `/workspace/nightcitytales`, base `feb4451f` (merged PR #403). Implementation `ad88f052` is pushed. It removes unset-value copy and repeated instructions across chargen, roster, sign-in, Opening, Life, shops, Job, downtime, and the Rap Sheet. Job sources and Lifepath errata are available on demand. Required warnings, retries, rules and suggestion announcements remain.
