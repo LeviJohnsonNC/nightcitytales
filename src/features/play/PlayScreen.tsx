@@ -1267,17 +1267,8 @@ export function PlayScreen({
         onTry={(idea) => void play.submit(suggestionInput(idea))}
         onSuggest={play.askOptions}
         suggesting={play.optionsBusy}
-        suggestionStatus={
-          play.optionsBusy
-            ? "Looking for more ideas…"
-            : play.optionsError
-              ? "Couldn’t load suggestions. Try again."
-              : play.ideasAdded === 0
-                ? "No new ideas for this scene."
-                : play.ideasAdded
-                  ? `${play.ideasAdded} more ${play.ideasAdded === 1 ? "idea" : "ideas"} below.`
-                  : ""
-        }
+        suggestionError={play.optionsError}
+        ideasAdded={play.ideasAdded}
         pendingId={(play.pendingCheck ?? play.pendingAttack ?? play.pendingDeathSave)?.eventId}
         chips={chips
           .filter(({ label }) => label !== "Wound")

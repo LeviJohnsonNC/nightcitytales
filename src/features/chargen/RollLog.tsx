@@ -22,9 +22,7 @@ export function RollLog() {
       {open && (
         <div className="border-t border-border">
           {entries.length === 0 ? (
-            <p className="p-3 text-sm text-muted-foreground">
-              Nothing rolled yet. Every die this app rolls lands here, with its arithmetic.
-            </p>
+            <p className="p-3 text-sm text-muted-foreground">Nothing rolled yet.</p>
           ) : (
             <>
               <ul className="max-h-72 divide-y divide-border overflow-y-auto">

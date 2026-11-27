@@ -74,8 +74,9 @@ export function OperaOpening({
   moreIdeas,
   onTry,
   onSuggest,
-  suggestionStatus,
   suggesting,
+  suggestionError,
+  ideasAdded,
 }: {
   bundle: PlayBundle;
   onChoose: (exit: BeatExit, input?: string) => void;
@@ -96,8 +97,9 @@ export function OperaOpening({
   moreIdeas: GmSuggestedAction[];
   onTry: (idea: GmSuggestedAction) => void;
   onSuggest: (labels: readonly string[]) => void;
-  suggestionStatus: string;
   suggesting: boolean;
+  suggestionError: boolean;
+  ideasAdded: number | undefined;
 }) {
   const atDesk = placeKeyOf(bundle.campaign.location_key) === "p4";
   const beforeLead = bundle.beat?.id === OPERA_OPENING_BEAT;
@@ -134,11 +136,7 @@ export function OperaOpening({
       approach && approach.to === "opera_clerk" && !atDesk ? "Call the desk clerk" : exit.label;
     return {
       label,
-      detail: approach
-        ? `${approach.hint} · ${formatDuration(approach.minutes)}`
-        : inShow && exit.to === "noodles_and_info"
-          ? "Continue after the performance"
-          : "",
+      detail: approach ? `${approach.hint} · ${formatDuration(approach.minutes)}` : "",
       run: () => onChoose(exit, label),
     };
   });
@@ -151,6 +149,18 @@ export function OperaOpening({
     };
   };
   const choices = [...ideas.map(suggestionRow), ...exits, ...moreIdeas.map(suggestionRow)];
+  const suggestionFeedback = suggesting
+    ? "Looking for more ideas…"
+    : suggestionError
+      ? "Couldn’t load suggestions. Try again."
+      : ideasAdded === 0
+        ? "No new ideas for this scene."
+        : "";
+  const suggestionAnnouncement =
+    suggestionFeedback ||
+    (ideasAdded
+      ? `${ideasAdded} new action ${ideasAdded === 1 ? "suggestion" : "suggestions"} added.`
+      : "");
   const renderRow = ({ label, detail, run }: (typeof choices)[number]) => (
     <li key={label}>
       <button className="opera-follow" type="button" onClick={run} disabled={blocked}>
@@ -347,8 +357,8 @@ export function OperaOpening({
                   {choices.length > 0 ? "Suggest more actions" : "Suggest actions"}
                 </button>
               </div>
-              <p className="opera-wait" role="status">
-                {suggestionStatus}
+              <p className={suggestionFeedback ? "opera-wait" : "sr-only"} role="status">
+                {suggestionAnnouncement}
               </p>
               <ul className="opera-next">{choices.slice(0, SHOWN_ACTIONS).map(renderRow)}</ul>
               {choices.length > SHOWN_ACTIONS && (

@@ -15,9 +15,7 @@ const SENTENCE = 48;
  * and reads as one, set off by the same ember rule a quoted line uses.
  */
 export function LifepathValue({ value }: { value: string | null }) {
-  if (!value) {
-    return <p className="mt-1.5 text-sm text-text-dim">Not set</p>;
-  }
+  if (!value) return null;
   const sentence = value.length > SENTENCE;
   return (
     <p

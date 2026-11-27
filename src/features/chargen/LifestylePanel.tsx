@@ -150,15 +150,11 @@ function FashionShop({ state }: { state: ChargenState }) {
       </div>
 
       <div className="border border-hairline bg-surface">
-        <p className="border-b border-hairline px-4 py-3 font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
+        <p className="px-4 py-3 font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
           Wardrobe — {bought.length} piece{bought.length === 1 ? "" : "s"}
         </p>
-        {bought.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-text-muted">
-            Nothing bought yet. Unspent fashion money is lost when you leave this step.
-          </p>
-        ) : (
-          <ul className="divide-y divide-hairline">
+        {bought.length > 0 && (
+          <ul className="divide-y divide-hairline border-t border-hairline">
             {bought.map((line) => (
               <li key={line.lineId} className="flex items-center justify-between gap-3 px-4 py-2">
                 <span className="text-sm text-text">{getFashion(line.itemId).name}</span>

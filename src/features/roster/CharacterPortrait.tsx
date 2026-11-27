@@ -40,9 +40,10 @@ export function CharacterPortrait({
       ) : preset ? (
         <ArtSlot art={portraitArt(preset)} label={name} />
       ) : (
-        <div className="flex h-full items-center justify-center bg-[radial-gradient(120%_90%_at_50%_0%,color-mix(in_oklab,var(--color-neon-purple)_18%,transparent),transparent_70%)] font-mono text-[10px] uppercase tracking-[0.24em] text-text-dim">
-          No portrait
-        </div>
+        <div
+          aria-hidden
+          className="h-full bg-[radial-gradient(120%_90%_at_50%_0%,color-mix(in_oklab,var(--color-neon-purple)_18%,transparent),transparent_70%)]"
+        />
       )}
     </div>
   );

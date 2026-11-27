@@ -606,9 +606,7 @@ function HookCard({ life }: { life: ReturnType<typeof useLife> }) {
               </div>
             )}
 
-            <p className="text-xs text-muted-foreground">
-              Nothing starts until you say yes. Ask questions, push for more, sleep on it, or walk.
-            </p>
+            <p className="text-xs text-muted-foreground">Nothing starts until you say yes.</p>
             <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"

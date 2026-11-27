@@ -172,7 +172,7 @@ function OpposedBody({
           luckRemaining={luckRemaining}
           versus={`to beat ${opposition.npcName}`}
           explain={(p) =>
-            `You roll 1d10 at +${p.base}; ${opposition.npcName} rolls at +${p.against}. You have to beat their total — a tie goes to them — and each side takes its own critical.`
+            `You roll 1d10 at +${p.base}. ${opposition.npcName} rolls 1d10 at +${p.against}. Each side takes its own critical.`
           }
         />
       )}
@@ -263,15 +263,10 @@ function OpposedBody({
       </div>
 
       {!rolled && (
-        <p className="text-xs text-muted-foreground">
-          Roll your d10 first, then theirs. You have to beat their total — a tie goes to them.
-        </p>
+        <p className="text-xs text-muted-foreground">Beat their total to win. Ties go to them.</p>
       )}
       {rolled && !opponentRevealed && (
-        <p className="text-xs text-muted-foreground">
-          You have {rolled.result.actor.total}. Roll {opposition.npcName}&apos;s die to see if it
-          holds.
-        </p>
+        <p className="text-xs text-muted-foreground">Reveal {opposition.npcName}&apos;s roll.</p>
       )}
 
       {rolled && opponentRevealed && (

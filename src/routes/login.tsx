@@ -100,11 +100,7 @@ function AccountForm({ signup }: { signup: boolean }) {
             Night City Tales
           </p>
           <h1 className="text-2xl text-text">{signup ? "Create an account" : "Sign in"}</h1>
-          <p className="text-sm text-text-muted">
-            {signup
-              ? "Save your character and campaign with Google or an email and password."
-              : "Use your Google account, or an email and password."}
-          </p>
+          {signup && <p className="text-sm text-text-muted">Save your character and campaign.</p>}
         </div>
 
         <Button type="button" variant="secondary" disabled={busy} onClick={onGoogle}>

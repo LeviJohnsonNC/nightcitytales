@@ -285,13 +285,11 @@ export function Cart({
   );
   return (
     <div className="border border-hairline bg-surface">
-      <p className="border-b border-hairline px-4 py-3 font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
+      <p className="px-4 py-3 font-mono text-[11px] uppercase tracking-[0.2em] text-text-dim">
         Cart · {stacks.length} line{stacks.length === 1 ? "" : "s"}
       </p>
-      {stacks.length === 0 ? (
-        <p className="px-4 py-6 text-sm text-text-muted">Nothing bought yet.</p>
-      ) : (
-        <div className="max-h-[45vh] overflow-y-auto lg:grid lg:grid-cols-2">
+      {stacks.length > 0 && (
+        <div className="max-h-[45vh] overflow-y-auto border-t border-hairline lg:grid lg:grid-cols-2">
           <ul className="divide-y divide-hairline lg:border-r lg:border-hairline">
             {left.map(renderRow)}
           </ul>
