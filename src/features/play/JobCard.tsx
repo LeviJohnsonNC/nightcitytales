@@ -62,9 +62,10 @@ export function JobCard({ mission, beat }: { mission: Mission; beat: Beat }) {
             </div>
           )}
 
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
-            {mission.source}
-          </p>
+          <details className="text-xs text-muted-foreground">
+            <summary className="cursor-pointer">Adventure source</summary>
+            <p className="mt-1">{mission.source}</p>
+          </details>
         </div>
       )}
     </section>

@@ -101,9 +101,9 @@ export function CharacterCard({
           <h3 className="truncate font-display text-2xl font-extrabold leading-tight tracking-tight text-text">
             {entry.name}
           </h3>
-          <p className="truncate text-sm italic text-text-muted">
-            {entry.handle ? `“${entry.handle}”` : "no street name"}
-          </p>
+          {entry.handle?.trim() && (
+            <p className="truncate text-sm italic text-text-muted">“{entry.handle}”</p>
+          )}
         </header>
 
         <CharacterStats

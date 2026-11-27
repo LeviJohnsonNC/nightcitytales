@@ -193,15 +193,6 @@ function Storefront({
               mark={{ text: "they know you", tone: "held", title: "You have bought here before." }}
             />
           )}
-          {shop.backRoomClosed && (
-            <Stamp
-              mark={{
-                text: "back room shut",
-                tone: "gone",
-                title: "They do not open it for people they do not know.",
-              }}
-            />
-          )}
           {v.range && (
             <Stamp
               mark={{ text: "range out back", tone: "in", title: "Try a gun before you buy it." }}
@@ -643,9 +634,7 @@ function BackRoom({
         <Label>The back room</Label>
       </div>
       {shop.backRoomClosed ? (
-        <p className="mt-1 text-sm text-text-muted">
-          A door at the back, and a look that says it stays shut for people they do not know.
-        </p>
+        <p className="mt-1 text-sm text-text-muted">Open to regulars.</p>
       ) : (
         <ul className="mt-1">
           {items.map((item) => (

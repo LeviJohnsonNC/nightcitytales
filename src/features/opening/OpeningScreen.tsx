@@ -48,9 +48,6 @@ function Failed({ message, onRetry }: { message: string; onRetry: () => void }) 
         The night did not come through
       </p>
       <p className="max-w-prose text-sm text-muted-foreground">{message}</p>
-      <p className="max-w-prose text-sm text-muted-foreground">
-        This one is worth waiting for, so there is no stand-in version of it. Try again.
-      </p>
       <div>
         <Button onClick={onRetry} variant="outline">
           Try again

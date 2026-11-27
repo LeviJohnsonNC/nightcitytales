@@ -114,9 +114,10 @@ export function RoleLifepathTableCard({
 
       <LifepathValue value={value} />
       {table.sourceDiscrepancy && (
-        <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.16em] text-cool">
-          {table.sourceDiscrepancy}
-        </p>
+        <details className="mt-1 text-xs text-text-muted">
+          <summary className="cursor-pointer">Rules note</summary>
+          <p className="mt-1">{table.sourceDiscrepancy}</p>
+        </details>
       )}
 
       {entry && editing && (

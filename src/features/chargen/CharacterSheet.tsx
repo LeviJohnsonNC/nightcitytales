@@ -235,9 +235,7 @@ export function CharacterSheet({
               <ArtSlot art={portraitArt(portrait)} label={build.name || "Portrait"} />
             </PortraitLightbox>
           ) : (
-            <div className="flex h-full items-center justify-center border border-dashed border-hairline text-center font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">
-              No portrait
-            </div>
+            <div aria-hidden className="h-full border border-dashed border-hairline" />
           )}
         </div>
         <div className="min-w-0 space-y-1">
@@ -259,9 +257,7 @@ export function CharacterSheet({
           >
             {build.name || "Unnamed"}
           </h1>
-          <p className="text-sm text-text-muted">
-            {build.handle ? `"${build.handle}"` : "no handle"}
-          </p>
+          {build.handle?.trim() && <p className="text-sm text-text-muted">"{build.handle}"</p>}
           {build.roleAbility && (
             <RoleAbilityTrigger
               roleId={build.roleId}
@@ -536,30 +532,26 @@ export function CharacterSheet({
       </Panel>
 
       {/* 7 — General Lifepath */}
-      <CollapsiblePanel title="General Lifepath">
-        {generalLines.length === 0 ? (
-          <Empty>No Lifepath answers yet.</Empty>
-        ) : (
+      {generalLines.length > 0 && (
+        <CollapsiblePanel title="General Lifepath">
           <ul className="space-y-1 text-sm leading-relaxed text-text">
             {generalLines.map((line, i) => (
               <li key={i}>{line}</li>
             ))}
           </ul>
-        )}
-      </CollapsiblePanel>
+        </CollapsiblePanel>
+      )}
 
       {/* 8 — Role Lifepath */}
-      <CollapsiblePanel title="Role-Specific Lifepath" note={role?.name}>
-        {roleLines.length === 0 ? (
-          <Empty>No Role Lifepath answers yet.</Empty>
-        ) : (
+      {roleLines.length > 0 && (
+        <CollapsiblePanel title="Role-Specific Lifepath" note={role?.name}>
           <ul className="space-y-1 text-sm leading-relaxed text-text">
             {roleLines.map((line, i) => (
               <li key={i}>{line}</li>
             ))}
           </ul>
-        )}
-      </CollapsiblePanel>
+        </CollapsiblePanel>
+      )}
 
       {/* 8b — The woven background, folded away until asked for */}
       {state.background.trim() !== "" && (

@@ -396,7 +396,7 @@ export function DowntimePanel({
       <div>
         <h3 className="text-lg font-bold leading-tight">Downtime</h3>
         <p className="text-sm text-muted-foreground">
-          Patch up, settle up, gear up. Days spent here are days Night City keeps charging you for.
+          Days spent here are days Night City keeps charging you for.
         </p>
       </div>
 

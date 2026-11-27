@@ -85,12 +85,9 @@ export function ScreamsheetSheet({ bundle }: { bundle: LifeBundle }) {
         </SheetHeader>
 
         {items.length === 0 ? (
-          <div className="mt-6 space-y-2 border-l-2 border-hairline pl-3" data-testid="sheet-empty">
-            <p className="text-sm">Nothing in the Sheet is about you yet.</p>
-            <p className="text-xs text-muted-foreground">
-              The city reads what you do. When it has something to say about it, it says it here.
-            </p>
-          </div>
+          <p className="mt-6 border-l-2 border-hairline pl-3 text-sm" data-testid="sheet-empty">
+            Nothing in the Sheet is about you yet.
+          </p>
         ) : (
           <div className="mt-5 space-y-6">
             {groups.map((group) => (

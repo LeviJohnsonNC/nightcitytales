@@ -168,8 +168,7 @@ export function RapSheetButton({
         <DialogHeader>
           <DialogTitle>Rap sheet · {sheet.handle}</DialogTitle>
           <DialogDescription>
-            Your file, as a card. Made here, on this device, from your own character; nothing is
-            uploaded unless you post it.
+            Made on this device. The image stays here unless you share it.
           </DialogDescription>
         </DialogHeader>
 
