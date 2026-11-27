@@ -1,15 +1,15 @@
-# Job scene continuity — 2026-11-27 17:08 UTC
+# Job scene continuity — 2026-11-27 17:39 UTC
 
-[Draft PR #405](https://github.com/LeviJohnsonNC/nightcitytales/pull/405), branch `codex/job-scene-continuity` in `/workspace/nightcitytales`, stacked on #404 at `ef99f5ea`. Implementation `0c7f1f60` is pushed. `CityTurns` shares Life’s wait bar, and `JobScene`, `PlayScreen` and `usePlay` put the current turn, receipts and saved roll results beside the decision. The authored Opera scene adds two optional ways to investigate the invitation.
+[PR #405](https://github.com/LeviJohnsonNC/nightcitytales/pull/405) merged into `codex/trim-ui-copy` at `aeda9769`. [PR #406](https://github.com/LeviJohnsonNC/nightcitytales/pull/406) carries it to `main` from that branch, based on `f89f2ecc`. Implementation `0c7f1f60` shares Life’s wait bar via `CityTurns`. `JobScene`, `PlayScreen` and `usePlay` put the current turn, receipts and saved roll results beside the decision. The Opera scene adds two ways to investigate the invitation.
 Typecheck, changed-file lint, formatting, and build passed. The full suite passed 4,804 of 4,805 tests. The timed-out nightclub composition test passed with all 11 tests in its isolated rerun. Chromium at 1440 and 390 px verified the delayed wait, reduced motion, after-show transition and a generated Job through a check and Journal with fixture data. Reviewed after-show layouts at both widths.
-Next: review #404, then retarget #405 to main for review. The signed-in Lovable playthrough remains. Fresh-chat prompt after merge: “Verify the wait bar and the transition out of Symphony Hall in my Lovable campaign.”
+The signed-in Lovable playthrough remains. Fresh-chat prompt after #406 lands: “Verify the wait bar and the transition out of Symphony Hall in my Lovable campaign.”
 
 # Player-facing copy cleanup — 2026-11-27 16:41 UTC
 
-[Draft PR #404](https://github.com/LeviJohnsonNC/nightcitytales/pull/404), branch `codex/trim-ui-copy` in `/workspace/nightcitytales`, base `feb4451f` (merged PR #403). Implementation `ad88f052` is pushed. It removes unset-value copy and repeated instructions across chargen, roster, sign-in, Opening, Life, shops, Job, downtime, and the Rap Sheet. Job sources and Lifepath errata are available on demand. Required warnings, retries, rules and suggestion announcements remain.
+[PR #404](https://github.com/LeviJohnsonNC/nightcitytales/pull/404) merged to `main` at `f89f2ecc`. Implementation `ad88f052` removes unset-value copy and repeated instructions across chargen, roster, sign-in, Opening, Life, shops, Job, downtime, and the Rap Sheet. Job sources and Lifepath errata are available on demand. Required warnings, retries, rules and suggestion announcements remain.
 The exact “Card name not specified” string is absent from tracked source. The shared Lifepath “Not set” fallback is removed. Existing untracked `generated_images/` is unrelated.
 Build, typecheck, changed-file lint, and 4,805 tests passed. Local Chromium checks at 1440 and 390 px verified sign-in and sign-up copy and Symphony Hall with fixture data, including the compact success feedback, visible no-result feedback, and preserved action draft and campaign state. The live campaign was outside this browser check.
-Next: review and merge #404. Fresh-chat prompt after merge: “Check an unselected Lifepath card and the Symphony Hall suggestions in Lovable.”
+Lovable smoke check: open an unselected Lifepath card and request Symphony Hall suggestions.
 
 # Symphony Hall scene actions — 2026-11-27 16:14 UTC
 
