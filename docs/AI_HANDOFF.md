@@ -1,3 +1,9 @@
+# Symphony Hall scene actions — 2026-11-27 16:14 UTC
+
+[PR #403](https://github.com/LeviJohnsonNC/nightcitytales/pull/403), branch `codex/opera-scene-actions`, base `92a4c466`, implementation `6d3f872d` pushed. Opera scene typography, portrait selection and layout, and the open composer share a decision with three or four starting actions. The Job options path returns distinct ideas without writing a turn.
+Build, typecheck, changed-file lint and 4,805 unit tests passed. Chromium ran at 1440 and 390 px with a fixture campaign and model. Checked repeated suggestions, draft and state preservation, confirmed and walk-on faces, camera availability, and the transition after the show. No provider credentials were available for the live narrator eval. Staging playthrough remains.
+Fresh-chat prompt after merge: “Resume my save at Symphony Hall, try Suggest more actions, and check the next investigation scene.”
+
 # Lucy’s investigation handoff — 2026-11-26 17:16 UTC
 
 [PR #402](https://github.com/LeviJohnsonNC/nightcitytales/pull/402) from `codex/opera-investigation`, base `ec8d3bc8`, implementation `2548eb6c` pushed.
@@ -96,25 +102,4 @@ base `9e3e3822`, implementation checked at `1da596c8`.
 
 # A Night at the Opera opening — 2026-11-19
 
-PR 394, branch `codex/opera-campaign-opening`, based on `88d3dbb`.
-The pilot covers accepting the offer, finding the first lead, and confirming a
-way into the party.
-
-- The Evergreen illustration, case file, radio and composer carry over Life's
-  scene hierarchy. First moves show the engine's time costs.
-- The clerk, broadcast and campus approaches lead to the guest list, public
-  ticket queue or press check-in. Clicked actions and equivalent typed
-  commands share the Job submit path. Other free text goes to the Job GM.
-- Mission branch history restores each learned fact on reload and supplies it
-  to later GM turns. The case file keeps the lead and the confirmed way in.
-- `20261119010000_opera_action.sql` commits progress, clock and history together.
-  A retry uses the original request ID. Fresh local Postgres replay applied
-  20 migrations above the baseline and passed the atomicity, stale choice,
-  retry and ownership regression.
-- The [roadmap](../ROADMAP.md#campaign-opening-pilot) ranks the signed-in
-  Opera review, a single generated Job, then the broader Job and Aftermath pass.
-
-The opening passed 4,799 tests and six browser walkthroughs using fixtures. The schema migration and signed-in staging playthrough were the release gate.
-
-[Previous handoff](https://github.com/LeviJohnsonNC/nightcitytales/blob/88d3dbb/docs/AI_HANDOFF.md)
-covers the inventory migration and staging follow-up.
+PR #394 introduced the three ways into the show and the saved approach. The existing `20261119010000_opera_action.sql` commits progress, time and the receipt together. The [earlier handoff](https://github.com/LeviJohnsonNC/nightcitytales/blob/88d3dbb/docs/AI_HANDOFF.md) covers inventory migration and staging.

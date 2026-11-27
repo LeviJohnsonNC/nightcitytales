@@ -14,6 +14,8 @@ function escape(s: string) {
 
 // Longest key first so full names beat nicknames. Boundaries are added only
 // where the key actually begins/ends with a word character.
+const WORD_NICKNAMES = new Set(["razor", "rogue"]);
+
 const PATTERN = new RegExp(
   NPC_MATCH_KEYS.map((k) => {
     const body = escape(k);
@@ -31,6 +33,13 @@ export function splitNpcMentions(text: string): Array<string | { match: string }
   PATTERN.lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = PATTERN.exec(text)) !== null) {
+    // A word that doubles as a nickname needs its proper-name spelling.
+    // Hyphenated adjectives like "Razor-edged" are ordinary prose.
+    if (
+      WORD_NICKNAMES.has(m[0].toLowerCase()) &&
+      (!/^[A-Z]/.test(m[0]) || /^[-‑][a-z]/i.test(text.slice(PATTERN.lastIndex)))
+    )
+      continue;
     if (m.index > last) out.push(text.slice(last, m.index));
     out.push({ match: m[0] });
     last = m.index + m[0].length;

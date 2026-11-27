@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { distinctSuggestions } from "../playSceneOps";
 import type { PlayBundle } from "../playOps";
 import type { LiveEncounter } from "@/features/campaign/encounterState";
 import {
@@ -23,9 +24,11 @@ const io = vi.hoisted(() => ({
   npc: vi.fn(),
   narrate: vi.fn(),
   close: vi.fn(),
+  clock: vi.fn(),
 }));
 vi.mock("@/lib/backend", async (importOriginal) => ({
   ...(await importOriginal<object>()),
+  setCampaignClock: io.clock,
   readCampaignScene: vi.fn(async () => null),
   getCampaign: vi.fn(async () => ({
     vitals: { hp_current: 30, wound_state: "none" },
@@ -78,7 +81,7 @@ vi.mock("@/features/gm/gmTurn.server", () => ({
       proposedActions: [{ kind: "move", targetId: "h", towards: "closer" }],
       stateDeltas: [{ kind: "set_flag", flag: "bad" }],
       observations: [],
-      suggestedActions: ["Shoot again"],
+      suggestedActions: [{ label: "Take cover", skill: null }],
       question: null,
     };
   },
@@ -204,6 +207,7 @@ const {
   commitCheck,
   endPlayerTurn,
   finishCombatAction,
+  narrate,
 } = await import("../playOps");
 const { attackOption, pendingAttackFrom } = await import("../attackPrompt");
 
@@ -233,6 +237,32 @@ beforeEach(() => {
 });
 
 describe("shipping turn orchestration", () => {
+  it("returns ideas without committing a turn even when the GM proposes changes", async () => {
+    const result = await narrate(bundle(), "What could I do here?", {
+      optionsRequested: ["Talk to the guard"],
+    });
+    expect(result).toEqual([{ label: "Take cover", skill: null }]);
+    expect(io.narrate).toHaveBeenCalledOnce();
+    expect(io.events).toEqual([]);
+    expect(io.save).not.toHaveBeenCalled();
+    expect(io.clock).not.toHaveBeenCalled();
+  });
+
+  it("ignores repeated ideas and paraphrased lead-ins to the scheduled exit", () => {
+    const existing = ["Work the leads after the show", "Record the show and crowd"];
+    expect(
+      distinctSuggestions(
+        [
+          { label: "Watch the performance through and work leads after the show", skill: null },
+          { label: "Record the show and the crowd.", skill: null },
+          { label: "Ask the host about the program", skill: "conversation" },
+          { label: "Ask the host about the program", skill: null },
+        ],
+        existing,
+      ),
+    ).toEqual([{ label: "Ask the host about the program", skill: "conversation" }]);
+  });
+
   it("publishes player attack HP from before the saved outcome", async () => {
     const { subscribeCombatFrames } = await import("../combatPlayback");
     const b = bundle();

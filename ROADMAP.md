@@ -36,6 +36,8 @@ The Net 54 report leads into a private message from Lucy’s family representati
 
 The investigation layout now continues through Getting Tickets and the first scene at the show or the professor’s office. Saved entry routes label the show action, the professor lead sits beside it, and Journal, Case file, and Role Ability open on demand.
 
+At Symphony Hall, the freeform composer opens alongside several concrete approaches and the after-show exit. Asking for more ideas only updates the action list. Scene portraits use the people identified as present.
+
 1. Apply `20261119010000_opera_action.sql` to staging and replay the three routes
    from a signed-in campaign. Compare clicked and typed actions, test a less
    predictable free-text approach, and check what changes at the door. Verify the

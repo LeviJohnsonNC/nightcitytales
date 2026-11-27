@@ -29,6 +29,7 @@ import {
   operaActionForExit,
   operaEntryRoute,
   operaFirstLead,
+  operaShowActions,
 } from "@/engine/missions/nightAtTheOpera";
 import { OperaOpening } from "./OperaOpening";
 import { CharacterCard as LifeCharacterCard } from "@/features/life/hud/CharacterCard";
@@ -66,7 +67,8 @@ import { NpcText } from "@/features/cast/NpcText";
 import { WalkOnStrip } from "@/features/cast/WalkOnStrip";
 import { SceneFaces } from "@/features/life/SceneFaces";
 import { sceneFaces } from "@/features/life/sceneFaceModel";
-import { readWalkOnsEventData } from "@/engine";
+import { readPresentPeopleEventData, readWalkOnsEventData } from "@/engine";
+import { distinctSuggestions } from "./playSceneOps";
 import { usePlay } from "./usePlay";
 import type { PlayBundle } from "./playOps";
 import type { RollRecord } from "./checkPrompt";
@@ -93,7 +95,13 @@ function EventBlock({
     case "gm_narration":
       return (
         <div className="space-y-2">
-          <p className="whitespace-pre-wrap text-[15px] leading-7 text-foreground sm:text-sm sm:leading-relaxed">
+          <p
+            className={
+              isCurrentTurn
+                ? "scene-narration"
+                : "whitespace-pre-wrap text-[15px] leading-7 text-foreground sm:text-sm sm:leading-relaxed"
+            }
+          >
             <NpcText text={text} />
           </p>
           {/* The pinned latest turn shows its faces as one "Here" row above (see
@@ -159,11 +167,13 @@ function EventBlock({
 function currentFaces(
   events: CampaignEvent[],
   people: readonly { name: string; disposition: number }[],
+  confirmedOnly = false,
 ) {
   const latest = [...events].reverse().find((e) => e.type === "gm_narration");
   return sceneFaces({
     text: latest?.summary ?? "",
     walkOns: latest ? readWalkOnsEventData(latest.data) : [],
+    ...(confirmedOnly && { present: readPresentPeopleEventData(latest?.data) }),
     people,
   });
 }
@@ -999,7 +1009,7 @@ export function PlayScreen({
             <>
               <InputBar
                 onSend={play.submit}
-                onAskOptions={play.askOptions}
+                onAskOptions={() => play.askOptions()}
                 showOptions={false}
                 busy={locked || Boolean(play.pendingAttack)}
               />
@@ -1178,6 +1188,20 @@ export function PlayScreen({
       .filter((event) => event.beat_id === bundle.beat?.id && event.type === "gm_narration")
       .at(-1);
     const player = bundle.character.character;
+    const ideas =
+      bundle.beat?.id === "night_at_opera"
+        ? operaShowActions.filter(
+            (idea) =>
+              !("item" in idea) ||
+              play.capability?.items.some(
+                ({ itemId, quantity }) => itemId === idea.item && quantity > 0,
+              ),
+          )
+        : [];
+    const moreIdeas = distinctSuggestions(play.suggestions, [
+      ...ideas.map(({ label }) => label),
+      ...bundle.availableExits.map(({ label }) => label),
+    ]);
     return (
       <OperaOpening
         bundle={bundle}
@@ -1232,18 +1256,28 @@ export function PlayScreen({
         currentTurn={
           latestTurn && (
             <div className="opera-current-turn">
-              <SceneFaces faces={currentFaces([latestTurn], bundle.npcs)} />
+              <SceneFaces scene faces={currentFaces([latestTurn], bundle.npcs, true)} />
               <EventBlock event={latestTurn} isCurrentTurn />
-              <SuggestionBar
-                suggestions={play.suggestions}
-                onPick={(suggestion) => void play.submit(suggestionInput(suggestion))}
-                busy={blocked}
-                character={bundle.character}
-              />
             </div>
           )
         }
         prompts={prompts}
+        ideas={ideas}
+        moreIdeas={moreIdeas}
+        onTry={(idea) => void play.submit(suggestionInput(idea))}
+        onSuggest={play.askOptions}
+        suggesting={play.optionsBusy}
+        suggestionStatus={
+          play.optionsBusy
+            ? "Looking for more ideas…"
+            : play.optionsError
+              ? "Couldn’t load suggestions. Try again."
+              : play.ideasAdded === 0
+                ? "No new ideas for this scene."
+                : play.ideasAdded
+                  ? `${play.ideasAdded} more ${play.ideasAdded === 1 ? "idea" : "ideas"} below.`
+                  : ""
+        }
         pendingId={(play.pendingCheck ?? play.pendingAttack ?? play.pendingDeathSave)?.eventId}
         chips={chips
           .filter(({ label }) => label !== "Wound")
@@ -1256,9 +1290,9 @@ export function PlayScreen({
           <InputBar
             key={bundle.beat?.id}
             onSend={play.submit}
-            onAskOptions={play.askOptions}
+            onAskOptions={() => play.askOptions()}
+            showOptions={false}
             busy={blocked}
-            showOptions
             sceneLayout
           />
         }
@@ -1334,10 +1368,20 @@ export function PlayScreen({
           {(play.busy || play.opening) && (
             <p className="text-sm italic text-muted-foreground">The GM is thinking…</p>
           )}
+          {play.optionsBusy && (
+            <p role="status" className="text-sm text-muted-foreground">
+              Looking for ideas…
+            </p>
+          )}
+          {play.optionsError && (
+            <p role="status" className="text-sm text-destructive">
+              Couldn’t load suggestions. Try again.
+            </p>
+          )}
           <BottomDock>
             <InputBar
               onSend={play.submit}
-              onAskOptions={play.askOptions}
+              onAskOptions={() => play.askOptions()}
               busy={
                 play.busy ||
                 play.opening ||

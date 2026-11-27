@@ -1,18 +1,12 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import {
-  ArrowRight,
-  AudioLines,
-  FileText,
-  MessageSquareText,
-  NotebookPen,
-  PhoneCall,
-  SlidersHorizontal,
-} from "lucide-react";
+import { ArrowRight, FileText, NotebookPen, SlidersHorizontal } from "lucide-react";
 import {
   agreedMissionFee,
   describePosition,
   formatDuration,
   formatLifeClock,
+  getSkill,
+  resolveSkillId,
   placeKeyOf,
   type BeatExit,
 } from "@/engine";
@@ -25,6 +19,7 @@ import {
 } from "@/engine/missions/nightAtTheOpera";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import type { CampaignEvent } from "@/lib/backend";
 import { NCAmp } from "@/features/music/ncamp/NCAmp";
 import { MobileStatusBar, type StatChip } from "./mobileShell";
@@ -57,7 +52,7 @@ function disclosedClient(events: CampaignEvent[]) {
   return learned ? NIGHT_AT_THE_OPERA.offer : null;
 }
 
-const approachIcons = [MessageSquareText, AudioLines, PhoneCall];
+const SHOWN_ACTIONS = 4;
 
 export function OperaOpening({
   bundle,
@@ -75,6 +70,12 @@ export function OperaOpening({
   composer,
   pendingId,
   chips,
+  ideas,
+  moreIdeas,
+  onTry,
+  onSuggest,
+  suggestionStatus,
+  suggesting,
 }: {
   bundle: PlayBundle;
   onChoose: (exit: BeatExit, input?: string) => void;
@@ -91,6 +92,12 @@ export function OperaOpening({
   composer: ReactNode;
   pendingId: string | undefined;
   chips: StatChip[];
+  ideas: GmSuggestedAction[];
+  moreIdeas: GmSuggestedAction[];
+  onTry: (idea: GmSuggestedAction) => void;
+  onSuggest: (labels: readonly string[]) => void;
+  suggestionStatus: string;
+  suggesting: boolean;
 }) {
   const atDesk = placeKeyOf(bundle.campaign.location_key) === "p4";
   const beforeLead = bundle.beat?.id === OPERA_OPENING_BEAT;
@@ -120,6 +127,41 @@ export function OperaOpening({
     : (activeRoute?.title ?? (atOffice ? "The professor’s office" : bundle.beat?.title));
   const client = disclosedClient(bundle.events);
   const total = agreedMissionFee(mission, bundle.agreedPayout);
+
+  const exits = bundle.availableExits.map((exit) => {
+    const approach = beforeLead && operaApproaches.find(({ to }) => to === exit.to);
+    const label =
+      approach && approach.to === "opera_clerk" && !atDesk ? "Call the desk clerk" : exit.label;
+    return {
+      label,
+      detail: approach
+        ? `${approach.hint} · ${formatDuration(approach.minutes)}`
+        : inShow && exit.to === "noodles_and_info"
+          ? "Continue after the performance"
+          : "",
+      run: () => onChoose(exit, label),
+    };
+  });
+  const suggestionRow = (idea: GmSuggestedAction) => {
+    const skill = idea.skill ? resolveSkillId(idea.skill) : undefined;
+    return {
+      label: idea.label,
+      detail: skill ? getSkill(skill).name : "",
+      run: () => onTry(idea),
+    };
+  };
+  const choices = [...ideas.map(suggestionRow), ...exits, ...moreIdeas.map(suggestionRow)];
+  const renderRow = ({ label, detail, run }: (typeof choices)[number]) => (
+    <li key={label}>
+      <button className="opera-follow" type="button" onClick={run} disabled={blocked}>
+        <span>
+          <strong>{label}</strong>
+          {detail && <small>{detail}</small>}
+        </span>
+        <ArrowRight aria-hidden="true" size={16} />
+      </button>
+    </li>
+  );
 
   const rail = (
     <div className="opera-case">
@@ -284,69 +326,37 @@ export function OperaOpening({
               {prompts}
             </div>
             <section aria-label="Scene actions" className="opera-actions">
-              {beforeLead ? (
-                <div className="opera-approaches">
-                  {operaApproaches.map((approach, index) => {
-                    const exit = bundle.availableExits.find(({ to }) => to === approach.to);
-                    if (!exit) return null;
-                    const Icon = approachIcons[index]!;
-                    const label =
-                      approach.to === "opera_clerk" && !atDesk ? "Call the desk clerk" : exit.label;
-                    return (
-                      <button
-                        key={exit.to}
-                        className="opera-approach"
-                        type="button"
-                        onClick={() => onChoose(exit, label)}
-                        disabled={blocked}
-                      >
-                        <Icon aria-hidden="true" size={18} />
-                        <span>
-                          <strong>{label}</strong>
-                          <small>
-                            {approach.hint} · {formatDuration(approach.minutes)}
-                          </small>
-                        </span>
-                        <ArrowRight aria-hidden="true" size={15} />
-                      </button>
-                    );
-                  })}
-                  {bundle.availableExits
-                    .filter(({ to }) => to === "getting_tickets")
-                    .map((exit) => (
-                      <button
-                        key={exit.to}
-                        className="opera-follow"
-                        type="button"
-                        onClick={() => onChoose(exit)}
-                        disabled={blocked}
-                      >
-                        {exit.label} <ArrowRight aria-hidden="true" size={16} />
-                      </button>
-                    ))}
-                </div>
-              ) : (
-                <div className="opera-next">
-                  {bundle.availableExits.map((exit) => (
-                    <button
-                      key={exit.to}
-                      className="opera-follow"
-                      type="button"
-                      onClick={() => onChoose(exit)}
-                      disabled={blocked}
-                    >
-                      {exit.label} <ArrowRight aria-hidden="true" size={16} />
-                    </button>
-                  ))}
-                </div>
-              )}
-              <details className="opera-freeform" key={beatId}>
-                <summary>Do something else</summary>
-                {composer}
-              </details>
+              {composer}
               <p role="status" className="opera-wait">
-                {busy ? "Resolving your action…" : ""}
+                {busy
+                  ? "Resolving your action…"
+                  : pendingId
+                    ? "Resolve the roll to act again."
+                    : ""}
               </p>
+              <div className="opera-action-heading">
+                {choices.length > 0 && <h2>Actions you can try</h2>}
+                <button
+                  type="button"
+                  className="life-link"
+                  aria-disabled={suggesting || blocked}
+                  onClick={() => {
+                    if (!suggesting && !blocked) onSuggest(choices.map(({ label }) => label));
+                  }}
+                >
+                  {choices.length > 0 ? "Suggest more actions" : "Suggest actions"}
+                </button>
+              </div>
+              <p className="opera-wait" role="status">
+                {suggestionStatus}
+              </p>
+              <ul className="opera-next">{choices.slice(0, SHOWN_ACTIONS).map(renderRow)}</ul>
+              {choices.length > SHOWN_ACTIONS && (
+                <details className="opera-ideas">
+                  <summary>More ideas ({choices.length - SHOWN_ACTIONS})</summary>
+                  <ul className="opera-next">{choices.slice(SHOWN_ACTIONS).map(renderRow)}</ul>
+                </details>
+              )}
             </section>
           </main>
           <aside className="opera-rail" aria-label="Character and case">

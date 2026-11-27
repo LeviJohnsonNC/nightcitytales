@@ -8,6 +8,8 @@
  * Query in here.
  */
 
+import { npcsNamedIn } from "@/features/cast/npcMentions";
+import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import { listSceneItems } from "@/lib/backend/chatInventory";
 import {
   inventoryPlayerInput,
@@ -51,6 +53,7 @@ import {
   mayRollItself,
   neighboursOf,
   placeFamiliarity,
+  presentPeopleEventData,
   recognitionRoll,
   resolvePosition,
   resolveSkillId,
@@ -148,14 +151,14 @@ export async function narrate(
   input: string,
   options: {
     logInput?: boolean;
-    optionsRequested?: boolean;
+    optionsRequested?: readonly string[];
     requestId?: string;
     inventoryCheckSucceeded?: boolean;
     fixedResult?: boolean;
     /** This turn narrates a check the engine rolled itself; see rollWhatIsSmall. */
     autoRolled?: boolean;
   } = {},
-): Promise<void> {
+): Promise<void | GmSuggestedAction[]> {
   if (
     !bundle.encounter &&
     !options.fixedResult &&
@@ -172,7 +175,7 @@ export async function narrate(
   const recognition = recognitionRoll(bundle.reputation.level);
 
   let requestId = options.requestId;
-  if (options.logInput !== false) {
+  if (!options.optionsRequested && options.logInput !== false) {
     const playerInput = await appendCampaignEvent({
       campaign_id: campaignId,
       type: "player_input",
@@ -222,7 +225,9 @@ export async function narrate(
   // Read now and SPENT only once the narrator has answered (below): spent
   // first, a failed model call took the threat and the answer with it.
   const due =
-    fightRunning || options.fixedResult ? null : await firedClockDue(campaignId, { beatId });
+    fightRunning || options.fixedResult || options.optionsRequested
+      ? null
+      : await firedClockDue(campaignId, { beatId });
   const arrived = due?.arrived ?? null;
 
   // Whatever the GM asked last turn, answered by dice it never saw. Skipped on
@@ -373,7 +378,9 @@ export async function narrate(
     ...(arrived ? { arrived: arrived.payoff } : {}),
     ...(bundle.complication ? { complication: bundle.complication.text } : {}),
     ...(answered ? { oracle: { question: answered.question, answer: answered.answer } } : {}),
-    ...(options.optionsRequested ? { optionsRequested: true } : {}),
+    ...(options.optionsRequested
+      ? { optionsRequested: true, visibleActions: options.optionsRequested }
+      : {}),
   });
 
   const inventoryLocation = bundle.campaign.location_key ?? DEFAULT_START;
@@ -384,9 +391,11 @@ export async function narrate(
   const gm = await gmTurnFn({
     data: { userPrompt: renderGmUserPrompt(context, input) + sceneInventoryPrompt(itemsHere) },
   });
+  // Asking for ideas never records a turn or applies the model’s proposed changes.
+  if (options.optionsRequested) return gm.suggestedActions;
+
   const inventoryReady =
     !options.fixedResult &&
-    !options.optionsRequested &&
     !gm.proposedActions.some(
       (action) =>
         action.kind === "skill_check" ||
@@ -429,6 +438,13 @@ export async function narrate(
         });
       }
   }
+  const namedHere = new Set(gm.presentPeople?.map((name) => name.trim().toLowerCase()));
+  const presence =
+    namedHere.size === 0
+      ? []
+      : npcsNamedIn(gm.narration)
+          .filter((npc) => namedHere.has(npc.name.toLowerCase()) || namedHere.has(npc.id))
+          .map((npc) => npc.name);
   await appendCampaignEvent({
     campaign_id: campaignId,
     type: "gm_narration",
@@ -436,6 +452,7 @@ export async function narrate(
     data: {
       endsWithDecision: gm.endsWithDecision,
       suggestedActions: options.fixedResult ? [] : gm.suggestedActions,
+      ...(presence.length && presentPeopleEventData(presence)),
       // Resolved HERE, once, with the campaign+place seed the response schema
       // never sees — never re-picked on a later render, so a walk-on's face
       // stays the same face across scrollback and reload.
@@ -459,7 +476,7 @@ export async function narrate(
 
   // Held, not answered: the dice are thrown on the next turn, so the turn that
   // asked was written without knowing.
-  if (!options.optionsRequested && !options.fixedResult) await askOracle(campaignId, gm.question);
+  if (!options.fixedResult) await askOracle(campaignId, gm.question);
 
   // The city keeps its own time during a job, not only between them. Each turn
   // costs a few minutes, so rent, bills and the calendar stay real while the
@@ -480,7 +497,7 @@ export async function narrate(
   // changes nothing here; quiet and remote ones change what the city noticed.
   const finds = gadgetTurn({
     capability,
-    proposed: options.optionsRequested ? [] : gm.proposedActions,
+    proposed: gm.proposedActions,
     reports: readObservations(gm.observations),
     timed: false,
     report: (observation) => ({ observation: observation as Observation, factionId: null }),
@@ -901,7 +918,7 @@ export async function narrate(
   const markedSmall = gm.proposedActions.some(
     (a) => a.kind === "skill_check" && a.stakes === "low",
   );
-  if (markedSmall && !options.optionsRequested && !options.fixedResult && !options.autoRolled) {
+  if (markedSmall && !options.fixedResult && !options.autoRolled) {
     await rollWhatIsSmall(bundle);
   }
 }

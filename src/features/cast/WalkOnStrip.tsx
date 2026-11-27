@@ -31,7 +31,13 @@ export type WalkOn = {
 };
 
 /** One walk-on as a face with its role and how it reads; the whole scene is a tap away. */
-export function WalkOnFace({ subject, gender, face, name }: WalkOn) {
+export function WalkOnFace({
+  subject,
+  gender,
+  face,
+  name,
+  scene = false,
+}: WalkOn & { scene?: boolean }) {
   const art = flavorArt(subject, gender, face);
   const [open, setOpen] = useState(false);
   // The catalog and the files on disk can drift (a JSON entry with no WebP
@@ -49,7 +55,9 @@ export function WalkOnFace({ subject, gender, face, name }: WalkOn) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="group flex w-[5.5rem] shrink-0 flex-col gap-1 text-left"
+          className={
+            scene ? "group opera-face" : "group flex w-[5.5rem] shrink-0 flex-col gap-1 text-left"
+          }
           aria-label={`Open image of ${label}`}
         >
           {/* The head and shoulders, cut from the scene (tools/art/flavor-faces.mjs):
@@ -58,16 +66,29 @@ export function WalkOnFace({ subject, gender, face, name }: WalkOn) {
             src={art.faceSrc}
             name={label}
             alt={[name, role, look].filter(Boolean).join(", ")}
-            className="size-[5.5rem] transition-opacity group-hover:opacity-80"
+            className={
+              scene
+                ? "opera-face-image group-hover:opacity-80"
+                : "size-[5.5rem] transition-opacity group-hover:opacity-80"
+            }
           />
-          {name && (
-            <span className="line-clamp-2 text-xs font-semibold leading-tight text-foreground">
-              {name}
+          {scene ? (
+            <span className="opera-face-name">
+              {label}
+              {name && <small>{role}</small>}
             </span>
+          ) : (
+            <>
+              {name && (
+                <span className="line-clamp-2 text-xs font-semibold leading-tight text-foreground">
+                  {name}
+                </span>
+              )}
+              <span className="font-mono text-[9px] uppercase leading-tight tracking-[0.12em] text-muted-foreground">
+                {role}
+              </span>
+            </>
           )}
-          <span className="font-mono text-[9px] uppercase leading-tight tracking-[0.12em] text-muted-foreground">
-            {role}
-          </span>
         </button>
       </DialogTrigger>
       <DialogContent className="life-viewer" aria-describedby={undefined}>

@@ -155,6 +155,7 @@ export type GmContextInput = {
    * The scene does not advance on such a turn: they are thinking, not acting.
    */
   optionsRequested?: boolean;
+  visibleActions?: readonly string[];
   /** Clocks with something on them, already worded by the engine. */
   pressure?: string[];
   /** Organisations with an opinion, already worded by the engine. */
@@ -504,6 +505,12 @@ export function renderGmUserPrompt(context: GmContext, playerInput: string): str
       "Fill suggestedActions with 3-4 concrete things drawn from the scene you already " +
         "described. Do not advance the fiction, do not propose a check, and do not narrate a new " +
         "moment: restate where they are standing and stop.",
+      ...(context.visibleActions?.length
+        ? [
+            "Offer distinct ideas. These actions are already visible:",
+            ...context.visibleActions.map((label) => "- " + label),
+          ]
+        : []),
     );
   }
 

@@ -846,6 +846,19 @@ export function readAgentCallEventData(raw: unknown): AgentCall | null {
 // events above rather than being read ad hoc where it is rendered.
 // ---------------------------------------------------------------------------
 
+/** Directory names confirmed as physically present by this narration. */
+export function presentPeopleEventData(names: string[]): { presentPeople: string[] } {
+  return { presentPeople: names };
+}
+
+export function readPresentPeopleEventData(raw: unknown): string[] {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+  const names = (raw as RawPayload)["presentPeople"];
+  return Array.isArray(names)
+    ? names.filter((name): name is string => typeof name === "string")
+    : [];
+}
+
 /**
  * A walk-on the turn named, already resolved to a concrete gender. `name` is
  * there only when the passage itself gave one (`nameTheyLearned`).

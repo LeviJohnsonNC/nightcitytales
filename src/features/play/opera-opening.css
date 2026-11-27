@@ -81,6 +81,9 @@
 .opera-result .opera-passage {
   margin-block: 0.2rem 0;
 }
+.opera-result .opera-lead {
+  padding: 0.15rem 0;
+}
 .opera-result h2 {
   font: 750 1.5rem/1.2 var(--font-display);
 }
@@ -92,66 +95,62 @@
   gap: 0.55rem;
   margin-block-start: 0.35rem;
 }
-.opera-approaches {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.55rem;
-}
-.opera-approach,
 .opera-follow {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  gap: 0.8rem;
+  width: 100%;
   min-block-size: 3rem;
-  padding: 0.6rem 0.7rem;
+  padding: 0.65rem 0.8rem;
   border: 1px solid var(--border);
   border-radius: 0.4rem;
   background: var(--card);
-  color: var(--foreground);
+  color: var(--accent);
   text-align: start;
   cursor: pointer;
 }
-.opera-approach:hover:not(:disabled),
 .opera-follow:hover:not(:disabled) {
   border-color: var(--accent);
   background: #242d33;
 }
-.opera-approach:disabled,
 .opera-follow:disabled {
   opacity: 0.62;
-  cursor: wait;
+  cursor: default;
 }
-.opera-approach strong,
-.opera-approach small {
+.opera-follow strong,
+.opera-follow small {
   display: block;
-  line-height: 1.23;
 }
-.opera-approach small {
-  margin-block-start: 0.24rem;
+.opera-follow small {
   color: var(--muted-foreground);
-  font-size: 0.77rem;
 }
-.opera-approach svg,
 .opera-follow svg {
   flex: none;
-  color: var(--accent);
 }
-.opera-approach svg:last-child {
-  margin-inline-start: auto;
+.opera-action-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  margin-block-start: 0.4rem;
 }
-.opera-follow {
-  justify-self: start;
-  color: var(--accent);
-  font-weight: 650;
+.opera-action-heading h2 {
+  font-weight: 700;
 }
-.opera-freeform summary {
+.opera-action-heading button,
+.opera-ideas summary {
   min-block-size: 44px;
+}
+.opera-action-heading button[aria-disabled="true"] {
+  opacity: 0.65;
+  cursor: default;
+}
+.opera-ideas summary {
   align-content: center;
   color: var(--accent);
   cursor: pointer;
-}
-.opera-freeform[open] summary {
-  margin-block-end: 0.45rem;
 }
 .opera-wait {
   color: var(--muted-foreground);
@@ -226,13 +225,7 @@
   display: grid;
   gap: 0.55rem;
 }
-.opera-next .opera-follow {
-  justify-self: stretch;
-  justify-content: space-between;
-}
-.opera-approaches > .opera-follow {
-  grid-column: 1 / -1;
-}
+
 @media (min-width: 900px) and (max-height: 720px) {
   .opera-art img {
     block-size: 29vh;
@@ -254,8 +247,7 @@
   }
 }
 @media (max-width: 600px) {
-  .opera-investigation,
-  .opera-approaches {
+  .opera-investigation {
     grid-template-columns: minmax(0, 1fr);
   }
   .opera-art img {
@@ -267,5 +259,68 @@
   }
   .opera-handbill img {
     object-position: center 43%;
+  }
+}
+
+.scene-narration {
+  max-inline-size: 70ch;
+  white-space: pre-wrap;
+  color: var(--foreground);
+  font-size: clamp(1.0625rem, 1rem + 0.15vw, 1.125rem);
+  line-height: 1.62;
+}
+.opera-current-turn:empty {
+  display: none;
+}
+.opera-faces {
+  margin-block-end: 0.35rem;
+}
+.opera-cast {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-block-start: 0.45rem;
+}
+.opera-cast li {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+.opera-face {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.85rem 0.35rem 0.35rem;
+  background: var(--card);
+  text-align: start;
+  cursor: pointer;
+}
+.opera-face:hover {
+  border-color: var(--accent);
+}
+.opera-face-image {
+  inline-size: 4rem;
+  block-size: 4rem;
+}
+.opera-cast li:only-child .opera-face-image {
+  inline-size: 6rem;
+  block-size: 6rem;
+}
+.opera-face-name {
+  max-inline-size: 19ch;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.opera-face-name small {
+  display: block;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+@media (max-width: 600px) {
+  .opera-face-image,
+  .opera-cast li:only-child .opera-face-image {
+    inline-size: 3.5rem;
+    block-size: 3.5rem;
   }
 }
