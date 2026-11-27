@@ -1,3 +1,10 @@
+# Player-facing copy cleanup — 2026-11-27 16:41 UTC
+
+Branch `codex/trim-ui-copy` in `/workspace/nightcitytales`, based on merged PR #403 at `feb4451f`. Implementation `ad88f052` removes unset-value copy and repeated instructions across chargen, roster, sign-in, Opening, Life, shops, Job, downtime, and the Rap Sheet. Job sources and Lifepath errata are available on demand. Required warnings, retries, rules and suggestion announcements remain.
+The exact “Card name not specified” string is absent from tracked source. The shared Lifepath “Not set” fallback is removed. Existing untracked `generated_images/` is unrelated.
+Build, typecheck, changed-file lint, and 4,805 tests passed. Local Chromium checks at 1440 and 390 px verified sign-in and sign-up copy and Symphony Hall with fixture data, including the compact success feedback, visible no-result feedback, and preserved action draft and campaign state. The live campaign was outside this browser check.
+Next: publish the draft PR for review. Fresh-chat prompt after merge: “Check an unselected Lifepath card and the Symphony Hall suggestions in Lovable.”
+
 # Symphony Hall scene actions — 2026-11-27 16:14 UTC
 
 [PR #403](https://github.com/LeviJohnsonNC/nightcitytales/pull/403), branch `codex/opera-scene-actions`, base `92a4c466`, implementation `6d3f872d` pushed. Opera scene typography, portrait selection and layout, and the open composer share a decision with three or four starting actions. The Job options path returns distinct ideas without writing a turn.
