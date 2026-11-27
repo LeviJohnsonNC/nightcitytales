@@ -38,14 +38,15 @@ The investigation layout now continues through Getting Tickets and the first sce
 
 At Symphony Hall, the freeform composer opens alongside several concrete approaches and the after-show exit. Asking for more ideas only updates the action list. Scene portraits use the people identified as present.
 
+Active noncombat Jobs share the scene layout through the after-show lead and generated Jobs. The current turn, saved roll results and changed resources sit beside the decision. Earlier turns are available in Journal. Life’s action wait also covers Job narration, scene changes and roll resolution.
+
 1. Apply `20261119010000_opera_action.sql` to staging and replay the three routes
    from a signed-in campaign. Compare clicked and typed actions, test a less
    predictable free-text approach, and check what changes at the door. Verify the
    lead and costs after reload. Include an interrupted save and retry in the
    regression checks.
-2. Use the same scene hierarchy on one generated Job. Review the acceptance,
-   first decision, handoff to a check or fight, and return from reload. Reuse the
-   parts that work for both Jobs and leave their scene content with their missions.
+2. Play a generated Job on staging from acceptance through the first decision,
+   a check or fight, and a reload. Review which case details help a player resume.
 3. After both openings play well on a laptop, prioritize the roughest moments
    inside a Job and then the handoff into Aftermath. Add location art where it helps
    the player notice or act on something specific.

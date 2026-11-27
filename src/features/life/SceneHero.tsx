@@ -1,5 +1,5 @@
 import { Expand } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { formatLifeClock, placeKeyOf, type GameClock } from "@/engine";
 import { sceneArt } from "./sceneArt";
@@ -7,12 +7,21 @@ import "./life.css";
 
 const focalPoints: Record<string, string> = { o3: "50% 49%", p4: "67% 38%" };
 
-export function SceneHero({ locationKey, clock }: { locationKey: string; clock: GameClock }) {
+export function SceneHero({
+  locationKey,
+  clock,
+  heading: Heading = "h1",
+}: {
+  locationKey: string | null;
+  clock: GameClock;
+  heading?: "h1" | "h2";
+}) {
+  const titleId = useId();
   const scene = sceneArt(locationKey);
   const [failed, setFailed] = useState<string | null>(null);
   const art = scene.artwork?.src === failed ? undefined : scene.artwork;
   return (
-    <section aria-labelledby="life-place" className="life-hero" data-picture={!!art}>
+    <section aria-labelledby={titleId} className="life-hero" data-picture={!!art}>
       {art && (
         <img
           src={art.src}
@@ -25,7 +34,7 @@ export function SceneHero({ locationKey, clock }: { locationKey: string; clock: 
         />
       )}
       <div className="life-location">
-        <h1 id="life-place">{scene.title}</h1>
+        <Heading id={titleId}>{scene.title}</Heading>
         <p>{[scene.subtitle, formatLifeClock(clock)].filter(Boolean).join(" · ")}</p>
       </div>
       {art && (

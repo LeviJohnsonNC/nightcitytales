@@ -1,7 +1,7 @@
 /**
  * The wait.
  *
- * Shown while a Life turn is with the model. The line comes from `cityTurnModel.ts`
+ * Shown while a campaign turn resolves. The line comes from `cityTurnModel.ts`
  * — picked per turn from where and when the character is — and the motion is in
  * `life.css`: a light sweep through the glyphs, a pulsing signal glyph, and a
  * hairline travelling under it. Nothing here spins, and nothing says "loading".
@@ -10,7 +10,9 @@
  * re-render mid-wait cannot swap the sentence out from under the player.
  */
 import "./life.css";
-import { turnLine, type TurnContext, type TurnHue } from "./cityTurnModel";
+import { useState } from "react";
+import { getDistrict, getPlace, isCombatZone, partOfDay, resolvePosition } from "@/engine";
+import { turnLine, type TurnHue } from "./cityTurnModel";
 
 /** The palette each hue draws from: the lit colour, and the same colour resting. */
 const HUES: Record<TurnHue, { hue: string; dim: string }> = {
@@ -21,25 +23,72 @@ const HUES: Record<TurnHue, { hue: string; dim: string }> = {
   purple: { hue: "#c79bff", dim: "rgba(161, 92, 255, 0.74)" },
 };
 
-export function CityTurns({ context, seed }: { context: TurnContext; seed: number }) {
-  const line = turnLine(context, seed);
+export function CityTurns({
+  locationKey,
+  minute,
+  seed,
+  message,
+  action,
+}: {
+  locationKey: string | null;
+  minute: number;
+  seed: number;
+  message?: string | undefined;
+  action?: string | undefined;
+}) {
+  return (
+    <>
+      <p className="sr-only" role="status">
+        {message && (action ? `${message} ${action}` : message)}
+      </p>
+      {message && (
+        <CitySignal locationKey={locationKey} minute={minute} seed={seed} action={action} />
+      )}
+    </>
+  );
+}
+
+function CitySignal({
+  locationKey,
+  minute,
+  seed,
+  action,
+}: {
+  locationKey: string | null;
+  minute: number;
+  seed: number;
+  action?: string | undefined;
+}) {
+  // Capture the atmosphere for this wait, even if an interim refetch updates the scene.
+  const [line] = useState(() => {
+    const at = resolvePosition(locationKey);
+    const district = at ? getDistrict(at.districtKey) : undefined;
+    const place = at?.placeKey ? getPlace(at.placeKey) : undefined;
+    return turnLine(
+      {
+        dayPart: partOfDay(minute),
+        districtName: district?.name,
+        combatZone: district ? isCombatZone(district.key) : undefined,
+        placeName: place?.name,
+      },
+      seed,
+    );
+  });
   const palette = HUES[line.hue];
   const style = {
     "--turn-hue": palette.hue,
     "--turn-dim": palette.dim,
   } as React.CSSProperties;
-
   return (
-    // aria-live, because a sighted player sees the city thinking and a screen
-    // reader user otherwise gets silence until the narration lands.
-    <div className="space-y-1.5 py-1" aria-live="polite" aria-busy="true" style={style}>
-      <p className="life-turn text-sm italic">
-        <span className="life-turn-mark not-italic" aria-hidden>
-          ◆
-        </span>
-        <span className="life-turn-text">{line.text}</span>
-      </p>
-      <div className="life-turn-rule h-px w-full" aria-hidden />
+    <div className="life-wait" style={style} aria-hidden="true">
+      {action && <p>{action}</p>}
+      <div className="space-y-1.5 py-1">
+        <p className="life-turn text-sm italic">
+          <span className="life-turn-mark not-italic">◆</span>
+          <span className="life-turn-text">{line.text}</span>
+        </p>
+        <div className="life-turn-rule h-px w-full" />
+      </div>
     </div>
   );
 }

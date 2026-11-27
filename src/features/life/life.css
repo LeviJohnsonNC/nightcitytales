@@ -115,7 +115,7 @@
   border-bottom: 1px solid #454348;
 }
 .life-brand,
-.life-location h1,
+.life-location :is(h1, h2),
 .life-passage h2 {
   font-family: var(--font-display);
   font-weight: 850;
@@ -220,7 +220,7 @@
   padding: clamp(0.9rem, 2vw, 1.55rem);
   padding-right: 3.9rem;
 }
-.life-location h1 {
+.life-location :is(h1, h2) {
   font-size: clamp(1.8rem, 3.2vw, 3rem);
   line-height: 1.02;
   color: #fff5e6;
@@ -886,7 +886,7 @@
   .life-location {
     padding-left: 0.85rem;
   }
-  .life-location h1 {
+  .life-location :is(h1, h2) {
     font-size: clamp(1.6rem, 6.5vw, 2.1rem);
   }
   .life-presence {
