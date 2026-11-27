@@ -16,23 +16,33 @@ import type { SceneFace } from "./sceneFaceModel";
 export function SceneFaces({
   faces,
   compact = false,
+  scene = false,
 }: {
   faces: readonly SceneFace[];
   compact?: boolean;
+  scene?: boolean;
 }) {
   if (faces.length === 0) return null;
   return (
-    <section aria-label="Who is here" className={compact ? "life-faces" : "space-y-2"}>
+    <section
+      aria-label="Who is here"
+      className={scene ? "opera-faces" : compact ? "life-faces" : "space-y-2"}
+    >
       <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-        {compact ? "In this scene" : "Here"}
+        {compact || scene ? "In this scene" : "Here"}
       </p>
-      <ul className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+      <ul className={scene ? "opera-cast" : "-mx-1 flex gap-3 overflow-x-auto px-1 pb-1"}>
         {faces.map((face) => (
           <li key={face.key} className="shrink-0">
             {face.kind === "person" ? (
-              <NpcFace npc={face.npc} ringClass={face.tone ? RING[face.tone] : undefined} />
+              <NpcFace
+                scene={scene}
+                npc={face.npc}
+                ringClass={face.tone ? RING[face.tone] : undefined}
+              />
             ) : (
               <WalkOnFace
+                scene={scene}
                 subject={face.subject}
                 gender={face.gender}
                 face={face.face}

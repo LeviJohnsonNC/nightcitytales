@@ -212,6 +212,13 @@ export function operaActionFromText(
   );
 }
 
+/** Grounded ways to investigate the show, submitted like the player’s own words. */
+export const operaShowActions = [
+  { label: "Talk to a guest about the Vampyres", skill: null },
+  { label: "Step outside and observe Campus Security", skill: "perception" },
+  { label: "Record the show and crowd", skill: null, item: "video_camera" },
+] as const;
+
 const operaLeadBeats: Beat[] = operaApproaches.map(({ to, lead, response, route }) => ({
   id: to,
   type: "dev",

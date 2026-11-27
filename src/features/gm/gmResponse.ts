@@ -205,6 +205,7 @@ export const GmResponseSchema = z.object({
    * campaign and place seed live.
    */
   walkOns: z.array(WalkOnMentionSchema).default([]),
+  presentPeople: z.array(z.string()).optional(),
 });
 export type GmResponse = z.infer<typeof GmResponseSchema>;
 
@@ -273,6 +274,12 @@ export const GmWireResponseSchema = z.object({
     )
     .nullish(),
   endsWithDecision: z.boolean().nullish(),
+  presentPeople: z
+    .array(z.string())
+    .describe(
+      "Names of known NPCs physically present and named in this narration. Omit remote voices, memories, and people mentioned by someone else.",
+    )
+    .nullish(),
   walkOns: z
     .array(z.unknown())
     .describe(
@@ -645,6 +652,7 @@ export function normalizeGmResponse(
     question: isAnswerableQuestion(wire.question) ? wire.question.trim() : null,
     endsWithDecision: wire.endsWithDecision ?? false,
     walkOns: normalizeWalkOnMentions(wire.walkOns),
+    ...(wire.presentPeople?.length && { presentPeople: wire.presentPeople.slice(0, 6) }),
   };
 }
 

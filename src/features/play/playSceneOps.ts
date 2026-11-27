@@ -64,12 +64,52 @@ export async function openScene(bundle: PlayBundle): Promise<void> {
 export function latestSuggestions(bundle: PlayBundle): GmSuggestedAction[] {
   for (let i = bundle.events.length - 1; i >= 0; i -= 1) {
     const event = bundle.events[i];
-    if (!event || event.type !== "gm_narration") continue;
+    if (!event || event.type !== "gm_narration" || event.beat_id !== bundle.beat?.id) continue;
     const data = event.data as { suggestedActions?: unknown } | null;
     const parsed = z.array(GmSuggestedActionSchema).safeParse(data?.suggestedActions ?? []);
     return parsed.success ? parsed.data : [];
   }
   return [];
+}
+
+/** Stable within a decision, including while the player browses ideas. */
+export function suggestionSceneKey(bundle: PlayBundle): string {
+  return JSON.stringify([
+    bundle.campaign.id,
+    bundle.beat?.id,
+    bundle.campaign.location_key,
+    bundle.events.at(-1)?.id,
+  ]);
+}
+
+function actionWords(label: string): string {
+  return (
+    label
+      .toLowerCase()
+      .match(/[\p{L}\p{N}]+/gu)
+      ?.filter((word) => !["a", "an", "the", "your"].includes(word))
+      .join(" ") ?? ""
+  );
+}
+
+/** Keep the original order and ignore repeated actions, even with a longer lead-in. */
+export function distinctSuggestions(
+  suggestions: readonly GmSuggestedAction[],
+  visibleActions: readonly string[],
+): GmSuggestedAction[] {
+  const seen = new Set(visibleActions.map(actionWords));
+  return suggestions.filter(({ label }) => {
+    const words = actionWords(label);
+    if (!words || seen.has(words)) return false;
+    if (
+      [...seen].some(
+        (other) => other.split(" ").length >= 4 && (" " + words + " ").includes(" " + other + " "),
+      )
+    )
+      return false;
+    seen.add(words);
+    return true;
+  });
 }
 
 /**

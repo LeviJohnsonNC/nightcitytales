@@ -78,10 +78,12 @@ export function NpcFace({
   npc,
   ringClass,
   relation,
+  scene = false,
 }: {
   npc: NpcEntry;
   ringClass?: string | undefined;
   relation?: React.ReactNode;
+  scene?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const art = npcArtwork(npc);
@@ -91,19 +93,31 @@ export function NpcFace({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="group flex w-[5.5rem] shrink-0 flex-col gap-1 text-left"
+        className={
+          scene ? "group opera-face" : "group flex w-[5.5rem] shrink-0 flex-col gap-1 text-left"
+        }
         aria-label={`Open dossier for ${npc.name}`}
       >
         <FacePlate
           src={art.src}
           srcSet={art.srcSet}
-          sizes="88px"
+          sizes={scene ? "(max-width: 600px) 56px, 96px" : "88px"}
           name={npc.name}
           alt={look ? `${npc.name}, ${look}` : npc.name}
           ringClass={ringClass}
-          className="size-[5.5rem] transition-opacity group-hover:opacity-80"
+          className={
+            scene
+              ? "opera-face-image group-hover:opacity-80"
+              : "size-[5.5rem] transition-opacity group-hover:opacity-80"
+          }
         />
-        <span className="line-clamp-2 text-xs font-semibold leading-tight text-foreground">
+        <span
+          className={
+            scene
+              ? "opera-face-name"
+              : "line-clamp-2 text-xs font-semibold leading-tight text-foreground"
+          }
+        >
           {npc.name}
         </span>
       </button>

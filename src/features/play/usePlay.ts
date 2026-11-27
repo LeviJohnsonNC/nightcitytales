@@ -15,7 +15,7 @@ import {
  * player action, and the invalidation that follows each one.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   type AttackOption,
   type PendingAttack,
@@ -96,6 +96,8 @@ import {
   takeExit,
 } from "./playOps";
 import type { IpTally, PlayBundle } from "./playOps";
+import type { GmSuggestedAction } from "@/features/gm/gmResponse";
+import { distinctSuggestions, suggestionSceneKey } from "./playSceneOps";
 import { lastStoryDayFor } from "@/features/campaign/publishing";
 
 type JobTurn = { input: string; requestId: string; operaAction?: OperaAction };
@@ -122,16 +124,36 @@ export function usePlay(campaignId: string) {
     onSettled: invalidate,
   });
 
-  /**
-   * "What are my options?" — a turn that does not advance the scene. The GM
-   * names angles it can already see; the fiction stays exactly where it was.
-   */
+  const [ideas, setIdeas] = useState<{
+    scene: string;
+    items: GmSuggestedAction[];
+    added: number;
+  }>();
+  const scene = query.data ? suggestionSceneKey(query.data) : null;
+  const recentIdeas = ideas?.scene === scene ? ideas : undefined;
+  const suggestions = query.data
+    ? distinctSuggestions([...latestSuggestions(query.data), ...(recentIdeas?.items ?? [])], [])
+    : [];
   const options = useMutation({
-    mutationFn: () => {
+    mutationFn: async ({ labels, scene }: { labels: readonly string[]; scene: string }) => {
       if (!query.data) throw new Error("Still loading.");
-      return narrate(query.data, "(What are my options here?)", { optionsRequested: true });
+      return {
+        scene,
+        suggestions: await narrate(query.data, "What could I do here?", {
+          optionsRequested: labels,
+        }),
+      };
     },
-    onSettled: invalidate,
+    onSuccess: (result, { labels }) => {
+      const current = queryClient.getQueryData<PlayBundle>(["play", campaignId]);
+      if (!current || suggestionSceneKey(current) !== result.scene) return;
+      const added = distinctSuggestions(result.suggestions ?? [], labels).slice(0, 4);
+      setIdeas((previous) => ({
+        scene: result.scene,
+        items: [...(previous?.scene === result.scene ? previous.items : []), ...added],
+        added: added.length,
+      }));
+    },
   });
 
   const choose = useMutation({
@@ -273,7 +295,6 @@ export function usePlay(campaignId: string) {
 
   const actionError =
     (turn.error as Error | null) ??
-    (options.error as Error | null) ??
     (choose.error as Error | null) ??
     (open.error as Error | null) ??
     (check.error as Error | null) ??
@@ -463,13 +484,17 @@ export function usePlay(campaignId: string) {
       }
     },
     choose: (exit: BeatExit) => choose.mutate(exit),
-    askOptions: () => options.mutate(),
-    suggestions:
-      pendingCheck || pendingAttack || pendingDeathSave
-        ? []
-        : bundle
-          ? latestSuggestions(bundle)
-          : [],
+    askOptions: (visibleActions: readonly string[] = []) => {
+      if (!scene || (options.isPending && options.variables?.scene === scene)) return;
+      options.mutate({
+        scene,
+        labels: [...visibleActions, ...suggestions.map(({ label }) => label)],
+      });
+    },
+    optionsBusy: options.isPending && options.variables?.scene === scene,
+    optionsError: options.variables?.scene === scene && options.isError,
+    ideasAdded: recentIdeas?.added,
+    suggestions: pendingCheck || pendingAttack || pendingDeathSave ? [] : suggestions,
 
     /**
      * What the character can actually do right now, so the cards can grey out
@@ -722,7 +747,6 @@ export function usePlay(campaignId: string) {
       playback.locked ||
       query.isFetching ||
       turn.isPending ||
-      options.isPending ||
       choose.isPending ||
       open.isPending ||
       check.isPending ||

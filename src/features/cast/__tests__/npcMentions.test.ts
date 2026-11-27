@@ -15,6 +15,14 @@ describe("npcMentions", () => {
     expect(named.map((n) => n.id)).toEqual(["marcus-tally-oyelaran"]);
   });
 
+  it("leaves ordinary words and hyphenated adjectives in the prose", () => {
+    const text = "Razor-edged glass caught the light. A rogue wire brushed a razor.";
+    expect(splitNpcMentions(text)).toEqual([text]);
+    expect(npcsNamedIn("Razor nods from the doorway.").map((npc) => npc.id)).toEqual([
+      "corrado-razor-villanueva",
+    ]);
+  });
+
   it("finds nobody in a passage with nobody named", () => {
     expect(npcsNamedIn("The rain has stopped.")).toEqual([]);
     expect(splitNpcMentions("")).toEqual([]);
