@@ -25,13 +25,15 @@ import {
   DEFAULT_START,
 } from "@/engine";
 import {
-  isOperaInvestigationScene,
   operaActionForExit,
+  operaAfterShowActions,
   operaEntryRoute,
   operaFirstLead,
   operaShowActions,
+  NIGHT_AT_THE_OPERA,
 } from "@/engine/missions/nightAtTheOpera";
-import { OperaOpening } from "./OperaOpening";
+import { JobScene } from "./JobScene";
+import { CityTurns } from "@/features/life/CityTurns";
 import { CharacterCard as LifeCharacterCard } from "@/features/life/hud/CharacterCard";
 import { PeopleStrip } from "@/features/life/hud/PeopleStrip";
 import { lifePeople } from "@/features/life/lifeModel";
@@ -181,13 +183,11 @@ function currentFaces(
 function NarrativeLog({
   events,
   readAloud,
-  busy,
   isCurrentTurn = false,
   people = [],
 }: {
   events: CampaignEvent[];
   readAloud?: string | undefined;
-  busy: boolean;
   /** This list IS the pinned "latest result" view, not the scrolling journal. */
   isCurrentTurn?: boolean;
   /** Who the character knows, for the ring on a face. */
@@ -215,12 +215,6 @@ function NarrativeLog({
         <p className="text-sm text-muted-foreground">Night City holds its breath…</p>
       ) : (
         events.map((e) => <EventBlock key={e.id} event={e} isCurrentTurn={isCurrentTurn} />)
-      )}
-      {/* Only the pinned "latest result" panel shows this inline — the
-          scrolling journal's wait is rendered standalone, at the true
-          bottom of the screen, above the input. */}
-      {isCurrentTurn && busy && (
-        <p className="text-sm italic text-muted-foreground">The GM is thinking…</p>
       )}
       <div ref={endRef} />
     </div>
@@ -865,6 +859,15 @@ export function PlayScreen({
   }
   const bundle = play.bundle;
   if (!bundle) return null;
+  const turnWait = (
+    <CityTurns
+      locationKey={bundle.campaign.location_key}
+      minute={bundle.campaign.minute}
+      seed={bundle.events.length}
+      message={play.turnActivity?.message}
+      action={play.turnActivity?.action}
+    />
+  );
 
   const chips = [
     { label: "HP", value: `${bundle.vitals.hp_current}/${bundle.vitals.hp_max}` },
@@ -1013,6 +1016,7 @@ export function PlayScreen({
                 showOptions={false}
                 busy={locked || Boolean(play.pendingAttack)}
               />
+              {turnWait}
               <div className="combat-intent-result" aria-live="polite">
                 <NarrativeLog
                   events={latestChatInventoryTurn(bundle.events).filter(
@@ -1023,7 +1027,6 @@ export function PlayScreen({
                         (event.data as { code?: unknown } | null)?.code ===
                           "inventory_unavailable"),
                   )}
-                  busy={play.busy || play.opening}
                   people={bundle.npcs.map((n) => ({ name: n.name, disposition: n.disposition }))}
                   isCurrentTurn
                 />
@@ -1033,7 +1036,7 @@ export function PlayScreen({
         }
         journal={
           <>
-            <NarrativeLog events={bundle.events} readAloud={bundle.beat?.readAloud} busy={false} />
+            <NarrativeLog events={bundle.events} readAloud={bundle.beat?.readAloud} />
             {rail}
           </>
         }
@@ -1100,15 +1103,14 @@ export function PlayScreen({
     );
   }
 
-  const operaScene =
-    bundle.mission &&
-    bundle.beat &&
-    !play.finished &&
-    isOperaInvestigationScene(bundle.mission, bundle.beat);
+  const jobScene =
+    bundle.campaign.phase === "job" && bundle.mission && bundle.beat && !play.finished
+      ? { mission: bundle.mission, beat: bundle.beat }
+      : null;
   const headerActions = (
     <>
       <MapButton
-        compact={!!operaScene}
+        compact={!!jobScene}
         clinicOpen={!!bundle.neighborhood.lease}
         placeHere={(key) =>
           key === CLINIC_PLACE && bundle.neighborhood.lease
@@ -1124,7 +1126,7 @@ export function PlayScreen({
             : []
         }
       />
-      {!operaScene && (
+      {!jobScene && (
         <SheetDrawer
           character={bundle.character}
           inventory={bundle.inventory}
@@ -1182,14 +1184,20 @@ export function PlayScreen({
     play.opening ||
     Boolean(play.finished || play.pendingCheck || play.pendingAttack || play.pendingDeathSave);
 
-  if (operaScene) {
+  if (jobScene) {
+    const { mission, beat } = jobScene;
+    const isOpera = mission.id === NIGHT_AT_THE_OPERA.id;
     const jobEvents = eventsForThisJob(bundle.events);
-    const latestTurn = jobEvents
-      .filter((event) => event.beat_id === bundle.beat?.id && event.type === "gm_narration")
-      .at(-1);
+    const sceneEvents = jobEvents.filter((event) => event.beat_id === beat.id);
+    const latestTurn = sceneEvents.filter((event) => event.type === "gm_narration").at(-1);
+    const actionEvents = sceneEvents.slice(
+      sceneEvents.map(({ type }) => type).lastIndexOf("player_input") + 1,
+    );
+    const latestRoll = actionEvents.filter((event) => event.type === "skill_check").at(-1);
+    const refusals = actionEvents.filter((event) => event.type === "action_refused");
     const player = bundle.character.character;
     const ideas =
-      bundle.beat?.id === "night_at_opera"
+      isOpera && beat.id === "night_at_opera"
         ? operaShowActions.filter(
             (idea) =>
               !("item" in idea) ||
@@ -1197,19 +1205,24 @@ export function PlayScreen({
                 ({ itemId, quantity }) => itemId === idea.item && quantity > 0,
               ),
           )
-        : [];
+        : isOpera && beat.id === "noodles_and_info"
+          ? operaAfterShowActions
+          : [];
     const moreIdeas = distinctSuggestions(play.suggestions, [
       ...ideas.map(({ label }) => label),
       ...bundle.availableExits.map(({ label }) => label),
     ]);
     return (
-      <OperaOpening
+      <JobScene
         bundle={bundle}
+        mission={mission}
+        beat={beat}
         onChoose={(exit, input) => {
-          if (operaActionForExit(bundle.runtime, exit.to)) void play.submit(input ?? exit.label);
+          if (isOpera && operaActionForExit(bundle.runtime, exit.to))
+            void play.submit(input ?? exit.label);
           else play.choose(exit);
         }}
-        busy={play.busy || play.opening}
+        turnActivity={play.turnActivity}
         blocked={blocked}
         tools={headerActions}
         history={jobEvents.map((event) => (
@@ -1250,18 +1263,42 @@ export function PlayScreen({
             <StatusStrip status={standing} />
             <RollHistory rolls={play.rolls} />
             <PressurePanel pressure={bundle.pressure} />
-            {sceneControls}
           </>
         }
         currentTurn={
           latestTurn && (
             <div className="opera-current-turn">
               <SceneFaces scene faces={currentFaces([latestTurn], bundle.npcs, true)} />
+              {latestRoll && <EventBlock event={latestRoll} />}
               <EventBlock event={latestTurn} isCurrentTurn />
             </div>
           )
         }
-        prompts={prompts}
+        prompts={
+          <>
+            {!latestTurn && latestRoll && <EventBlock event={latestRoll} />}
+            {refusals.length > 0 && (
+              <div role="status" className="space-y-1">
+                {refusals.map((event) => (
+                  <EventBlock key={event.id} event={event} />
+                ))}
+              </div>
+            )}
+            {prompts}
+            {sceneControls}
+          </>
+        }
+        decision={
+          beat.evidenceDecision && (
+            <EvidenceDecision
+              beat={beat}
+              exits={bundle.availableExits}
+              fee={agreedMissionFee(mission, bundle.agreedPayout)}
+              onChoose={play.choose}
+              busy={blocked}
+            />
+          )
+        }
         ideas={ideas}
         moreIdeas={moreIdeas}
         onTry={(idea) => void play.submit(suggestionInput(idea))}
@@ -1279,7 +1316,7 @@ export function PlayScreen({
           )}
         composer={
           <InputBar
-            key={bundle.beat?.id}
+            key={beat.id}
             onSend={play.submit}
             onAskOptions={() => play.askOptions()}
             showOptions={false}
@@ -1325,7 +1362,7 @@ export function PlayScreen({
             the column past the viewport and take the input bar with it.
           */}
           <div className="space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-            <NarrativeLog events={bundle.events} readAloud={bundle.beat?.readAloud} busy={false} />
+            <NarrativeLog events={bundle.events} readAloud={bundle.beat?.readAloud} />
             {sceneControls}
             {bundle.mission && bundle.beat?.evidenceDecision && !play.finished && (
               <EvidenceDecision
@@ -1356,9 +1393,7 @@ export function PlayScreen({
           {/* The wait, pinned above the input rather than at the tail of the
               scroller above — the lowest thing on the screen until the turn
               actually lands. */}
-          {(play.busy || play.opening) && (
-            <p className="text-sm italic text-muted-foreground">The GM is thinking…</p>
-          )}
+          {turnWait}
           {play.optionsBusy && (
             <p role="status" className="text-sm text-muted-foreground">
               Looking for ideas…

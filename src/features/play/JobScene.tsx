@@ -2,6 +2,8 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { ArrowRight, FileText, NotebookPen, SlidersHorizontal } from "lucide-react";
 import {
   agreedMissionFee,
+  type Beat,
+  type Mission,
   describePosition,
   formatDuration,
   formatLifeClock,
@@ -11,6 +13,7 @@ import {
   type BeatExit,
 } from "@/engine";
 import {
+  isOperaInvestigationScene,
   NIGHT_AT_THE_OPERA,
   OPERA_OPENING_BEAT,
   operaApproaches,
@@ -21,6 +24,13 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import type { GmSuggestedAction } from "@/features/gm/gmResponse";
 import type { CampaignEvent } from "@/lib/backend";
+import { CityTurns } from "@/features/life/CityTurns";
+import { SceneHero } from "@/features/life/SceneHero";
+import { ReceiptBar } from "@/features/status/ReceiptBar";
+import { snapshotOf } from "@/features/status/receipts";
+import { useReceipts } from "@/features/status/useReceipts";
+import { carriedKit } from "./carriedKit";
+import { JobCard } from "./JobCard";
 import { NCAmp } from "@/features/music/ncamp/NCAmp";
 import { MobileStatusBar, type StatChip } from "./mobileShell";
 import type { PlayBundle } from "./playBundleOps";
@@ -54,10 +64,12 @@ function disclosedClient(events: CampaignEvent[]) {
 
 const SHOWN_ACTIONS = 4;
 
-export function OperaOpening({
+export function JobScene({
   bundle,
+  mission,
+  beat,
   onChoose,
-  busy,
+  turnActivity,
   blocked,
   tools,
   history,
@@ -67,6 +79,7 @@ export function OperaOpening({
   roleLabel,
   currentTurn,
   prompts,
+  decision,
   composer,
   pendingId,
   chips,
@@ -79,8 +92,10 @@ export function OperaOpening({
   ideasAdded,
 }: {
   bundle: PlayBundle;
+  mission: Mission;
+  beat: Beat;
   onChoose: (exit: BeatExit, input?: string) => void;
-  busy: boolean;
+  turnActivity: { message: string; action?: string | undefined } | null;
   blocked: boolean;
   tools: ReactNode;
   history: ReactNode;
@@ -90,10 +105,11 @@ export function OperaOpening({
   roleLabel: string;
   currentTurn: ReactNode;
   prompts: ReactNode;
+  decision: ReactNode;
   composer: ReactNode;
   pendingId: string | undefined;
   chips: StatChip[];
-  ideas: GmSuggestedAction[];
+  ideas: readonly GmSuggestedAction[];
   moreIdeas: GmSuggestedAction[];
   onTry: (idea: GmSuggestedAction) => void;
   onSuggest: (labels: readonly string[]) => void;
@@ -101,13 +117,15 @@ export function OperaOpening({
   suggestionError: boolean;
   ideasAdded: number | undefined;
 }) {
+  const opera = isOperaInvestigationScene(mission, beat);
+  const operaJob = mission.id === NIGHT_AT_THE_OPERA.id;
   const atDesk = placeKeyOf(bundle.campaign.location_key) === "p4";
-  const beforeLead = bundle.beat?.id === OPERA_OPENING_BEAT;
+  const beforeLead = opera && beat.id === OPERA_OPENING_BEAT;
   const lead = operaFirstLead(bundle.runtime);
   const route = operaEntryRoute(bundle.runtime);
-  const activeRoute = route?.to === bundle.beat?.id ? route : undefined;
+  const activeRoute = route?.to === beat.id ? route : undefined;
   const sceneHeading = useRef<HTMLHeadingElement>(null);
-  const beatId = bundle.beat?.id;
+  const beatId = beat.id;
   const previousBeatId = useRef(beatId);
   const pending = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -118,19 +136,37 @@ export function OperaOpening({
     previousBeatId.current = beatId;
   }, [beatId, pendingId]);
 
-  const mission = NIGHT_AT_THE_OPERA;
-  const gettingTickets = beatId === "getting_tickets";
-  const inShow = beatId === "night_at_opera";
-  const atOffice = beatId === "empty_office_hours";
-  const hasHandbill = !beforeLead && !inShow && !atOffice;
+  const gettingTickets = opera && beatId === "getting_tickets";
+  const inShow = opera && beatId === "night_at_opera";
+  const atOffice = opera && beatId === "empty_office_hours";
+  const afterShow = operaJob && beatId === "noodles_and_info";
+  const hasHandbill = opera && !beforeLead && !inShow && !atOffice;
   const result = gettingTickets ? route : activeRoute;
   const title = gettingTickets
     ? (route?.title ?? "Find a way into the show")
-    : (activeRoute?.title ?? (atOffice ? "The professor’s office" : bundle.beat?.title));
+    : (activeRoute?.title ?? (atOffice ? "The professor’s office" : beat.title));
   const client = disclosedClient(bundle.events);
   const total = agreedMissionFee(mission, bundle.agreedPayout);
+  const objectives = bundle.runtime?.objectives.filter(({ status }) => status === "active") ?? [];
+  const objective = operaJob ? "Find Lucy Rhinemeyer" : (objectives[0]?.text ?? mission.title);
+  // The show and the office have an authored venue. The after-show contact is
+  // described by the scene and may be away from both the hall and the map pin.
+  const locationKey = inShow ? "f3" : atOffice ? "f4" : bundle.campaign.location_key;
+  const showPlace = inShow || atOffice || (!opera && !afterShow);
+  const publicBrief = beat.playerBrief ?? beat.readAloud;
+  const receipts = useReceipts(
+    snapshotOf({
+      clock: bundle.campaign,
+      vitals: bundle.vitals,
+      npcs: bundle.npcs,
+      pressure: bundle.pressure,
+      inventory: carriedKit(bundle.inventory).flatMap(({ kind, lines }) =>
+        lines.map(({ itemId, name, quantity }) => ({ key: `${kind}:${itemId}`, name, quantity })),
+      ),
+    }),
+  );
 
-  const exits = bundle.availableExits.map((exit) => {
+  const exits = (beat.evidenceDecision ? [] : bundle.availableExits).map((exit) => {
     const approach = beforeLead && operaApproaches.find(({ to }) => to === exit.to);
     const label =
       approach && approach.to === "opera_clerk" && !atDesk ? "Call the desk clerk" : exit.label;
@@ -190,18 +226,33 @@ export function OperaOpening({
               <SheetTitle>Case file</SheetTitle>
             </SheetHeader>
             <div className="opera-reference">
-              <h3>Find Lucy Rhinemeyer</h3>
-              <p>Last seen near the University District.</p>
-              <p>
-                {client
-                  ? `${client.patronName} · ${client.patronOrg}`
-                  : "Rhinemeyer family representative"}
-              </p>
-              <p>
-                <strong>{total.toLocaleString("en-CA")} eb</strong> agreed for recovery
-              </p>
-              {lead && <p>{lead.response}</p>}
-              {route && <p>{route.response}</p>}
+              {operaJob ? (
+                <>
+                  <h3>Find Lucy Rhinemeyer</h3>
+                  <p>Last seen near the University District.</p>
+                  <p>
+                    {client
+                      ? `${client.patronName} · ${client.patronOrg}`
+                      : "Rhinemeyer family representative"}
+                  </p>
+                  <p>
+                    <strong>{total.toLocaleString("en-CA")} eb</strong> agreed for recovery
+                  </p>
+                  {lead && <p>{lead.response}</p>}
+                  {route && <p>{route.response}</p>}
+                </>
+              ) : (
+                <>
+                  {objectives.length > 0 && (
+                    <ul className="list-disc space-y-1 pl-5">
+                      {objectives.map((entry) => (
+                        <li key={entry.id}>{entry.text}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <JobCard mission={mission} beat={beat} />
+                </>
+              )}
             </div>
           </SheetContent>
         </Sheet>
@@ -218,7 +269,12 @@ export function OperaOpening({
             </SheetHeader>
             <div className="opera-reference">
               {history}
-              <p>Adventure source · {mission.source}</p>
+              {operaJob && (
+                <details>
+                  <summary className="cursor-pointer">Adventure source</summary>
+                  <p>{mission.source}</p>
+                </details>
+              )}
             </div>
           </SheetContent>
         </Sheet>
@@ -259,12 +315,14 @@ export function OperaOpening({
         <div className="opera-layout">
           <main className="opera-main">
             <header className="opera-heading">
-              <p className="opera-eyebrow">
-                {describePosition(bundle.campaign.location_key)} ·{" "}
-                {formatLifeClock(bundle.campaign)}
-              </p>
+              {!showPlace && (
+                <p className="opera-eyebrow">
+                  {!afterShow && `${describePosition(locationKey)} · `}
+                  {formatLifeClock(bundle.campaign)}
+                </p>
+              )}
               <h1 ref={beforeLead ? sceneHeading : undefined} tabIndex={-1}>
-                Find Lucy Rhinemeyer
+                {objective}
               </h1>
             </header>
             {beforeLead && (
@@ -294,7 +352,10 @@ export function OperaOpening({
                 </p>
               </>
             )}
-            {!beforeLead && (
+            {showPlace && (
+              <SceneHero locationKey={locationKey} clock={bundle.campaign} heading="h2" />
+            )}
+            {opera && !beforeLead && (
               <section
                 className={hasHandbill ? "opera-investigation" : "opera-result"}
                 aria-labelledby="opera-lead"
@@ -331,41 +392,60 @@ export function OperaOpening({
                 </div>
               </section>
             )}
+            {!opera && (
+              <section className="opera-result" aria-labelledby="job-scene-title">
+                <h2 id="job-scene-title" ref={sceneHeading} tabIndex={-1}>
+                  {afterShow ? "A note after the show" : beat.title}
+                </h2>
+                {!currentTurn && publicBrief && !beat.evidenceDecision && (
+                  <p className="opera-passage">{publicBrief}</p>
+                )}
+              </section>
+            )}
             {currentTurn}
+            <ReceiptBar receipts={receipts} />
             <div ref={pending} tabIndex={-1} aria-label="Action feedback">
               {prompts}
             </div>
             <section aria-label="Scene actions" className="opera-actions">
               {composer}
-              <p role="status" className="opera-wait">
-                {busy
-                  ? "Resolving your action…"
-                  : pendingId
-                    ? "Resolve the roll to act again."
-                    : ""}
-              </p>
-              <div className="opera-action-heading">
-                {choices.length > 0 && <h2>Actions you can try</h2>}
-                <button
-                  type="button"
-                  className="life-link"
-                  aria-disabled={suggesting || blocked}
-                  onClick={() => {
-                    if (!suggesting && !blocked) onSuggest(choices.map(({ label }) => label));
-                  }}
-                >
-                  {choices.length > 0 ? "Suggest more actions" : "Suggest actions"}
-                </button>
-              </div>
-              <p className={suggestionFeedback ? "opera-wait" : "sr-only"} role="status">
-                {suggestionAnnouncement}
-              </p>
-              <ul className="opera-next">{choices.slice(0, SHOWN_ACTIONS).map(renderRow)}</ul>
-              {choices.length > SHOWN_ACTIONS && (
-                <details className="opera-ideas">
-                  <summary>More ideas ({choices.length - SHOWN_ACTIONS})</summary>
-                  <ul className="opera-next">{choices.slice(SHOWN_ACTIONS).map(renderRow)}</ul>
-                </details>
+              <CityTurns
+                locationKey={afterShow ? null : locationKey}
+                minute={bundle.campaign.minute}
+                seed={bundle.events.length}
+                message={turnActivity?.message}
+                action={turnActivity?.action}
+              />
+              {!turnActivity && pendingId && (
+                <p className="opera-wait">Resolve the roll to act again.</p>
+              )}
+              {decision}
+              {!beat.evidenceDecision && (
+                <>
+                  <div className="opera-action-heading">
+                    {choices.length > 0 && <h2>Actions you can try</h2>}
+                    <button
+                      type="button"
+                      className="life-link"
+                      aria-disabled={suggesting || blocked}
+                      onClick={() => {
+                        if (!suggesting && !blocked) onSuggest(choices.map(({ label }) => label));
+                      }}
+                    >
+                      {choices.length > 0 ? "Suggest more actions" : "Suggest actions"}
+                    </button>
+                  </div>
+                  <p className={suggestionFeedback ? "opera-wait" : "sr-only"} role="status">
+                    {suggestionAnnouncement}
+                  </p>
+                  <ul className="opera-next">{choices.slice(0, SHOWN_ACTIONS).map(renderRow)}</ul>
+                  {choices.length > SHOWN_ACTIONS && (
+                    <details className="opera-ideas">
+                      <summary>More ideas ({choices.length - SHOWN_ACTIONS})</summary>
+                      <ul className="opera-next">{choices.slice(SHOWN_ACTIONS).map(renderRow)}</ul>
+                    </details>
+                  )}
+                </>
               )}
             </section>
           </main>

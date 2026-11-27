@@ -90,6 +90,7 @@
 .opera-actions {
   display: grid;
   gap: 0.65rem;
+  margin-block-start: 0.85rem;
 }
 .opera-actions .life-entry {
   gap: 0.55rem;

@@ -63,10 +63,6 @@ import {
   districtOfPlace,
   whoIsAt,
   flagMeaning,
-  getDistrict,
-  getPlace,
-  isCombatZone,
-  partOfDay,
 } from "@/engine";
 
 import { NpcText } from "@/features/cast/NpcText";
@@ -115,7 +111,6 @@ import type { CampaignEvent, FullCharacter } from "@/lib/backend";
 import { useLife } from "./useLife";
 import { CityTurns } from "./CityTurns";
 import { SceneHero } from "./SceneHero";
-import type { TurnContext } from "./cityTurnModel";
 import { hauntPeople } from "./lifeModel";
 import { placeHistory } from "@/features/campaign/placeState";
 import { ShopView } from "./shop/ShopView";
@@ -1138,22 +1133,6 @@ function CampaignLife({
   const callEnded = lastEvent?.type === AGENT_CALL_ENDED ? lastEvent.summary : null;
   const visibleEvents = shownLifeEvents(bundle.events);
 
-  /**
-   * What the wait is allowed to know: where they are, and roughly when. Three
-   * map lookups, computed inline rather than memoised — this sits after the
-   * screen's early returns, where a hook cannot go.
-   */
-  const turnContext: TurnContext = (() => {
-    const at = resolvePosition(locationKey);
-    const district = at ? getDistrict(at.districtKey) : undefined;
-    const place = at?.placeKey ? getPlace(at.placeKey) : undefined;
-    return {
-      dayPart: partOfDay(bundle.clock.minute),
-      ...(district ? { districtName: district.name, combatZone: isCombatZone(district.key) } : {}),
-      ...(place ? { placeName: place.name } : {}),
-    };
-  })();
-
   const chips = [
     { label: "HP", value: `${bundle.vitals.hp_current}/${bundle.vitals.hp_max}` },
     { label: "Cash", value: formatMoney(bundle.vitals.eurobucks) },
@@ -1539,13 +1518,17 @@ function CampaignLife({
                         {life.actionError.message}
                       </p>
                     )}
-                    {waiting && !life.checkBusy && !life.endingCall && (
-                      <div className="life-wait" role="status">
-                        {submitted && <p>{submitted}</p>}
-                        <span className="sr-only">Resolving your turn.</span>
-                        <CityTurns context={turnContext} seed={bundle.events.length} />
-                      </div>
-                    )}
+                    <CityTurns
+                      locationKey={locationKey}
+                      minute={bundle.clock.minute}
+                      seed={bundle.events.length}
+                      message={
+                        waiting && !life.checkBusy && !life.endingCall
+                          ? "Resolving your turn."
+                          : undefined
+                      }
+                      action={submitted}
+                    />
                     <p role="status" className="sr-only">
                       {activeAttempt && checkResult
                         ? `${lifeCheckAnnouncement(checkResult)} ${resultStatus ?? ""}`

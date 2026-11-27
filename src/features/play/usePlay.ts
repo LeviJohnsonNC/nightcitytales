@@ -459,6 +459,17 @@ export function usePlay(campaignId: string) {
     }
   };
 
+  const opening = open.isPending || Boolean(bundle && needsOpeningScene(bundle) && !open.error);
+  const turnActivity = turn.isPending
+    ? { message: "Resolving your action.", action: turn.variables?.input }
+    : choose.isPending
+      ? { message: "Changing scenes.", action: choose.variables?.label }
+      : check.isPending
+        ? { message: "Resolving the roll.", action: undefined }
+        : opening
+          ? { message: "Opening the scene.", action: undefined }
+          : null;
+
   return {
     bundle,
     isPending: query.isPending,
@@ -742,7 +753,8 @@ export function usePlay(campaignId: string) {
     backToLife: () => nextJobMutation.mutate(),
     backToLifeBusy: nextJobMutation.isPending,
     backToLifeError: (nextJobMutation.error as Error | null) ?? null,
-    opening: open.isPending || (bundle ? needsOpeningScene(bundle) && !open.error : false),
+    opening,
+    turnActivity,
     busy:
       playback.locked ||
       query.isFetching ||
